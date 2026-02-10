@@ -1,32 +1,20 @@
 
+# Botao "Limpar Banco de Dados" na pagina de Importacao
 
-# Receber Todos os Dados (sem limite)
+## O que sera feito
 
-## Problema Atual
-- O Supabase retorna no maximo **1.000 linhas** por query (limite padrao da API)
-- O hook `usePayrollData` faz uma unica chamada `.select('*')`, entao dados acima de 1.000 registros sao silenciosamente ignorados
-- A importacao funciona em lotes de 500, mas a leitura nao
+Adicionar um botao vermelho "Limpar Banco de Dados" na pagina de Importacao (`/import`), com dialogo de confirmacao para evitar exclusao acidental. Ao confirmar, todos os registros da tabela `payroll_records` serao deletados.
 
-## Solucao
+## Detalhes
 
-### 1. Leitura paginada no `usePayrollData.ts`
-Implementar busca recursiva que carrega **todos** os registros do banco em blocos de 1.000, concatenando ate nao haver mais dados:
+### Arquivo alterado: `src/pages/Import.tsx`
 
-```
-Bloco 1: range(0, 999)    -> 1000 registros
-Bloco 2: range(1000, 1999) -> 1000 registros
-Bloco 3: range(2000, 2999) -> 800 registros (fim)
-Total: 2800 registros carregados
-```
-
-### 2. Manter importacao robusta
-A importacao ja envia em lotes de 500 -- isso esta adequado. Nenhuma alteracao necessaria.
-
-## Arquivo Alterado
-
-- `src/hooks/usePayrollData.ts` -- substituir query simples por loop paginado com `.range()`
-
-## Detalhe Tecnico
-
-A funcao `queryFn` passara a usar um loop que chama `.range(from, to)` repetidamente ate receber menos de 1.000 registros (indicando que acabou). Todos os blocos sao concatenados em um unico array antes de retornar.
-
+1. **Importar** `AlertDialog` e icone `Trash2`
+2. **Adicionar estado** `clearing` para controlar loading do botao
+3. **Criar funcao `handleClearDatabase`** que executa `supabase.from('payroll_records').delete().gte('id', 0)` para remover todos os registros, seguido de `queryClient.invalidateQueries`
+4. **Adicionar um Card** abaixo do card de upload com:
+   - Titulo "Gerenciar Dados"
+   - Botao vermelho (variant `destructive`) com icone de lixeira
+   - AlertDialog de confirmacao com texto "Tem certeza? Todos os registros serao apagados permanentemente."
+   - Botoes "Cancelar" e "Sim, limpar tudo"
+5. Exibir toast de sucesso/erro apos a operacao
