@@ -70,26 +70,22 @@ export const runInconsistencyCheck = (records: PayrollRecord[]): AuditAlert[] =>
     }));
 };
 
-export const runGhostCheck = (records: PayrollRecord[]): AuditAlert[] => {
-  const byCPF: Record<string, PayrollRecord[]> = {};
+export const runDuplicateCheck = (records: PayrollRecord[]): AuditAlert[] => {
+  const grouped: Record<string, PayrollRecord[]> = {};
   records.forEach(r => {
-    if (!byCPF[r.cpf]) byCPF[r.cpf] = [];
-    byCPF[r.cpf].push(r);
+    const key = `${r.cpf}-${r.ano}-${r.mes}-${r.pasta}`;
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(r);
   });
 
-  const totalMonths = new Set(records.map(r => `${r.ano}-${r.mes}`)).size;
-
-  return Object.values(byCPF)
-    .filter(cpfRecords => {
-      const uniqueMonths = new Set(cpfRecords.map(r => `${r.ano}-${r.mes}`)).size;
-      return uniqueMonths === 1 && totalMonths > 1;
-    })
-    .map(cpfRecords => ({
-      type: 'fantasma' as const,
-      severity: 'baixa' as const,
-      title: `Possível funcionário fantasma`,
-      description: `${cpfRecords[0].nome} (${cpfRecords[0].cpf}) aparece apenas em ${cpfRecords[0].mes}/${cpfRecords[0].ano}`,
-      records: cpfRecords,
+  return Object.values(grouped)
+    .filter(group => group.length > 1)
+    .map(group => ({
+      type: 'duplicado' as const,
+      severity: 'alta' as const,
+      title: `CPF duplicado no mês`,
+      description: `${group[0].nome} (${group[0].cpf}) aparece ${group.length}x em ${group[0].pasta} - ${group[0].mes}/${group[0].ano}`,
+      records: group,
     }));
 };
 
@@ -98,6 +94,6 @@ export const runAllChecks = (records: PayrollRecord[]): AuditAlert[] => {
     ...runCPFCrossCheck(records),
     ...runVariationCheck(records),
     ...runInconsistencyCheck(records),
-    ...runGhostCheck(records),
+    ...runDuplicateCheck(records),
   ];
 };

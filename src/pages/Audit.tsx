@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react';
 import { usePayrollData } from '@/hooks/usePayrollData';
-import { runAllChecks, runCPFCrossCheck, runVariationCheck, runInconsistencyCheck, runGhostCheck } from '@/lib/auditChecks';
+import { runAllChecks, runCPFCrossCheck, runVariationCheck, runInconsistencyCheck, runDuplicateCheck } from '@/lib/auditChecks';
 import type { AuditAlert } from '@/types/payroll';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ShieldAlert, AlertTriangle, Eye, Ghost, ArrowUpDown } from 'lucide-react';
+import { ShieldAlert, AlertTriangle, Eye, Copy, ArrowUpDown } from 'lucide-react';
 
 const SEVERITY_STYLES: Record<string, string> = {
   alta: 'bg-destructive text-destructive-foreground',
@@ -18,14 +18,14 @@ const TYPE_LABELS: Record<string, string> = {
   cpf_cruzamento: 'CPF em Múltiplas Pastas',
   variacao: 'Variação > 20%',
   inconsistencia: 'Líquido = Bruto',
-  fantasma: 'Funcionário Fantasma',
+  duplicado: 'Duplicado no Mês',
 };
 
 const TYPE_ICONS: Record<string, any> = {
   cpf_cruzamento: ArrowUpDown,
   variacao: AlertTriangle,
   inconsistencia: Eye,
-  fantasma: Ghost,
+  duplicado: Copy,
 };
 
 const Audit = () => {
@@ -43,7 +43,7 @@ const Audit = () => {
     cpf_cruzamento: runCPFCrossCheck(records).length,
     variacao: runVariationCheck(records).length,
     inconsistencia: runInconsistencyCheck(records).length,
-    fantasma: runGhostCheck(records).length,
+    duplicado: runDuplicateCheck(records).length,
   }), [records]);
 
   if (isLoading) {
