@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { DollarSign, Users, TrendingUp, Wallet, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 
-const COLORS = ['hsl(215, 28%, 17%)', 'hsl(215, 28%, 35%)', 'hsl(215, 28%, 50%)', 'hsl(215, 28%, 65%)', 'hsl(210, 20%, 75%)', 'hsl(142, 76%, 36%)', 'hsl(38, 92%, 50%)', 'hsl(0, 84%, 60%)'];
+const COLORS = ['hsl(267, 70%, 23%)', 'hsl(267, 60%, 35%)', 'hsl(270, 50%, 50%)', 'hsl(270, 45%, 65%)', 'hsl(280, 40%, 75%)', 'hsl(290, 35%, 60%)', 'hsl(300, 30%, 70%)', 'hsl(250, 50%, 55%)'];
 const PAGE_SIZE = 15;
 
 const Dashboard = () => {
