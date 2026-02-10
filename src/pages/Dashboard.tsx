@@ -162,23 +162,27 @@ const Dashboard = () => {
 
         <Card className="bg-info/5 border-info/20">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Admissões</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Admissões {impactoLabel && `(${impactoLabel})`}
+            </CardTitle>
             <UserPlus className="h-4 w-4 text-info" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-info">{formatNumber(admissoes)}</div>
-            <p className="text-xs text-muted-foreground">Novos colaboradores</p>
+            <p className="text-xs text-muted-foreground">Novos em relação ao mês anterior</p>
           </CardContent>
         </Card>
 
         <Card className="bg-destructive/5 border-destructive/20">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Desligamentos</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Desligamentos {impactoLabel && `(${impactoLabel})`}
+            </CardTitle>
             <UserMinus className="h-4 w-4 text-destructive" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-destructive">{formatNumber(desligamentos)}</div>
-            <p className="text-xs text-muted-foreground">Saídas no período</p>
+            <p className="text-xs text-muted-foreground">Saídas em relação ao mês anterior</p>
           </CardContent>
         </Card>
       </div>
