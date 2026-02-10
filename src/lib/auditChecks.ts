@@ -1,0 +1,103 @@
+import type { PayrollRecord, AuditAlert } from '@/types/payroll';
+
+export const runCPFCrossCheck = (records: PayrollRecord[]): AuditAlert[] => {
+  const alerts: AuditAlert[] = [];
+  const grouped: Record<string, PayrollRecord[]> = {};
+
+  records.forEach(r => {
+    const key = `${r.cpf}-${r.ano}-${r.mes}`;
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(r);
+  });
+
+  Object.values(grouped).forEach(group => {
+    const pastas = [...new Set(group.map(r => r.pasta))];
+    if (pastas.length > 1) {
+      alerts.push({
+        type: 'cpf_cruzamento',
+        severity: 'alta',
+        title: `CPF ${group[0].cpf} em múltiplas pastas`,
+        description: `${group[0].nome} recebeu em ${pastas.join(', ')} no mesmo mês (${group[0].mes}/${group[0].ano})`,
+        records: group,
+      });
+    }
+  });
+
+  return alerts;
+};
+
+export const runVariationCheck = (records: PayrollRecord[]): AuditAlert[] => {
+  const alerts: AuditAlert[] = [];
+  const byCPF: Record<string, PayrollRecord[]> = {};
+
+  records.forEach(r => {
+    if (!byCPF[r.cpf]) byCPF[r.cpf] = [];
+    byCPF[r.cpf].push(r);
+  });
+
+  Object.values(byCPF).forEach(cpfRecords => {
+    cpfRecords.sort((a, b) => a.ano * 12 + a.mes - (b.ano * 12 + b.mes));
+    for (let i = 1; i < cpfRecords.length; i++) {
+      const prev = cpfRecords[i - 1];
+      const curr = cpfRecords[i];
+      if (prev.liquido > 0) {
+        const variation = ((curr.liquido - prev.liquido) / prev.liquido) * 100;
+        if (variation > 20) {
+          alerts.push({
+            type: 'variacao',
+            severity: 'media',
+            title: `Variação de ${variation.toFixed(1)}% no líquido`,
+            description: `${curr.nome} (${curr.cpf}): de R$ ${prev.liquido.toFixed(2)} para R$ ${curr.liquido.toFixed(2)} (${prev.mes}/${prev.ano} → ${curr.mes}/${curr.ano})`,
+            records: [prev, curr],
+          });
+        }
+      }
+    }
+  });
+
+  return alerts;
+};
+
+export const runInconsistencyCheck = (records: PayrollRecord[]): AuditAlert[] => {
+  return records
+    .filter(r => r.bruto > 0 && r.liquido === r.bruto)
+    .map(r => ({
+      type: 'inconsistencia' as const,
+      severity: 'media' as const,
+      title: `Líquido = Bruto (sem retenções)`,
+      description: `${r.nome} (${r.cpf}): R$ ${r.bruto.toFixed(2)} em ${r.mes}/${r.ano} - ${r.pasta}`,
+      records: [r],
+    }));
+};
+
+export const runGhostCheck = (records: PayrollRecord[]): AuditAlert[] => {
+  const byCPF: Record<string, PayrollRecord[]> = {};
+  records.forEach(r => {
+    if (!byCPF[r.cpf]) byCPF[r.cpf] = [];
+    byCPF[r.cpf].push(r);
+  });
+
+  const totalMonths = new Set(records.map(r => `${r.ano}-${r.mes}`)).size;
+
+  return Object.values(byCPF)
+    .filter(cpfRecords => {
+      const uniqueMonths = new Set(cpfRecords.map(r => `${r.ano}-${r.mes}`)).size;
+      return uniqueMonths === 1 && totalMonths > 1;
+    })
+    .map(cpfRecords => ({
+      type: 'fantasma' as const,
+      severity: 'baixa' as const,
+      title: `Possível funcionário fantasma`,
+      description: `${cpfRecords[0].nome} (${cpfRecords[0].cpf}) aparece apenas em ${cpfRecords[0].mes}/${cpfRecords[0].ano}`,
+      records: cpfRecords,
+    }));
+};
+
+export const runAllChecks = (records: PayrollRecord[]): AuditAlert[] => {
+  return [
+    ...runCPFCrossCheck(records),
+    ...runVariationCheck(records),
+    ...runInconsistencyCheck(records),
+    ...runGhostCheck(records),
+  ];
+};
