@@ -1,46 +1,69 @@
 import { useMemo, useState } from 'react';
 import { usePayrollData } from '@/hooks/usePayrollData';
 import { formatCurrency, formatNumber, getMonthShort } from '@/lib/formatters';
-import type { DashboardFilters } from '@/types/payroll';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { DollarSign, Users, TrendingUp, Wallet, Search, ChevronLeft, ChevronRight } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import { DollarSign, Users, TrendingUp, TrendingDown, UserPlus, UserMinus } from 'lucide-react';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Legend, LineChart, Line,
+} from 'recharts';
 
-const COLORS = ['hsl(267, 70%, 23%)', 'hsl(267, 60%, 35%)', 'hsl(270, 50%, 50%)', 'hsl(270, 45%, 65%)', 'hsl(280, 40%, 75%)', 'hsl(290, 35%, 60%)', 'hsl(300, 30%, 70%)', 'hsl(250, 50%, 55%)'];
-const PAGE_SIZE = 15;
+const COLORS = [
+  'hsl(267, 70%, 23%)', 'hsl(267, 60%, 35%)', 'hsl(270, 50%, 50%)',
+  'hsl(270, 45%, 65%)', 'hsl(280, 40%, 75%)', 'hsl(290, 35%, 60%)',
+  'hsl(300, 30%, 70%)', 'hsl(250, 50%, 55%)',
+];
 
 const Dashboard = () => {
   const { data: records = [], isLoading } = usePayrollData();
-  const [filters, setFilters] = useState<DashboardFilters>({ ano: null, mes: null, pasta: null, search: '' });
-  const [page, setPage] = useState(0);
+  const [anoFilter, setAnoFilter] = useState<number | null>(null);
 
   const anos = useMemo(() => [...new Set(records.map(r => r.ano))].sort(), [records]);
-  const meses = useMemo(() => [...new Set(records.map(r => r.mes))].sort((a, b) => a - b), [records]);
-  const pastas = useMemo(() => [...new Set(records.map(r => r.pasta))].sort(), [records]);
 
   const filtered = useMemo(() => {
-    return records.filter(r => {
-      if (filters.ano && r.ano !== filters.ano) return false;
-      if (filters.mes && r.mes !== filters.mes) return false;
-      if (filters.pasta && r.pasta !== filters.pasta) return false;
-      if (filters.search) {
-        const s = filters.search.toLowerCase();
-        if (!r.nome.toLowerCase().includes(s) && !r.cpf.includes(s)) return false;
-      }
-      return true;
+    if (!anoFilter) return records;
+    return records.filter(r => r.ano === anoFilter);
+  }, [records, anoFilter]);
+
+  // Get sorted unique periods
+  const periods = useMemo(() => {
+    const set = new Map<string, { ano: number; mes: number }>();
+    filtered.forEach(r => {
+      const key = `${r.ano}-${r.mes}`;
+      if (!set.has(key)) set.set(key, { ano: r.ano, mes: r.mes });
     });
-  }, [records, filters]);
+    return [...set.values()].sort((a, b) => a.ano * 12 + a.mes - (b.ano * 12 + b.mes));
+  }, [filtered]);
 
-  const totalBruto = useMemo(() => filtered.reduce((sum, r) => sum + r.bruto, 0), [filtered]);
-  const totalLiquido = useMemo(() => filtered.reduce((sum, r) => sum + r.liquido, 0), [filtered]);
-  const uniqueEmployees = useMemo(() => new Set(filtered.map(r => r.cpf)).size, [filtered]);
-  const ticketMedio = uniqueEmployees > 0 ? totalLiquido / uniqueEmployees : 0;
+  const lastPeriod = periods[periods.length - 1];
+  const prevPeriod = periods[periods.length - 2];
 
+  // Current period records
+  const currentRecords = useMemo(() => {
+    if (!lastPeriod) return [];
+    return filtered.filter(r => r.ano === lastPeriod.ano && r.mes === lastPeriod.mes);
+  }, [filtered, lastPeriod]);
+
+  const prevRecords = useMemo(() => {
+    if (!prevPeriod) return [];
+    return filtered.filter(r => r.ano === prevPeriod.ano && r.mes === prevPeriod.mes);
+  }, [filtered, prevPeriod]);
+
+  // KPIs
+  const totalBruto = currentRecords.reduce((s, r) => s + r.bruto, 0);
+  const totalBrutoPrev = prevRecords.reduce((s, r) => s + r.bruto, 0);
+  const impacto = totalBruto - totalBrutoPrev;
+  const uniqueEmployees = new Set(currentRecords.map(r => r.cpf)).size;
+
+  // Admissions & Departures
+  const currentCPFs = new Set(currentRecords.map(r => r.cpf));
+  const prevCPFs = new Set(prevRecords.map(r => r.cpf));
+  const admissoes = prevPeriod ? [...currentCPFs].filter(cpf => !prevCPFs.has(cpf)).length : 0;
+  const desligamentos = prevPeriod ? [...prevCPFs].filter(cpf => !currentCPFs.has(cpf)).length : 0;
+
+  // Bar chart - monthly cost evolution
   const barData = useMemo(() => {
     const grouped: Record<string, { mes: number; ano: number; bruto: number }> = {};
     filtered.forEach(r => {
@@ -53,19 +76,33 @@ const Dashboard = () => {
       .map(g => ({ name: `${getMonthShort(g.mes)}/${g.ano}`, bruto: g.bruto }));
   }, [filtered]);
 
+  // Pie chart - by pasta
   const pieData = useMemo(() => {
     const grouped: Record<string, number> = {};
-    filtered.forEach(r => {
+    currentRecords.forEach(r => {
       grouped[r.pasta] = (grouped[r.pasta] || 0) + r.bruto;
     });
     return Object.entries(grouped)
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value);
-  }, [filtered]);
+  }, [currentRecords]);
+
+  // Line chart - headcount evolution
+  const headcountData = useMemo(() => {
+    return periods.map(p => {
+      const count = new Set(
+        filtered.filter(r => r.ano === p.ano && r.mes === p.mes).map(r => r.cpf)
+      ).size;
+      return { name: `${getMonthShort(p.mes)}/${p.ano}`, colaboradores: count };
+    });
+  }, [filtered, periods]);
 
   const prefeitura = records[0]?.prefeitura || 'Prefeitura';
-  const paged = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const lastPeriodLabel = lastPeriod ? `${getMonthShort(lastPeriod.mes)}/${lastPeriod.ano}` : '';
+  const prevPeriodLabel = prevPeriod ? `${getMonthShort(prevPeriod.mes)}` : '';
+  const impactoLabel = prevPeriod && lastPeriod
+    ? `${prevPeriodLabel} → ${getMonthShort(lastPeriod.mes)}`
+    : '';
 
   if (isLoading) {
     return (
@@ -77,84 +114,71 @@ const Dashboard = () => {
 
   return (
     <Layout>
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground">{prefeitura}</h1>
-        <p className="text-muted-foreground">
-          {filters.ano || 'Todos os anos'} • {filters.mes ? getMonthShort(filters.mes) : 'Todos os meses'}
-        </p>
-      </div>
-
-      {/* Filters */}
-      <div className="mb-6 flex flex-wrap items-center gap-3">
-        <Select value={filters.ano?.toString() || 'all'} onValueChange={v => { setFilters(f => ({ ...f, ano: v === 'all' ? null : Number(v) })); setPage(0); }}>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">{prefeitura}</h1>
+          <p className="text-muted-foreground">Painel de acompanhamento da folha de pagamento</p>
+        </div>
+        <Select value={anoFilter?.toString() || 'all'} onValueChange={v => setAnoFilter(v === 'all' ? null : Number(v))}>
           <SelectTrigger className="w-32"><SelectValue placeholder="Ano" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos</SelectItem>
             {anos.map(a => <SelectItem key={a} value={a.toString()}>{a}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Select value={filters.mes?.toString() || 'all'} onValueChange={v => { setFilters(f => ({ ...f, mes: v === 'all' ? null : Number(v) })); setPage(0); }}>
-          <SelectTrigger className="w-36"><SelectValue placeholder="Mês" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos</SelectItem>
-            {meses.map(m => <SelectItem key={m} value={m.toString()}>{getMonthShort(m)}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={filters.pasta || 'all'} onValueChange={v => { setFilters(f => ({ ...f, pasta: v === 'all' ? null : v })); setPage(0); }}>
-          <SelectTrigger className="w-48"><SelectValue placeholder="Pasta" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas</SelectItem>
-            {pastas.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por nome ou CPF..."
-            value={filters.search}
-            onChange={e => { setFilters(f => ({ ...f, search: e.target.value })); setPage(0); }}
-            className="pl-10"
-          />
-        </div>
       </div>
 
       {/* KPI Cards */}
       <div className="mb-6 grid gap-4 grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Bruto</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Custo Total {lastPeriodLabel && `(${lastPeriodLabel})`}
+            </CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(totalBruto)}</div>
+            <p className="text-xs text-muted-foreground">{formatNumber(uniqueEmployees)} colaboradores</p>
           </CardContent>
         </Card>
-        <Card>
+
+        <Card className={impacto > 0 ? 'bg-destructive/5 border-destructive/20' : impacto < 0 ? 'bg-success/5 border-success/20' : ''}>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Líquido</CardTitle>
-            <Wallet className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Impacto {impactoLabel && `(${impactoLabel})`}
+            </CardTitle>
+            {impacto >= 0 ? <TrendingUp className="h-4 w-4 text-destructive" /> : <TrendingDown className="h-4 w-4 text-success" />}
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(totalLiquido)}</div>
+            <div className={`text-2xl font-bold ${impacto > 0 ? 'text-destructive' : impacto < 0 ? 'text-success' : ''}`}>
+              {impacto >= 0 ? '+' : ''}{formatCurrency(impacto)}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {impacto > 0 ? 'Aumento na folha' : impacto < 0 ? 'Redução na folha' : 'Sem variação'}
+            </p>
           </CardContent>
         </Card>
-        <Card>
+
+        <Card className="bg-info/5 border-info/20">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Funcionários</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">Admissões</CardTitle>
+            <UserPlus className="h-4 w-4 text-info" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatNumber(uniqueEmployees)}</div>
+            <div className="text-2xl font-bold text-info">{formatNumber(admissoes)}</div>
+            <p className="text-xs text-muted-foreground">Novos colaboradores</p>
           </CardContent>
         </Card>
-        <Card>
+
+        <Card className="bg-destructive/5 border-destructive/20">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Ticket Médio</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">Desligamentos</CardTitle>
+            <UserMinus className="h-4 w-4 text-destructive" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(ticketMedio)}</div>
+            <div className="text-2xl font-bold text-destructive">{formatNumber(desligamentos)}</div>
+            <p className="text-xs text-muted-foreground">Saídas no período</p>
           </CardContent>
         </Card>
       </div>
@@ -204,53 +228,24 @@ const Dashboard = () => {
         </Card>
       </div>
 
-      {/* Table */}
+      {/* Headcount evolution */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-base">Registros ({formatNumber(filtered.length)})</CardTitle>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            Página {page + 1} de {totalPages || 1}
-            <Button variant="outline" size="icon" className="h-8 w-8" disabled={page === 0} onClick={() => setPage(p => p - 1)}>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="icon" className="h-8 w-8" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
+        <CardHeader>
+          <CardTitle className="text-base">Evolução do Quadro de Pessoal</CardTitle>
+          <p className="text-sm text-muted-foreground">Total de colaboradores ativos por mês</p>
         </CardHeader>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>CPF</TableHead>
-                <TableHead>Função</TableHead>
-                <TableHead>Pasta</TableHead>
-                <TableHead className="text-right">Bruto</TableHead>
-                <TableHead className="text-right">Líquido</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paged.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                    {records.length === 0 ? 'Nenhum dado importado ainda. Vá em Importar para começar.' : 'Nenhum registro encontrado com os filtros aplicados.'}
-                  </TableCell>
-                </TableRow>
-              ) : (
-                paged.map((r, i) => (
-                  <TableRow key={r.id || i}>
-                    <TableCell className="font-medium">{r.nome}</TableCell>
-                    <TableCell>{r.cpf}</TableCell>
-                    <TableCell>{r.funcao}</TableCell>
-                    <TableCell>{r.pasta}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(r.bruto)}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(r.liquido)}</TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+        <CardContent>
+          <div className="h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={headcountData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="name" tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
+                <YAxis tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
+                <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }} />
+                <Line type="monotone" dataKey="colaboradores" stroke="hsl(var(--success))" strokeWidth={2} dot={{ fill: 'hsl(var(--success))', r: 4 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </CardContent>
       </Card>
     </Layout>

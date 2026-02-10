@@ -1,11 +1,12 @@
 import { ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Upload, ShieldAlert, LogOut } from 'lucide-react';
+import { LayoutDashboard, Upload, ShieldAlert, LogOut, TableProperties } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/detalhamento', label: 'Detalhamento', icon: TableProperties },
   { href: '/import', label: 'Importar', icon: Upload },
   { href: '/audit', label: 'Auditoria', icon: ShieldAlert },
 ];
