@@ -136,10 +136,11 @@ const Comparativo = () => {
 
       {/* Export buttons */}
       {activePeriod && filtered.length > 0 && (
-        <div className="mb-4 flex gap-2">
+        <div className="mb-4 flex flex-wrap gap-2">
           <Button
             variant="outline"
             size="sm"
+            className="text-xs md:text-sm"
             onClick={() => {
               const exportData = filtered.map(r => ({
                 nome: r.nome,
@@ -164,11 +165,12 @@ const Comparativo = () => {
               });
             }}
           >
-            <Download className="mr-2 h-4 w-4" /> Excel
+            <Download className="mr-1.5 h-4 w-4" /> Excel
           </Button>
           <Button
             variant="outline"
             size="sm"
+            className="text-xs md:text-sm"
             onClick={() => {
               const exportData = filtered.map(r => ({
                 nome: r.nome,
@@ -194,25 +196,25 @@ const Comparativo = () => {
               });
             }}
           >
-            <FileText className="mr-2 h-4 w-4" /> PDF
+            <FileText className="mr-1.5 h-4 w-4" /> PDF
           </Button>
         </div>
       )}
 
       {/* Filters */}
       <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="text-lg">Filtros</CardTitle>
+        <CardHeader className="p-4 md:p-6">
+          <CardTitle className="text-base md:text-lg">Filtros</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap items-end gap-4">
+        <CardContent className="p-4 pt-0 md:p-6 md:pt-0">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
             <div className="space-y-1">
-              <label className="text-sm font-medium text-primary">Período</label>
+              <label className="text-xs md:text-sm font-medium text-primary">Período</label>
               <Select
                 value={activePeriod?.key || ''}
                 onValueChange={v => { setSelectedPeriod(v); setPage(0); }}
               >
-                <SelectTrigger className="w-56"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectTrigger className="w-full"><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
                   {periods.map(p => (
                     <SelectItem key={p.key} value={p.key}>{p.label}</SelectItem>
@@ -221,12 +223,12 @@ const Comparativo = () => {
               </Select>
             </div>
             <div className="space-y-1">
-              <label className="text-sm font-medium text-primary">Tipo de Variação</label>
+              <label className="text-xs md:text-sm font-medium text-primary">Tipo de Variação</label>
               <Select
                 value={variationType}
                 onValueChange={v => { setVariationType(v as VariationType); setPage(0); }}
               >
-                <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todos</SelectItem>
                   <SelectItem value="admissoes">Admissões</SelectItem>
@@ -237,12 +239,12 @@ const Comparativo = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex-1 min-w-[200px] space-y-1">
-              <label className="text-sm font-medium text-primary">Buscar por Nome ou CPF</label>
+            <div className="space-y-1 sm:col-span-2 lg:col-span-1">
+              <label className="text-xs md:text-sm font-medium text-primary">Buscar</label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  placeholder="Digite nome ou CPF..."
+                  placeholder="Nome ou CPF..."
                   value={search}
                   onChange={e => { setSearch(e.target.value); setPage(0); }}
                   className="pl-10"
@@ -251,7 +253,7 @@ const Comparativo = () => {
             </div>
           </div>
           {filtered.length > 0 && (
-            <p className="mt-3 text-sm text-muted-foreground">
+            <p className="mt-3 text-xs md:text-sm text-muted-foreground">
               Mostrando <strong>{filtered.length}</strong> colaboradores
             </p>
           )}
@@ -298,18 +300,18 @@ const Comparativo = () => {
                 ) : (
                   paged.map((r, i) => (
                     <TableRow key={r.cpf + i}>
-                      <TableCell className="font-medium">{r.nome}</TableCell>
-                      <TableCell className="font-mono text-sm">{r.cpf}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(r.brutoA)}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(r.brutoB)}</TableCell>
-                      <TableCell className="text-right">
-                        <span className={`inline-flex items-center gap-1 font-semibold ${r.variacaoRS < 0 ? 'text-destructive' : r.variacaoRS > 0 ? 'text-emerald-600' : 'text-muted-foreground'}`}>
+                      <TableCell className="font-medium text-xs md:text-sm whitespace-nowrap">{r.nome}</TableCell>
+                      <TableCell className="font-mono text-xs">{r.cpf}</TableCell>
+                      <TableCell className="text-right text-xs md:text-sm whitespace-nowrap">{formatCurrency(r.brutoA)}</TableCell>
+                      <TableCell className="text-right text-xs md:text-sm whitespace-nowrap">{formatCurrency(r.brutoB)}</TableCell>
+                      <TableCell className="text-right whitespace-nowrap">
+                        <span className={`inline-flex items-center gap-1 text-xs md:text-sm font-semibold ${r.variacaoRS < 0 ? 'text-destructive' : r.variacaoRS > 0 ? 'text-emerald-600' : 'text-muted-foreground'}`}>
                           {r.variacaoRS < 0 ? <ArrowDown className="h-3 w-3" /> : r.variacaoRS > 0 ? <ArrowUp className="h-3 w-3" /> : null}
                           {formatCurrency(Math.abs(r.variacaoRS))}
                         </span>
                       </TableCell>
-                      <TableCell className="text-right">
-                        <span className={`font-semibold ${r.variacaoPct < 0 ? 'text-destructive' : r.variacaoPct > 0 ? 'text-emerald-600' : 'text-muted-foreground'}`}>
+                      <TableCell className="text-right whitespace-nowrap">
+                        <span className={`text-xs md:text-sm font-semibold ${r.variacaoPct < 0 ? 'text-destructive' : r.variacaoPct > 0 ? 'text-emerald-600' : 'text-muted-foreground'}`}>
                           {r.variacaoPct > 0 ? '+' : ''}{r.variacaoPct.toFixed(2)}%
                         </span>
                       </TableCell>
