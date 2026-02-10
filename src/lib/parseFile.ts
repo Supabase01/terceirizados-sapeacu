@@ -78,8 +78,12 @@ export const parseFile = async (file: File): Promise<ParseResult> => {
 
         record.bruto = typeof record.bruto === 'number' ? record.bruto : parseFloat(String(record.bruto || '0').replace(/[^\d.,-]/g, '').replace(',', '.'));
         record.liquido = typeof record.liquido === 'number' ? record.liquido : parseFloat(String(record.liquido || '0').replace(/[^\d.,-]/g, '').replace(',', '.'));
+        record.bruto = isNaN(record.bruto) ? 0 : record.bruto;
+        record.liquido = isNaN(record.liquido) ? 0 : record.liquido;
         record.ano = Number(record.ano);
         record.mes = Number(record.mes);
+        record.ano = isNaN(record.ano) ? 0 : record.ano;
+        record.mes = isNaN(record.mes) ? 0 : record.mes;
         record.cpf = String(record.cpf || '').replace(/\D/g, '');
         record.nome = String(record.nome || '').trim();
         record.funcao = String(record.funcao || '').trim();
