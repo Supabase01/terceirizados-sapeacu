@@ -49,8 +49,8 @@ const Detalhamento = () => {
   return (
     <Layout>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground">Detalhamento da Folha</h1>
-        <p className="text-muted-foreground">Consulta detalhada dos registros de pagamento</p>
+        <h1 className="text-xl md:text-2xl font-bold text-foreground">Detalhamento da Folha</h1>
+        <p className="text-sm text-muted-foreground">Consulta detalhada dos registros de pagamento</p>
       </div>
 
       {/* Filters */}
@@ -170,8 +170,8 @@ const Detalhamento = () => {
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="p-0">
-          <Table>
+        <CardContent className="p-0 overflow-x-auto">
+          <Table className="min-w-[700px]">
             <TableHeader>
               <TableRow>
                 <TableHead>Nome</TableHead>

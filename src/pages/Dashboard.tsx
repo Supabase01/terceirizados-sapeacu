@@ -114,10 +114,10 @@ const Dashboard = () => {
 
   return (
     <Layout>
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">{prefeitura}</h1>
-          <p className="text-muted-foreground">Painel de acompanhamento da folha de pagamento</p>
+          <h1 className="text-xl md:text-2xl font-bold text-foreground">{prefeitura}</h1>
+          <p className="text-sm text-muted-foreground">Painel de acompanhamento da folha de pagamento</p>
         </div>
         <Select value={anoFilter?.toString() || 'all'} onValueChange={v => setAnoFilter(v === 'all' ? null : Number(v))}>
           <SelectTrigger className="w-32"><SelectValue placeholder="Ano" /></SelectTrigger>
@@ -129,29 +129,29 @@ const Dashboard = () => {
       </div>
 
       {/* KPI Cards */}
-      <div className="mb-6 grid gap-4 grid-cols-2 lg:grid-cols-4">
+      <div className="mb-6 grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 p-4 md:p-6 md:pb-2">
+            <CardTitle className="text-xs md:text-sm font-medium text-muted-foreground leading-tight">
               Custo Total {lastPeriodLabel && `(${lastPeriodLabel})`}
             </CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <DollarSign className="h-4 w-4 text-muted-foreground shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(totalBruto)}</div>
+          <CardContent className="p-4 pt-0 md:p-6 md:pt-0">
+            <div className="text-lg md:text-2xl font-bold truncate">{formatCurrency(totalBruto)}</div>
             <p className="text-xs text-muted-foreground">{formatNumber(uniqueEmployees)} colaboradores</p>
           </CardContent>
         </Card>
 
         <Card className={impacto > 0 ? 'bg-destructive/5 border-destructive/20' : impacto < 0 ? 'bg-success/5 border-success/20' : ''}>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 p-4 md:p-6 md:pb-2">
+            <CardTitle className="text-xs md:text-sm font-medium text-muted-foreground leading-tight">
               Impacto {impactoLabel && `(${impactoLabel})`}
             </CardTitle>
-            {impacto >= 0 ? <TrendingUp className="h-4 w-4 text-destructive" /> : <TrendingDown className="h-4 w-4 text-success" />}
+            {impacto >= 0 ? <TrendingUp className="h-4 w-4 text-destructive shrink-0" /> : <TrendingDown className="h-4 w-4 text-success shrink-0" />}
           </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${impacto > 0 ? 'text-destructive' : impacto < 0 ? 'text-success' : ''}`}>
+          <CardContent className="p-4 pt-0 md:p-6 md:pt-0">
+            <div className={`text-lg md:text-2xl font-bold truncate ${impacto > 0 ? 'text-destructive' : impacto < 0 ? 'text-success' : ''}`}>
               {impacto >= 0 ? '+' : ''}{formatCurrency(impacto)}
             </div>
             <p className="text-xs text-muted-foreground">
@@ -161,48 +161,48 @@ const Dashboard = () => {
         </Card>
 
         <Card className="bg-info/5 border-info/20">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 p-4 md:p-6 md:pb-2">
+            <CardTitle className="text-xs md:text-sm font-medium text-muted-foreground leading-tight">
               Admissões {impactoLabel && `(${impactoLabel})`}
             </CardTitle>
-            <UserPlus className="h-4 w-4 text-info" />
+            <UserPlus className="h-4 w-4 text-info shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-info">{formatNumber(admissoes)}</div>
+          <CardContent className="p-4 pt-0 md:p-6 md:pt-0">
+            <div className="text-lg md:text-2xl font-bold text-info">{formatNumber(admissoes)}</div>
             <p className="text-xs text-muted-foreground">Novos em relação ao mês anterior</p>
           </CardContent>
         </Card>
 
         <Card className="bg-destructive/5 border-destructive/20">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 p-4 md:p-6 md:pb-2">
+            <CardTitle className="text-xs md:text-sm font-medium text-muted-foreground leading-tight">
               Desligamentos {impactoLabel && `(${impactoLabel})`}
             </CardTitle>
-            <UserMinus className="h-4 w-4 text-destructive" />
+            <UserMinus className="h-4 w-4 text-destructive shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-destructive">{formatNumber(desligamentos)}</div>
+          <CardContent className="p-4 pt-0 md:p-6 md:pt-0">
+            <div className="text-lg md:text-2xl font-bold text-destructive">{formatNumber(desligamentos)}</div>
             <p className="text-xs text-muted-foreground">Saídas em relação ao mês anterior</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Charts */}
-      <div className="mb-6 grid gap-4 lg:grid-cols-3">
+      <div className="mb-6 grid gap-4 grid-cols-1 lg:grid-cols-3">
         <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="text-base">Evolução do Custo Mensal</CardTitle>
+          <CardHeader className="p-4 md:p-6">
+            <CardTitle className="text-sm md:text-base">Evolução do Custo Mensal</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="h-72">
+          <CardContent className="p-2 md:p-6 pt-0 md:pt-0">
+            <div className="h-56 md:h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={barData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="name" tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
-                  <YAxis tickFormatter={v => `${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
+                  <XAxis dataKey="name" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" angle={-45} textAnchor="end" height={50} />
+                  <YAxis tickFormatter={v => `${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" width={45} />
                   <Tooltip
                     formatter={(value: number) => [formatCurrency(value), 'Total Bruto']}
-                    contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
+                    contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }}
                   />
                   <Bar dataKey="bruto" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                 </BarChart>
@@ -211,20 +211,20 @@ const Dashboard = () => {
           </CardContent>
         </Card>
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Composição por Pasta</CardTitle>
+          <CardHeader className="p-4 md:p-6">
+            <CardTitle className="text-sm md:text-base">Composição por Pasta</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="h-72">
+          <CardContent className="p-2 md:p-6 pt-0 md:pt-0">
+            <div className="h-56 md:h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={50} outerRadius={90} paddingAngle={2}>
+                  <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={2}>
                     {pieData.map((_, i) => (
                       <Cell key={i} fill={COLORS[i % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value: number) => formatCurrency(value)} contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }} />
-                  <Legend wrapperStyle={{ fontSize: '12px' }} />
+                  <Tooltip formatter={(value: number) => formatCurrency(value)} contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }} />
+                  <Legend wrapperStyle={{ fontSize: '11px' }} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -234,12 +234,12 @@ const Dashboard = () => {
 
       {/* Headcount evolution */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Evolução do Quadro de Pessoal</CardTitle>
-          <p className="text-sm text-muted-foreground">Total de colaboradores ativos por mês</p>
+        <CardHeader className="p-4 md:p-6">
+          <CardTitle className="text-sm md:text-base">Evolução do Quadro de Pessoal</CardTitle>
+          <p className="text-xs md:text-sm text-muted-foreground">Total de colaboradores ativos por mês</p>
         </CardHeader>
-        <CardContent>
-          <div className="h-72">
+        <CardContent className="p-2 md:p-6 pt-0 md:pt-0">
+          <div className="h-56 md:h-72">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={headcountData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
