@@ -13,7 +13,7 @@ export interface PayrollRecord {
 }
 
 export interface AuditAlert {
-  type: 'cpf_cruzamento' | 'variacao' | 'inconsistencia' | 'fantasma';
+  type: 'cpf_cruzamento' | 'variacao' | 'inconsistencia' | 'duplicado';
   severity: 'alta' | 'media' | 'baixa';
   title: string;
   description: string;
