@@ -1,63 +1,65 @@
 
 
-# Sistema de Auditoria de Folha de Pagamento
+# Ajuste de Cores da Marca e Favicon
 
-## Visão Geral
-Sistema completo para auditoria de folha de pagamento de prefeituras, com dashboard visual, importação de dados Excel/CSV, análise comparativa de colaboradores e módulo de auditoria inteligente. Dados persistidos no Supabase externo com acesso protegido por PIN de 4 dígitos.
+## 1. Paleta de Cores (baseada no logo roxo/violeta)
 
----
+A paleta será migrada de Slate/Zinc para tons de roxo/violeta, extraídos do logo da marca:
 
-## 1. Tela de Acesso (PIN)
-- Tela simples com input de 4 dígitos numéricos
-- PIN armazenado no Supabase para validação
-- Sem cadastro de usuários, apenas verificação do PIN
-- Ao acertar, redireciona ao dashboard
+- **Primary**: Roxo escuro profundo (similar ao "t" do logo, ~262 70% 23%)
+- **Primary foreground**: Branco
+- **Accent/Secondary**: Lavanda claro (similar ao fundo do logo, ~270 40% 92%)
+- **Ring/Focus**: Roxo médio
+- **Sidebar**: Tons de roxo escuro
 
-## 2. Dashboard Geral (Tela Principal)
-- **Cabeçalho** com nome da prefeitura (ex: Sapeaçu - BA) e período selecionado
-- **4 Cards de Indicadores**: Total Bruto, Total Líquido, Quantidade de Funcionários, Ticket Médio
-- **Gráfico de Barras** (Recharts): Evolução do custo total por mês
-- **Gráfico de Linha**: Evolução do quadro de pessoal (colaboradores ativos por mês)
-- **Cards de Comparação**: Impacto financeiro entre meses consecutivos (admissões, desligamentos, aumentos, reduções)
-- **Tabela principal** listando todos os registros com paginação
-- **Filtros Inteligentes**: Ano, Mês, Pasta/Secretaria, Busca por Nome/CPF — ao filtrar, cards e gráficos se atualizam instantaneamente
+### Cores de Alertas (Auditoria)
+- **Destructive (Alta severidade)**: Vermelho forte -- mantido para alertas criticos
+- **Warning (Media severidade)**: Laranja/Amber -- mantido para chamar atenção
+- **Success (Positivo)**: Verde -- mantido
+- **Info (novo)**: Azul claro para informações neutras
 
-## 3. Comparativo Detalhado de Colaboradores
-- Tela acessível ao clicar nos cards de comparação ou via navegação
-- **Filtros**: Período (ex: Agosto vs Setembro), Tipo de Variação (Todos, Admissões, Desligamentos, Aumentos, Reduções, Sem Alteração), Busca por Nome/CPF
-- **Tabela detalhada**: Nome, CPF, Bruto do mês anterior, Bruto do mês atual, Variação em R$ (com setas coloridas ↑↓), Variação em %
-- Ordenação por maior variação absoluta
+As cores nos graficos do Dashboard (barras e pizza) tambem serao atualizadas para usar tons de roxo como cor principal.
 
-## 4. Importação de Dados
-- Upload de arquivos Excel (.xlsx) e CSV
-- Colunas obrigatórias: PREFEITURA, PASTA, ANO, MÊS, NOME, FUNÇÃO, CPF, BRUTO, LÍQUIDO
-- Validação automática das colunas antes de salvar
-- Parse dos dados e persistência no Supabase
-- Indicador de progresso durante importação
+## 2. Favicon
 
-## 5. Módulo de Auditoria (Diferencial)
-- Aba ou modal dedicado com 4 verificações automáticas:
-  - **Cruzamento de CPFs**: CPFs que receberam em pastas diferentes no mesmo mês
-  - **Análise de Variação**: Colaboradores com aumento de líquido >20% em relação ao mês anterior
-  - **Inconsistência de Valores**: Linhas onde Líquido = Bruto (ausência de retenções)
-  - **Filtro de Fantasmas**: Nomes que aparecem em meses isolados sem recorrência
-- Cada alerta exibido em card com indicador de severidade
-- Possibilidade de filtrar por tipo de alerta
+Sera gerada uma imagem de favicon (lupa auditando folha de papel) via AI image generation e configurada no `index.html`. O titulo da pagina tambem sera atualizado para "Auditoria de Folha".
 
-## 6. Exportações
-- **Gerar PDF**: Exporta a visualização atual do dashboard (cards + gráficos) como relatório oficial
-- **Exportar Excel**: Gera planilha com dados filtrados ou com os alertas de auditoria
+## 3. Arquivos Alterados
 
-## 7. Backend (Supabase Externo)
-- Tabela para armazenar registros da folha de pagamento (campos: prefeitura, pasta, ano, mês, nome, função, cpf, bruto, líquido)
-- Tabela de configuração para o PIN de acesso
-- RLS policies adequadas para segurança dos dados
+- `src/index.css` -- nova paleta de variaveis CSS (light e dark)
+- `src/pages/Dashboard.tsx` -- cores dos graficos Recharts atualizadas para tons de roxo
+- `src/pages/PinAccess.tsx` -- icone e estilo do card com cor primaria roxa
+- `src/components/Layout.tsx` -- header com tom de roxo
+- `index.html` -- favicon + titulo atualizado
+- `public/favicon.svg` -- novo favicon gerado (lupa + folha)
 
-## 8. Estilo Visual
-- Tema Slate/Zinc com Tailwind CSS (fiel às imagens)
-- Fundo claro com cards arredondados e sombras suaves
-- Cores de destaque: verde para positivo, vermelho para negativo
-- Ícones com Lucide React
-- Gráficos com Recharts (tooltips conforme imagens de referência)
-- Layout responsivo
+## Detalhes Tecnicos
+
+### Paleta CSS (light mode)
+```
+--primary: 267 70% 23%        (roxo escuro profundo)
+--primary-foreground: 0 0% 100%
+--secondary: 270 40% 94%      (lavanda bem claro)
+--secondary-foreground: 267 70% 23%
+--accent: 270 35% 92%         (lavanda)
+--accent-foreground: 267 70% 23%
+--muted: 270 20% 93%
+--muted-foreground: 267 15% 46%
+--ring: 267 70% 40%
+--border: 270 20% 90%
+--input: 270 20% 90%
+```
+
+### Paleta CSS (dark mode)
+```
+--primary: 270 60% 78%        (roxo claro)
+--primary-foreground: 267 70% 10%
+--secondary: 267 30% 17%
+--accent: 267 30% 17%
+--card: 267 40% 8%
+--background: 267 40% 6%
+```
+
+### Cores dos graficos Recharts
+Array COLORS atualizado para tons de roxo degradando ate complementares.
 
