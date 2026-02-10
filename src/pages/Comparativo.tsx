@@ -3,13 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { usePayrollData } from '@/hooks/usePayrollData';
 import { formatCurrency } from '@/lib/formatters';
 import { getMonthName } from '@/lib/formatters';
+import { exportToExcel, exportToPDF } from '@/lib/exportUtils';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Search, Home, ArrowUp, ArrowDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Home, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Download, FileText } from 'lucide-react';
 
 type VariationType = 'todos' | 'admissoes' | 'desligamentos' | 'aumentos' | 'reducoes' | 'sem_alteracao';
 
@@ -128,10 +129,77 @@ const Comparativo = () => {
           <h1 className="text-2xl font-bold text-foreground">Comparativo Detalhado de Colaboradores</h1>
           <p className="text-muted-foreground">Evolução salarial individual por período</p>
         </div>
-        <Button variant="outline" onClick={() => navigate('/dashboard')}>
-          <Home className="mr-2 h-4 w-4" /> Voltar
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => navigate('/dashboard')}>
+            <Home className="mr-2 h-4 w-4" /> Voltar
+          </Button>
+        </div>
       </div>
+
+      {/* Export buttons */}
+      {activePeriod && filtered.length > 0 && (
+        <div className="mb-4 flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const exportData = filtered.map(r => ({
+                nome: r.nome,
+                cpf: r.cpf,
+                brutoA: formatCurrency(r.brutoA),
+                brutoB: formatCurrency(r.brutoB),
+                variacaoRS: formatCurrency(r.variacaoRS),
+                variacaoPct: `${r.variacaoPct > 0 ? '+' : ''}${r.variacaoPct.toFixed(2)}%`,
+              }));
+              exportToExcel({
+                title: 'Comparativo',
+                columns: [
+                  { header: 'Nome', key: 'nome' },
+                  { header: 'CPF', key: 'cpf' },
+                  { header: `Bruto ${getMonthName(activePeriod.mesA)}`, key: 'brutoA', align: 'right' },
+                  { header: `Bruto ${getMonthName(activePeriod.mesB)}`, key: 'brutoB', align: 'right' },
+                  { header: 'Variação (R$)', key: 'variacaoRS', align: 'right' },
+                  { header: 'Variação (%)', key: 'variacaoPct', align: 'right' },
+                ],
+                data: exportData,
+                fileName: `comparativo_${activePeriod.key}`,
+              });
+            }}
+          >
+            <Download className="mr-2 h-4 w-4" /> Excel
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const exportData = filtered.map(r => ({
+                nome: r.nome,
+                cpf: r.cpf,
+                brutoA: formatCurrency(r.brutoA),
+                brutoB: formatCurrency(r.brutoB),
+                variacaoRS: formatCurrency(r.variacaoRS),
+                variacaoPct: `${r.variacaoPct > 0 ? '+' : ''}${r.variacaoPct.toFixed(2)}%`,
+              }));
+              exportToPDF({
+                title: 'Comparativo de Colaboradores',
+                subtitle: activePeriod.label,
+                columns: [
+                  { header: 'Nome', key: 'nome' },
+                  { header: 'CPF', key: 'cpf' },
+                  { header: `Bruto ${getMonthName(activePeriod.mesA)}`, key: 'brutoA', align: 'right' },
+                  { header: `Bruto ${getMonthName(activePeriod.mesB)}`, key: 'brutoB', align: 'right' },
+                  { header: 'Variação (R$)', key: 'variacaoRS', align: 'right' },
+                  { header: 'Variação (%)', key: 'variacaoPct', align: 'right' },
+                ],
+                data: exportData,
+                fileName: `comparativo_${activePeriod.key}`,
+              });
+            }}
+          >
+            <FileText className="mr-2 h-4 w-4" /> PDF
+          </Button>
+        </div>
+      )}
 
       {/* Filters */}
       <Card className="mb-6">
