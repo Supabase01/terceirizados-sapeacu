@@ -25,7 +25,7 @@ const Import = () => {
   const handleClearDatabase = async () => {
     setClearing(true);
     try {
-      const { error } = await supabase.from('payroll_records').delete().gte('id', 0);
+      const { error } = await supabase.from('payroll_records').delete().neq('id', '00000000-0000-0000-0000-000000000000');
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ['payroll-records'] });
       toast({ title: 'Banco limpo', description: 'Todos os registros foram apagados.' });
