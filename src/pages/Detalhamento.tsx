@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { usePayrollData } from '@/hooks/usePayrollData';
 import { formatCurrency, formatNumber, getMonthShort } from '@/lib/formatters';
+import { exportToExcel, exportToPDF } from '@/lib/exportUtils';
 import type { DashboardFilters } from '@/types/payroll';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Search, ChevronLeft, ChevronRight, Download } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, Download, FileText } from 'lucide-react';
 
 const PAGE_SIZE = 15;
 
@@ -85,6 +86,75 @@ const Detalhamento = () => {
           />
         </div>
       </div>
+
+      {/* Export buttons */}
+      {filtered.length > 0 && (
+        <div className="mb-4 flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const exportData = filtered.map(r => ({
+                nome: r.nome,
+                cpf: r.cpf,
+                funcao: r.funcao,
+                pasta: r.pasta,
+                mesAno: `${getMonthShort(r.mes)}/${r.ano}`,
+                bruto: formatCurrency(r.bruto),
+                liquido: formatCurrency(r.liquido),
+              }));
+              exportToExcel({
+                title: 'Detalhamento',
+                columns: [
+                  { header: 'Nome', key: 'nome' },
+                  { header: 'CPF', key: 'cpf' },
+                  { header: 'Função', key: 'funcao' },
+                  { header: 'Pasta', key: 'pasta' },
+                  { header: 'Mês/Ano', key: 'mesAno' },
+                  { header: 'Bruto', key: 'bruto', align: 'right' },
+                  { header: 'Líquido', key: 'liquido', align: 'right' },
+                ],
+                data: exportData,
+                fileName: 'detalhamento_folha',
+              });
+            }}
+          >
+            <Download className="mr-2 h-4 w-4" /> Excel
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const exportData = filtered.map(r => ({
+                nome: r.nome,
+                cpf: r.cpf,
+                funcao: r.funcao,
+                pasta: r.pasta,
+                mesAno: `${getMonthShort(r.mes)}/${r.ano}`,
+                bruto: formatCurrency(r.bruto),
+                liquido: formatCurrency(r.liquido),
+              }));
+              exportToPDF({
+                title: 'Detalhamento da Folha',
+                subtitle: `${formatNumber(filtered.length)} registros`,
+                columns: [
+                  { header: 'Nome', key: 'nome' },
+                  { header: 'CPF', key: 'cpf' },
+                  { header: 'Função', key: 'funcao' },
+                  { header: 'Pasta', key: 'pasta' },
+                  { header: 'Mês/Ano', key: 'mesAno' },
+                  { header: 'Bruto', key: 'bruto', align: 'right' },
+                  { header: 'Líquido', key: 'liquido', align: 'right' },
+                ],
+                data: exportData,
+                fileName: 'detalhamento_folha',
+              });
+            }}
+          >
+            <FileText className="mr-2 h-4 w-4" /> PDF
+          </Button>
+        </div>
+      )}
 
       {/* Table */}
       <Card>
