@@ -7,7 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Upload, FileSpreadsheet, CheckCircle2, AlertCircle } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Upload, FileSpreadsheet, CheckCircle2, AlertCircle, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const BATCH_SIZE = 500;
@@ -17,8 +18,25 @@ const Import = () => {
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [clearing, setClearing] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
+
+  const handleClearDatabase = async () => {
+    setClearing(true);
+    try {
+      const { error } = await supabase.from('payroll_records').delete().gte('id', 0);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['payroll-records'] });
+      toast({ title: 'Banco limpo', description: 'Todos os registros foram apagados.' });
+      setResult(null);
+      setFile(null);
+    } catch (err: any) {
+      toast({ title: 'Erro', description: err.message || 'Erro ao limpar banco.', variant: 'destructive' });
+    } finally {
+      setClearing(false);
+    }
+  };
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -129,6 +147,35 @@ const Import = () => {
               <Upload className="mr-2 h-4 w-4" />
               {importing ? 'Importando...' : 'Iniciar Importação'}
             </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Gerenciar Dados</CardTitle>
+            <CardDescription>Remova todos os registros para reimportar os dados.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" className="w-full h-12" disabled={clearing}>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  {clearing ? 'Limpando...' : 'Limpar Banco de Dados'}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Todos os registros serão apagados permanentemente. Esta ação não pode ser desfeita.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleClearDatabase}>Sim, limpar tudo</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </CardContent>
         </Card>
       </div>
