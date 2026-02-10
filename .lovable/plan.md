@@ -1,65 +1,32 @@
 
 
-# Ajuste de Cores da Marca e Favicon
+# Receber Todos os Dados (sem limite)
 
-## 1. Paleta de Cores (baseada no logo roxo/violeta)
+## Problema Atual
+- O Supabase retorna no maximo **1.000 linhas** por query (limite padrao da API)
+- O hook `usePayrollData` faz uma unica chamada `.select('*')`, entao dados acima de 1.000 registros sao silenciosamente ignorados
+- A importacao funciona em lotes de 500, mas a leitura nao
 
-A paleta será migrada de Slate/Zinc para tons de roxo/violeta, extraídos do logo da marca:
+## Solucao
 
-- **Primary**: Roxo escuro profundo (similar ao "t" do logo, ~262 70% 23%)
-- **Primary foreground**: Branco
-- **Accent/Secondary**: Lavanda claro (similar ao fundo do logo, ~270 40% 92%)
-- **Ring/Focus**: Roxo médio
-- **Sidebar**: Tons de roxo escuro
+### 1. Leitura paginada no `usePayrollData.ts`
+Implementar busca recursiva que carrega **todos** os registros do banco em blocos de 1.000, concatenando ate nao haver mais dados:
 
-### Cores de Alertas (Auditoria)
-- **Destructive (Alta severidade)**: Vermelho forte -- mantido para alertas criticos
-- **Warning (Media severidade)**: Laranja/Amber -- mantido para chamar atenção
-- **Success (Positivo)**: Verde -- mantido
-- **Info (novo)**: Azul claro para informações neutras
-
-As cores nos graficos do Dashboard (barras e pizza) tambem serao atualizadas para usar tons de roxo como cor principal.
-
-## 2. Favicon
-
-Sera gerada uma imagem de favicon (lupa auditando folha de papel) via AI image generation e configurada no `index.html`. O titulo da pagina tambem sera atualizado para "Auditoria de Folha".
-
-## 3. Arquivos Alterados
-
-- `src/index.css` -- nova paleta de variaveis CSS (light e dark)
-- `src/pages/Dashboard.tsx` -- cores dos graficos Recharts atualizadas para tons de roxo
-- `src/pages/PinAccess.tsx` -- icone e estilo do card com cor primaria roxa
-- `src/components/Layout.tsx` -- header com tom de roxo
-- `index.html` -- favicon + titulo atualizado
-- `public/favicon.svg` -- novo favicon gerado (lupa + folha)
-
-## Detalhes Tecnicos
-
-### Paleta CSS (light mode)
 ```
---primary: 267 70% 23%        (roxo escuro profundo)
---primary-foreground: 0 0% 100%
---secondary: 270 40% 94%      (lavanda bem claro)
---secondary-foreground: 267 70% 23%
---accent: 270 35% 92%         (lavanda)
---accent-foreground: 267 70% 23%
---muted: 270 20% 93%
---muted-foreground: 267 15% 46%
---ring: 267 70% 40%
---border: 270 20% 90%
---input: 270 20% 90%
+Bloco 1: range(0, 999)    -> 1000 registros
+Bloco 2: range(1000, 1999) -> 1000 registros
+Bloco 3: range(2000, 2999) -> 800 registros (fim)
+Total: 2800 registros carregados
 ```
 
-### Paleta CSS (dark mode)
-```
---primary: 270 60% 78%        (roxo claro)
---primary-foreground: 267 70% 10%
---secondary: 267 30% 17%
---accent: 267 30% 17%
---card: 267 40% 8%
---background: 267 40% 6%
-```
+### 2. Manter importacao robusta
+A importacao ja envia em lotes de 500 -- isso esta adequado. Nenhuma alteracao necessaria.
 
-### Cores dos graficos Recharts
-Array COLORS atualizado para tons de roxo degradando ate complementares.
+## Arquivo Alterado
+
+- `src/hooks/usePayrollData.ts` -- substituir query simples por loop paginado com `.range()`
+
+## Detalhe Tecnico
+
+A funcao `queryFn` passara a usar um loop que chama `.range(from, to)` repetidamente ate receber menos de 1.000 registros (indicando que acabou). Todos os blocos sao concatenados em um unico array antes de retornar.
 
