@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { BarChart3, Upload, ShieldAlert, LogOut, TableProperties, ArrowLeftRight, FileText } from 'lucide-react';
+import { BarChart3, Upload, ShieldAlert, LogOut, TableProperties, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -9,7 +9,7 @@ const navItems = [
   { href: '/detalhamento', label: 'Detalhamento', icon: TableProperties },
   { href: '/import', label: 'Importar', icon: Upload },
   { href: '/audit', label: 'Auditoria', icon: ShieldAlert },
-  { href: '/comparativo', label: 'Comparativo', icon: ArrowLeftRight },
+  
   { href: '/relatorios', label: 'Relatórios', icon: FileText },
 ];
 
