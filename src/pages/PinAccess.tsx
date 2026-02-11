@@ -21,7 +21,7 @@ const PinAccess = () => {
       if (error) throw error;
       if (data) {
         sessionStorage.setItem('pin_validated', 'true');
-        navigate('/dashboard');
+        navigate('/indicadores');
       } else {
         toast({ title: 'PIN incorreto', description: 'Verifique e tente novamente.', variant: 'destructive' });
         setPin('');
