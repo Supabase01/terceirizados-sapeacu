@@ -1,32 +1,19 @@
 import { useMemo, useState } from 'react';
 import { usePayrollData } from '@/hooks/usePayrollData';
-import { formatCurrency, formatNumber, getMonthShort, getMonthName } from '@/lib/formatters';
-import { runAllChecks } from '@/lib/auditChecks';
+import { formatCurrency, formatNumber, getMonthName } from '@/lib/formatters';
+import { exportToPDF, exportToExcel } from '@/lib/exportUtils';
 import Layout from '@/components/Layout';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend,
-} from 'recharts';
-import {
-  FileText, Users, DollarSign, TrendingUp, TrendingDown,
-  Building2, Briefcase, AlertTriangle, CheckCircle2,
-} from 'lucide-react';
-
-const COLORS = [
-  'hsl(267, 70%, 23%)', 'hsl(267, 60%, 35%)', 'hsl(270, 50%, 50%)',
-  'hsl(270, 45%, 65%)', 'hsl(280, 40%, 75%)', 'hsl(290, 35%, 60%)',
-  'hsl(300, 30%, 70%)', 'hsl(250, 50%, 55%)', 'hsl(240, 45%, 45%)',
-  'hsl(260, 55%, 40%)',
-];
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { FileText, FileSpreadsheet, Download } from 'lucide-react';
 
 const Relatorios = () => {
   const { data: records = [], isLoading } = usePayrollData();
   const [selectedPeriod, setSelectedPeriod] = useState<string>('all');
 
-  // All periods sorted
   const periods = useMemo(() => {
     const set = new Map<string, { ano: number; mes: number }>();
     records.forEach(r => {
@@ -36,7 +23,6 @@ const Relatorios = () => {
     return [...set.values()].sort((a, b) => a.ano * 12 + a.mes - (b.ano * 12 + b.mes));
   }, [records]);
 
-  // Filtered records based on selected period
   const filteredRecords = useMemo(() => {
     if (selectedPeriod === 'all') return records;
     const [ano, mes] = selectedPeriod.split('-').map(Number);
@@ -49,69 +35,121 @@ const Relatorios = () => {
     return `${getMonthName(mes)}/${ano}`;
   }, [selectedPeriod]);
 
-  // === RESUMO GERAL ===
   const totalBruto = filteredRecords.reduce((s, r) => s + r.bruto, 0);
-  const totalLiquido = filteredRecords.reduce((s, r) => s + r.liquido, 0);
-  const totalDescontos = totalBruto - totalLiquido;
-  const percentDesconto = totalBruto > 0 ? (totalDescontos / totalBruto) * 100 : 0;
-  const uniqueEmployees = new Set(filteredRecords.map(r => r.cpf)).size;
-  const uniquePastas = new Set(filteredRecords.map(r => r.pasta)).size;
-  const avgSalario = uniqueEmployees > 0 ? totalBruto / uniqueEmployees : 0;
 
-  // === TOP PASTAS ===
-  const topPastas = useMemo(() => {
-    const grouped: Record<string, { pasta: string; bruto: number; liquido: number; count: number }> = {};
+  // ===== POR SECRETARIA =====
+  const bySecretaria = useMemo(() => {
+    const grouped: Record<string, { pasta: string; count: number; bruto: number; liquido: number }> = {};
     filteredRecords.forEach(r => {
-      if (!grouped[r.pasta]) grouped[r.pasta] = { pasta: r.pasta, bruto: 0, liquido: 0, count: 0 };
+      if (!grouped[r.pasta]) grouped[r.pasta] = { pasta: r.pasta, count: 0, bruto: 0, liquido: 0 };
+      const cpfs = new Set<string>();
       grouped[r.pasta].bruto += r.bruto;
       grouped[r.pasta].liquido += r.liquido;
       grouped[r.pasta].count++;
     });
-    return Object.values(grouped).sort((a, b) => b.bruto - a.bruto);
-  }, [filteredRecords]);
+    // Recalculate unique count per pasta
+    const uniqueCount: Record<string, Set<string>> = {};
+    filteredRecords.forEach(r => {
+      if (!uniqueCount[r.pasta]) uniqueCount[r.pasta] = new Set();
+      uniqueCount[r.pasta].add(r.cpf);
+    });
+    return Object.values(grouped)
+      .map(g => ({
+        ...g,
+        uniqueCount: uniqueCount[g.pasta]?.size || 0,
+        descontos: g.bruto - g.liquido,
+        pctTotal: totalBruto > 0 ? (g.bruto / totalBruto) * 100 : 0,
+      }))
+      .sort((a, b) => b.bruto - a.bruto);
+  }, [filteredRecords, totalBruto]);
 
-  // === TOP FUNÇÕES ===
-  const topFuncoes = useMemo(() => {
-    const grouped: Record<string, { funcao: string; count: number; bruto: number }> = {};
+  // ===== POR FUNÇÃO =====
+  const byFuncao = useMemo(() => {
+    const grouped: Record<string, { funcao: string; cpfs: Set<string>; bruto: number }> = {};
     filteredRecords.forEach(r => {
       const f = r.funcao || 'Não informado';
-      if (!grouped[f]) grouped[f] = { funcao: f, count: 0, bruto: 0 };
-      grouped[f].count++;
+      if (!grouped[f]) grouped[f] = { funcao: f, cpfs: new Set(), bruto: 0 };
+      grouped[f].cpfs.add(r.cpf);
       grouped[f].bruto += r.bruto;
     });
-    return Object.values(grouped).sort((a, b) => b.count - a.count).slice(0, 10);
+    return Object.values(grouped)
+      .map(g => ({ funcao: g.funcao, qtd: g.cpfs.size, bruto: g.bruto, media: g.cpfs.size > 0 ? g.bruto / g.cpfs.size : 0 }))
+      .sort((a, b) => b.qtd - a.qtd);
   }, [filteredRecords]);
 
-  // === PIE BRUTO vs LIQUIDO ===
-  const brutoLiquidoPie = useMemo(() => [
-    { name: 'Líquido', value: totalLiquido },
-    { name: 'Descontos', value: totalDescontos },
-  ], [totalLiquido, totalDescontos]);
-
-  // === FAIXAS SALARIAIS ===
-  const faixas = useMemo(() => {
-    const ranges = [
-      { label: 'Até R$ 2.000', min: 0, max: 2000 },
-      { label: 'R$ 2.001 - 5.000', min: 2001, max: 5000 },
-      { label: 'R$ 5.001 - 10.000', min: 5001, max: 10000 },
-      { label: 'R$ 10.001 - 20.000', min: 10001, max: 20000 },
-      { label: 'Acima de R$ 20.000', min: 20001, max: Infinity },
-    ];
-    return ranges.map(range => ({
-      name: range.label,
-      count: filteredRecords.filter(r => r.bruto >= range.min && r.bruto <= range.max).length,
-    }));
+  // ===== TOP SALÁRIOS =====
+  const topSalarios = useMemo(() => {
+    return [...filteredRecords]
+      .sort((a, b) => b.bruto - a.bruto)
+      .slice(0, 20);
   }, [filteredRecords]);
 
-  // === AUDITORIA RESUMO ===
-  const auditAlerts = useMemo(() => runAllChecks(filteredRecords), [filteredRecords]);
-  const alertsBySeverity = useMemo(() => ({
-    alta: auditAlerts.filter(a => a.severity === 'alta').length,
-    media: auditAlerts.filter(a => a.severity === 'media').length,
-    baixa: auditAlerts.filter(a => a.severity === 'baixa').length,
-  }), [auditAlerts]);
+  // Export helpers
+  const exportSecretaria = (type: 'pdf' | 'excel') => {
+    const opts = {
+      title: 'Relatório por Secretaria',
+      subtitle: periodLabel,
+      fileName: `relatorio-secretaria-${selectedPeriod}`,
+      columns: [
+        { header: 'Secretaria', key: 'pasta' },
+        { header: 'Colaboradores', key: 'uniqueCount', align: 'right' as const },
+        { header: 'Total Bruto', key: 'brutoFmt', align: 'right' as const },
+        { header: 'Total Líquido', key: 'liquidoFmt', align: 'right' as const },
+        { header: 'Descontos', key: 'descontosFmt', align: 'right' as const },
+        { header: '% do Total', key: 'pctFmt', align: 'right' as const },
+      ],
+      data: bySecretaria.map(r => ({
+        ...r,
+        brutoFmt: formatCurrency(r.bruto),
+        liquidoFmt: formatCurrency(r.liquido),
+        descontosFmt: formatCurrency(r.descontos),
+        pctFmt: `${r.pctTotal.toFixed(1)}%`,
+      })),
+    };
+    type === 'pdf' ? exportToPDF(opts) : exportToExcel(opts);
+  };
 
-  const prefeitura = records[0]?.prefeitura || 'Prefeitura';
+  const exportFuncao = (type: 'pdf' | 'excel') => {
+    const opts = {
+      title: 'Relatório por Função',
+      subtitle: periodLabel,
+      fileName: `relatorio-funcao-${selectedPeriod}`,
+      columns: [
+        { header: 'Função', key: 'funcao' },
+        { header: 'Qtd', key: 'qtd', align: 'right' as const },
+        { header: 'Total Bruto', key: 'brutoFmt', align: 'right' as const },
+        { header: 'Média Bruto', key: 'mediaFmt', align: 'right' as const },
+      ],
+      data: byFuncao.map(r => ({
+        ...r,
+        brutoFmt: formatCurrency(r.bruto),
+        mediaFmt: formatCurrency(r.media),
+      })),
+    };
+    type === 'pdf' ? exportToPDF(opts) : exportToExcel(opts);
+  };
+
+  const exportTopSalarios = (type: 'pdf' | 'excel') => {
+    const opts = {
+      title: 'Top 20 Maiores Salários',
+      subtitle: periodLabel,
+      fileName: `relatorio-top-salarios-${selectedPeriod}`,
+      columns: [
+        { header: 'Nome', key: 'nome' },
+        { header: 'CPF', key: 'cpf' },
+        { header: 'Função', key: 'funcao' },
+        { header: 'Secretaria', key: 'pasta' },
+        { header: 'Bruto', key: 'brutoFmt', align: 'right' as const },
+        { header: 'Líquido', key: 'liquidoFmt', align: 'right' as const },
+      ],
+      data: topSalarios.map(r => ({
+        ...r,
+        brutoFmt: formatCurrency(r.bruto),
+        liquidoFmt: formatCurrency(r.liquido),
+      })),
+    };
+    type === 'pdf' ? exportToPDF(opts) : exportToExcel(opts);
+  };
 
   if (isLoading) {
     return (
@@ -132,9 +170,19 @@ const Relatorios = () => {
     );
   }
 
+  const ExportButtons = ({ onExport }: { onExport: (type: 'pdf' | 'excel') => void }) => (
+    <div className="flex gap-2">
+      <Button variant="outline" size="sm" onClick={() => onExport('pdf')} className="gap-1.5 text-xs">
+        <Download className="h-3.5 w-3.5" /> PDF
+      </Button>
+      <Button variant="outline" size="sm" onClick={() => onExport('excel')} className="gap-1.5 text-xs">
+        <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
+      </Button>
+    </div>
+  );
+
   return (
     <Layout>
-      {/* Header */}
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2 mb-1">
@@ -142,13 +190,11 @@ const Relatorios = () => {
             <h1 className="text-xl md:text-2xl font-bold text-foreground">Relatórios</h1>
           </div>
           <p className="text-sm text-muted-foreground">
-            {prefeitura} — <span className="font-medium text-foreground">{periodLabel}</span>
+            {records[0]?.prefeitura || 'Prefeitura'} — <span className="font-medium text-foreground">{periodLabel}</span>
           </p>
         </div>
         <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Período" />
-          </SelectTrigger>
+          <SelectTrigger className="w-48"><SelectValue placeholder="Período" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos os períodos</SelectItem>
             {periods.map(p => (
@@ -160,249 +206,135 @@ const Relatorios = () => {
         </Select>
       </div>
 
-      {/* ===== RESUMO EXECUTIVO ===== */}
-      <div className="mb-6">
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Resumo Executivo</h2>
-        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-          <Card className="border-l-4 border-l-primary">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-muted-foreground font-medium">Folha Bruta</span>
-                <DollarSign className="h-4 w-4 text-primary" />
+      <Tabs defaultValue="secretaria" className="w-full">
+        <TabsList className="mb-4 w-full sm:w-auto">
+          <TabsTrigger value="secretaria" className="flex-1 sm:flex-none">Por Secretaria</TabsTrigger>
+          <TabsTrigger value="funcao" className="flex-1 sm:flex-none">Por Função</TabsTrigger>
+          <TabsTrigger value="salarios" className="flex-1 sm:flex-none">Top Salários</TabsTrigger>
+        </TabsList>
+
+        {/* POR SECRETARIA */}
+        <TabsContent value="secretaria">
+          <Card>
+            <CardHeader className="p-4 md:p-6 flex flex-row items-center justify-between">
+              <CardTitle className="text-sm md:text-base">Relatório por Secretaria</CardTitle>
+              <ExportButtons onExport={exportSecretaria} />
+            </CardHeader>
+            <CardContent className="p-0 md:p-0">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Secretaria</TableHead>
+                      <TableHead className="text-right">Colaboradores</TableHead>
+                      <TableHead className="text-right">Total Bruto</TableHead>
+                      <TableHead className="text-right">Total Líquido</TableHead>
+                      <TableHead className="text-right">Descontos</TableHead>
+                      <TableHead className="text-right">% do Total</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {bySecretaria.map(row => (
+                      <TableRow key={row.pasta}>
+                        <TableCell className="font-medium text-xs md:text-sm">{row.pasta}</TableCell>
+                        <TableCell className="text-right text-xs md:text-sm">{formatNumber(row.uniqueCount)}</TableCell>
+                        <TableCell className="text-right text-xs md:text-sm">{formatCurrency(row.bruto)}</TableCell>
+                        <TableCell className="text-right text-xs md:text-sm">{formatCurrency(row.liquido)}</TableCell>
+                        <TableCell className="text-right text-xs md:text-sm">{formatCurrency(row.descontos)}</TableCell>
+                        <TableCell className="text-right text-xs md:text-sm font-medium">{row.pctTotal.toFixed(1)}%</TableCell>
+                      </TableRow>
+                    ))}
+                    {bySecretaria.length > 0 && (
+                      <TableRow className="bg-muted/50 font-bold">
+                        <TableCell className="text-xs md:text-sm">TOTAL</TableCell>
+                        <TableCell className="text-right text-xs md:text-sm">{formatNumber(new Set(filteredRecords.map(r => r.cpf)).size)}</TableCell>
+                        <TableCell className="text-right text-xs md:text-sm">{formatCurrency(totalBruto)}</TableCell>
+                        <TableCell className="text-right text-xs md:text-sm">{formatCurrency(filteredRecords.reduce((s, r) => s + r.liquido, 0))}</TableCell>
+                        <TableCell className="text-right text-xs md:text-sm">{formatCurrency(totalBruto - filteredRecords.reduce((s, r) => s + r.liquido, 0))}</TableCell>
+                        <TableCell className="text-right text-xs md:text-sm">100%</TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
               </div>
-              <p className="text-lg md:text-xl font-bold truncate">{formatCurrency(totalBruto)}</p>
             </CardContent>
           </Card>
+        </TabsContent>
 
-          <Card className="border-l-4 border-l-success">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-muted-foreground font-medium">Folha Líquida</span>
-                <DollarSign className="h-4 w-4 text-success" />
+        {/* POR FUNÇÃO */}
+        <TabsContent value="funcao">
+          <Card>
+            <CardHeader className="p-4 md:p-6 flex flex-row items-center justify-between">
+              <CardTitle className="text-sm md:text-base">Relatório por Função</CardTitle>
+              <ExportButtons onExport={exportFuncao} />
+            </CardHeader>
+            <CardContent className="p-0 md:p-0">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Função</TableHead>
+                      <TableHead className="text-right">Qtd</TableHead>
+                      <TableHead className="text-right">Total Bruto</TableHead>
+                      <TableHead className="text-right">Média Bruto</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {byFuncao.map(row => (
+                      <TableRow key={row.funcao}>
+                        <TableCell className="font-medium text-xs md:text-sm">{row.funcao}</TableCell>
+                        <TableCell className="text-right text-xs md:text-sm">{formatNumber(row.qtd)}</TableCell>
+                        <TableCell className="text-right text-xs md:text-sm">{formatCurrency(row.bruto)}</TableCell>
+                        <TableCell className="text-right text-xs md:text-sm">{formatCurrency(row.media)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
-              <p className="text-lg md:text-xl font-bold truncate">{formatCurrency(totalLiquido)}</p>
-              <p className="text-xs text-muted-foreground mt-1">Descontos: {percentDesconto.toFixed(1)}%</p>
             </CardContent>
           </Card>
+        </TabsContent>
 
-          <Card className="border-l-4 border-l-info">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-muted-foreground font-medium">Colaboradores</span>
-                <Users className="h-4 w-4 text-info" />
+        {/* TOP SALÁRIOS */}
+        <TabsContent value="salarios">
+          <Card>
+            <CardHeader className="p-4 md:p-6 flex flex-row items-center justify-between">
+              <CardTitle className="text-sm md:text-base">Top 20 Maiores Salários</CardTitle>
+              <ExportButtons onExport={exportTopSalarios} />
+            </CardHeader>
+            <CardContent className="p-0 md:p-0">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>#</TableHead>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>CPF</TableHead>
+                      <TableHead>Função</TableHead>
+                      <TableHead>Secretaria</TableHead>
+                      <TableHead className="text-right">Bruto</TableHead>
+                      <TableHead className="text-right">Líquido</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {topSalarios.map((row, i) => (
+                      <TableRow key={`${row.cpf}-${i}`}>
+                        <TableCell className="text-xs text-muted-foreground">{i + 1}</TableCell>
+                        <TableCell className="font-medium text-xs md:text-sm">{row.nome}</TableCell>
+                        <TableCell className="text-xs md:text-sm font-mono">{row.cpf}</TableCell>
+                        <TableCell className="text-xs md:text-sm">{row.funcao}</TableCell>
+                        <TableCell className="text-xs md:text-sm">{row.pasta}</TableCell>
+                        <TableCell className="text-right text-xs md:text-sm font-medium">{formatCurrency(row.bruto)}</TableCell>
+                        <TableCell className="text-right text-xs md:text-sm">{formatCurrency(row.liquido)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
-              <p className="text-lg md:text-xl font-bold">{formatNumber(uniqueEmployees)}</p>
-              <p className="text-xs text-muted-foreground mt-1">{uniquePastas} secretaria{uniquePastas !== 1 ? 's' : ''}</p>
             </CardContent>
           </Card>
-
-          <Card className="border-l-4 border-l-warning">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-muted-foreground font-medium">Salário Médio</span>
-                <Briefcase className="h-4 w-4 text-warning" />
-              </div>
-              <p className="text-lg md:text-xl font-bold truncate">{formatCurrency(avgSalario)}</p>
-              <p className="text-xs text-muted-foreground mt-1">Bruto por colaborador</p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* ===== COMPOSIÇÃO + FAIXAS ===== */}
-      <div className="mb-6 grid gap-4 grid-cols-1 lg:grid-cols-2">
-        {/* PIE Bruto vs Líquido */}
-        <Card>
-          <CardHeader className="p-4 md:p-6 pb-2">
-            <CardTitle className="text-sm md:text-base">Composição da Folha</CardTitle>
-            <CardDescription className="text-xs">Líquido vs Descontos</CardDescription>
-          </CardHeader>
-          <CardContent className="p-2 md:p-6 pt-0">
-            <div className="h-56 md:h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={brutoLiquidoPie} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={3}>
-                    <Cell fill="hsl(142, 76%, 36%)" />
-                    <Cell fill="hsl(0, 84%, 60%)" />
-                  </Pie>
-                  <Tooltip formatter={(value: number) => formatCurrency(value)} contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }} />
-                  <Legend wrapperStyle={{ fontSize: '11px' }} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Faixas Salariais */}
-        <Card>
-          <CardHeader className="p-4 md:p-6 pb-2">
-            <CardTitle className="text-sm md:text-base">Distribuição por Faixa Salarial</CardTitle>
-            <CardDescription className="text-xs">Quantidade de colaboradores por faixa</CardDescription>
-          </CardHeader>
-          <CardContent className="p-2 md:p-6 pt-0">
-            <div className="h-56 md:h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={faixas} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis type="number" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
-                  <YAxis dataKey="name" type="category" tick={{ fontSize: 9 }} stroke="hsl(var(--muted-foreground))" width={110} />
-                  <Tooltip
-                    formatter={(value: number) => [`${value} colaboradores`, 'Quantidade']}
-                    contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }}
-                  />
-                  <Bar dataKey="count" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* ===== DISTRIBUIÇÃO POR PASTA + TOP FUNÇÕES ===== */}
-      <div className="mb-6 grid gap-4 grid-cols-1 lg:grid-cols-2">
-        {/* Top Pastas */}
-        <Card>
-          <CardHeader className="p-4 md:p-6 pb-2">
-            <CardTitle className="text-sm md:text-base flex items-center gap-2">
-              <Building2 className="h-4 w-4 text-primary" />
-              Custo por Secretaria
-            </CardTitle>
-            <CardDescription className="text-xs">Ranking de pastas por folha bruta</CardDescription>
-          </CardHeader>
-          <CardContent className="p-4 md:p-6 pt-0">
-            <div className="space-y-3 max-h-72 overflow-y-auto">
-              {topPastas.map((p, i) => {
-                const pct = totalBruto > 0 ? (p.bruto / totalBruto) * 100 : 0;
-                return (
-                  <div key={p.pasta}>
-                    <div className="flex items-center justify-between text-xs mb-1">
-                      <span className="font-medium truncate mr-2 max-w-[60%]">
-                        <span className="text-muted-foreground mr-1">{i + 1}.</span>
-                        {p.pasta}
-                      </span>
-                      <span className="text-muted-foreground whitespace-nowrap">
-                        {formatCurrency(p.bruto)} ({pct.toFixed(1)}%)
-                      </span>
-                    </div>
-                    <div className="h-2 rounded-full bg-muted overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all"
-                        style={{
-                          width: `${pct}%`,
-                          backgroundColor: COLORS[i % COLORS.length],
-                        }}
-                      />
-                    </div>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">{p.count} colaboradores</p>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Top Funções */}
-        <Card>
-          <CardHeader className="p-4 md:p-6 pb-2">
-            <CardTitle className="text-sm md:text-base flex items-center gap-2">
-              <Briefcase className="h-4 w-4 text-primary" />
-              Top 10 Funções
-            </CardTitle>
-            <CardDescription className="text-xs">Funções com mais colaboradores</CardDescription>
-          </CardHeader>
-          <CardContent className="p-2 md:p-6 pt-0">
-            <div className="h-56 md:h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={topFuncoes}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="funcao" tick={{ fontSize: 8 }} stroke="hsl(var(--muted-foreground))" angle={-45} textAnchor="end" height={60} interval={0} />
-                  <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
-                  <Tooltip
-                    formatter={(value: number, name: string) => [name === 'count' ? `${value} colaboradores` : formatCurrency(value), name === 'count' ? 'Quantidade' : 'Custo Bruto']}
-                    contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }}
-                  />
-                  <Bar dataKey="count" fill="hsl(270, 50%, 50%)" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* ===== RESUMO AUDITORIA ===== */}
-      <div className="mb-6 grid gap-4 grid-cols-1 lg:grid-cols-2">
-        <Card>
-          <CardHeader className="p-4 md:p-6 pb-2">
-            <CardTitle className="text-sm md:text-base flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-warning" />
-              Resumo de Auditoria
-            </CardTitle>
-            <CardDescription className="text-xs">Alertas identificados nos dados filtrados</CardDescription>
-          </CardHeader>
-          <CardContent className="p-4 md:p-6 pt-0">
-            <div className="space-y-4">
-              <div className="grid grid-cols-3 gap-3">
-                <div className="text-center p-3 rounded-lg bg-destructive/10">
-                  <p className="text-2xl md:text-3xl font-bold text-destructive">{alertsBySeverity.alta}</p>
-                  <p className="text-[10px] md:text-xs text-muted-foreground font-medium mt-1">Alta</p>
-                </div>
-                <div className="text-center p-3 rounded-lg bg-warning/10">
-                  <p className="text-2xl md:text-3xl font-bold text-warning">{alertsBySeverity.media}</p>
-                  <p className="text-[10px] md:text-xs text-muted-foreground font-medium mt-1">Média</p>
-                </div>
-                <div className="text-center p-3 rounded-lg bg-info/10">
-                  <p className="text-2xl md:text-3xl font-bold text-info">{alertsBySeverity.baixa}</p>
-                  <p className="text-[10px] md:text-xs text-muted-foreground font-medium mt-1">Baixa</p>
-                </div>
-              </div>
-
-              <div className="border-t pt-3 space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Total de alertas</span>
-                  <Badge variant={auditAlerts.length > 0 ? 'destructive' : 'secondary'} className="text-[10px]">
-                    {auditAlerts.length}
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Registros analisados</span>
-                  <span className="font-medium">{formatNumber(filteredRecords.length)}</span>
-                </div>
-              </div>
-
-              {auditAlerts.length === 0 && (
-                <div className="flex items-center gap-2 p-3 rounded-lg bg-success/10 text-success text-xs">
-                  <CheckCircle2 className="h-4 w-4" />
-                  <span className="font-medium">Nenhuma irregularidade encontrada</span>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Indicadores Gerais */}
-        <Card>
-          <CardHeader className="p-4 md:p-6 pb-2">
-            <CardTitle className="text-sm md:text-base">Indicadores Gerais</CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 md:p-6 pt-0">
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              {[
-                { label: 'Total Registros', value: formatNumber(filteredRecords.length) },
-                { label: 'CPFs Únicos', value: formatNumber(uniqueEmployees) },
-                { label: 'Secretarias', value: formatNumber(uniquePastas) },
-                { label: 'Funções', value: formatNumber(new Set(filteredRecords.map(r => r.funcao)).size) },
-                { label: 'Maior Salário', value: formatCurrency(Math.max(...filteredRecords.map(r => r.bruto), 0)) },
-                { label: 'Menor Salário', value: formatCurrency(Math.min(...filteredRecords.map(r => r.bruto), 0)) },
-              ].map(item => (
-                <div key={item.label} className="text-center p-3 rounded-lg bg-muted/50">
-                  <p className="text-sm md:text-lg font-bold text-foreground">{item.value}</p>
-                  <p className="text-[10px] md:text-xs text-muted-foreground mt-1">{item.label}</p>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+        </TabsContent>
+      </Tabs>
     </Layout>
   );
 };
