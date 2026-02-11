@@ -1,13 +1,14 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { usePayrollData } from '@/hooks/usePayrollData';
 import { formatCurrency, formatNumber, getMonthShort, getMonthName } from '@/lib/formatters';
 import { runAllChecks } from '@/lib/auditChecks';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend, AreaChart, Area, RadialBarChart, RadialBar,
+  PieChart, Pie, Cell, Legend,
 } from 'recharts';
 import {
   FileText, Users, DollarSign, TrendingUp, TrendingDown,
@@ -23,6 +24,7 @@ const COLORS = [
 
 const Relatorios = () => {
   const { data: records = [], isLoading } = usePayrollData();
+  const [selectedPeriod, setSelectedPeriod] = useState<string>('all');
 
   // All periods sorted
   const periods = useMemo(() => {
@@ -34,72 +36,51 @@ const Relatorios = () => {
     return [...set.values()].sort((a, b) => a.ano * 12 + a.mes - (b.ano * 12 + b.mes));
   }, [records]);
 
-  const lastPeriod = periods[periods.length - 1];
-  const prevPeriod = periods.length >= 2 ? periods[periods.length - 2] : null;
+  // Filtered records based on selected period
+  const filteredRecords = useMemo(() => {
+    if (selectedPeriod === 'all') return records;
+    const [ano, mes] = selectedPeriod.split('-').map(Number);
+    return records.filter(r => r.ano === ano && r.mes === mes);
+  }, [records, selectedPeriod]);
 
-  const currentRecords = useMemo(() => {
-    if (!lastPeriod) return [];
-    return records.filter(r => r.ano === lastPeriod.ano && r.mes === lastPeriod.mes);
-  }, [records, lastPeriod]);
-
-  const prevRecords = useMemo(() => {
-    if (!prevPeriod) return [];
-    return records.filter(r => r.ano === prevPeriod.ano && r.mes === prevPeriod.mes);
-  }, [records, prevPeriod]);
+  const periodLabel = useMemo(() => {
+    if (selectedPeriod === 'all') return 'Todos os períodos';
+    const [ano, mes] = selectedPeriod.split('-').map(Number);
+    return `${getMonthName(mes)}/${ano}`;
+  }, [selectedPeriod]);
 
   // === RESUMO GERAL ===
-  const totalBruto = currentRecords.reduce((s, r) => s + r.bruto, 0);
-  const totalLiquido = currentRecords.reduce((s, r) => s + r.liquido, 0);
+  const totalBruto = filteredRecords.reduce((s, r) => s + r.bruto, 0);
+  const totalLiquido = filteredRecords.reduce((s, r) => s + r.liquido, 0);
   const totalDescontos = totalBruto - totalLiquido;
   const percentDesconto = totalBruto > 0 ? (totalDescontos / totalBruto) * 100 : 0;
-  const uniqueEmployees = new Set(currentRecords.map(r => r.cpf)).size;
-  const uniquePastas = new Set(currentRecords.map(r => r.pasta)).size;
+  const uniqueEmployees = new Set(filteredRecords.map(r => r.cpf)).size;
+  const uniquePastas = new Set(filteredRecords.map(r => r.pasta)).size;
   const avgSalario = uniqueEmployees > 0 ? totalBruto / uniqueEmployees : 0;
-
-  // Variação mês anterior
-  const totalBrutoPrev = prevRecords.reduce((s, r) => s + r.bruto, 0);
-  const variacao = totalBrutoPrev > 0 ? ((totalBruto - totalBrutoPrev) / totalBrutoPrev) * 100 : 0;
 
   // === TOP PASTAS ===
   const topPastas = useMemo(() => {
     const grouped: Record<string, { pasta: string; bruto: number; liquido: number; count: number }> = {};
-    currentRecords.forEach(r => {
+    filteredRecords.forEach(r => {
       if (!grouped[r.pasta]) grouped[r.pasta] = { pasta: r.pasta, bruto: 0, liquido: 0, count: 0 };
       grouped[r.pasta].bruto += r.bruto;
       grouped[r.pasta].liquido += r.liquido;
       grouped[r.pasta].count++;
     });
     return Object.values(grouped).sort((a, b) => b.bruto - a.bruto);
-  }, [currentRecords]);
+  }, [filteredRecords]);
 
   // === TOP FUNÇÕES ===
   const topFuncoes = useMemo(() => {
     const grouped: Record<string, { funcao: string; count: number; bruto: number }> = {};
-    currentRecords.forEach(r => {
+    filteredRecords.forEach(r => {
       const f = r.funcao || 'Não informado';
       if (!grouped[f]) grouped[f] = { funcao: f, count: 0, bruto: 0 };
       grouped[f].count++;
       grouped[f].bruto += r.bruto;
     });
     return Object.values(grouped).sort((a, b) => b.count - a.count).slice(0, 10);
-  }, [currentRecords]);
-
-  // === EVOLUÇÃO ACUMULADA ===
-  const evolutionData = useMemo(() => {
-    return periods.map(p => {
-      const monthRecords = records.filter(r => r.ano === p.ano && r.mes === p.mes);
-      const bruto = monthRecords.reduce((s, r) => s + r.bruto, 0);
-      const liquido = monthRecords.reduce((s, r) => s + r.liquido, 0);
-      const headcount = new Set(monthRecords.map(r => r.cpf)).size;
-      return {
-        name: `${getMonthShort(p.mes)}/${p.ano}`,
-        bruto,
-        liquido,
-        descontos: bruto - liquido,
-        headcount,
-      };
-    });
-  }, [records, periods]);
+  }, [filteredRecords]);
 
   // === PIE BRUTO vs LIQUIDO ===
   const brutoLiquidoPie = useMemo(() => [
@@ -118,12 +99,12 @@ const Relatorios = () => {
     ];
     return ranges.map(range => ({
       name: range.label,
-      count: currentRecords.filter(r => r.bruto >= range.min && r.bruto <= range.max).length,
+      count: filteredRecords.filter(r => r.bruto >= range.min && r.bruto <= range.max).length,
     }));
-  }, [currentRecords]);
+  }, [filteredRecords]);
 
   // === AUDITORIA RESUMO ===
-  const auditAlerts = useMemo(() => runAllChecks(records), [records]);
+  const auditAlerts = useMemo(() => runAllChecks(filteredRecords), [filteredRecords]);
   const alertsBySeverity = useMemo(() => ({
     alta: auditAlerts.filter(a => a.severity === 'alta').length,
     media: auditAlerts.filter(a => a.severity === 'media').length,
@@ -131,7 +112,6 @@ const Relatorios = () => {
   }), [auditAlerts]);
 
   const prefeitura = records[0]?.prefeitura || 'Prefeitura';
-  const periodoLabel = lastPeriod ? `${getMonthName(lastPeriod.mes)}/${lastPeriod.ano}` : '';
 
   if (isLoading) {
     return (
@@ -155,14 +135,29 @@ const Relatorios = () => {
   return (
     <Layout>
       {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center gap-2 mb-1">
-          <FileText className="h-5 w-5 text-primary" />
-          <h1 className="text-xl md:text-2xl font-bold text-foreground">Relatórios</h1>
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <FileText className="h-5 w-5 text-primary" />
+            <h1 className="text-xl md:text-2xl font-bold text-foreground">Relatórios</h1>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {prefeitura} — <span className="font-medium text-foreground">{periodLabel}</span>
+          </p>
         </div>
-        <p className="text-sm text-muted-foreground">
-          {prefeitura} — Resumo executivo referente a <span className="font-medium text-foreground">{periodoLabel}</span>
-        </p>
+        <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Período" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os períodos</SelectItem>
+            {periods.map(p => (
+              <SelectItem key={`${p.ano}-${p.mes}`} value={`${p.ano}-${p.mes}`}>
+                {getMonthName(p.mes)}/{p.ano}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* ===== RESUMO EXECUTIVO ===== */}
@@ -176,12 +171,6 @@ const Relatorios = () => {
                 <DollarSign className="h-4 w-4 text-primary" />
               </div>
               <p className="text-lg md:text-xl font-bold truncate">{formatCurrency(totalBruto)}</p>
-              {prevPeriod && (
-                <div className={`flex items-center gap-1 mt-1 text-xs ${variacao > 0 ? 'text-destructive' : variacao < 0 ? 'text-success' : 'text-muted-foreground'}`}>
-                  {variacao > 0 ? <TrendingUp className="h-3 w-3" /> : variacao < 0 ? <TrendingDown className="h-3 w-3" /> : null}
-                  <span>{variacao > 0 ? '+' : ''}{variacao.toFixed(1)}% vs mês anterior</span>
-                </div>
-              )}
             </CardContent>
           </Card>
 
@@ -220,48 +209,13 @@ const Relatorios = () => {
         </div>
       </div>
 
-      {/* ===== EVOLUÇÃO BRUTO vs LÍQUIDO ===== */}
-      <div className="mb-6 grid gap-4 grid-cols-1 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
-          <CardHeader className="p-4 md:p-6 pb-2">
-            <CardTitle className="text-sm md:text-base">Evolução Bruto vs Líquido</CardTitle>
-            <CardDescription className="text-xs">Comparação mensal com área de descontos</CardDescription>
-          </CardHeader>
-          <CardContent className="p-2 md:p-6 pt-0">
-            <div className="h-56 md:h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={evolutionData}>
-                  <defs>
-                    <linearGradient id="gradBruto" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(267, 70%, 23%)" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="hsl(267, 70%, 23%)" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="gradLiquido" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="name" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
-                  <YAxis tickFormatter={v => `${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" width={45} />
-                  <Tooltip
-                    formatter={(value: number, name: string) => [formatCurrency(value), name === 'bruto' ? 'Bruto' : 'Líquido']}
-                    contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }}
-                  />
-                  <Area type="monotone" dataKey="bruto" stroke="hsl(267, 70%, 23%)" fill="url(#gradBruto)" strokeWidth={2} />
-                  <Area type="monotone" dataKey="liquido" stroke="hsl(142, 76%, 36%)" fill="url(#gradLiquido)" strokeWidth={2} />
-                  <Legend formatter={v => v === 'bruto' ? 'Bruto' : 'Líquido'} wrapperStyle={{ fontSize: '11px' }} />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
+      {/* ===== COMPOSIÇÃO + FAIXAS ===== */}
+      <div className="mb-6 grid gap-4 grid-cols-1 lg:grid-cols-2">
         {/* PIE Bruto vs Líquido */}
         <Card>
           <CardHeader className="p-4 md:p-6 pb-2">
             <CardTitle className="text-sm md:text-base">Composição da Folha</CardTitle>
-            <CardDescription className="text-xs">Líquido vs Descontos ({periodoLabel})</CardDescription>
+            <CardDescription className="text-xs">Líquido vs Descontos</CardDescription>
           </CardHeader>
           <CardContent className="p-2 md:p-6 pt-0">
             <div className="h-56 md:h-72">
@@ -278,9 +232,33 @@ const Relatorios = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Faixas Salariais */}
+        <Card>
+          <CardHeader className="p-4 md:p-6 pb-2">
+            <CardTitle className="text-sm md:text-base">Distribuição por Faixa Salarial</CardTitle>
+            <CardDescription className="text-xs">Quantidade de colaboradores por faixa</CardDescription>
+          </CardHeader>
+          <CardContent className="p-2 md:p-6 pt-0">
+            <div className="h-56 md:h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={faixas} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis type="number" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+                  <YAxis dataKey="name" type="category" tick={{ fontSize: 9 }} stroke="hsl(var(--muted-foreground))" width={110} />
+                  <Tooltip
+                    formatter={(value: number) => [`${value} colaboradores`, 'Quantidade']}
+                    contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }}
+                  />
+                  <Bar dataKey="count" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* ===== DISTRIBUIÇÃO POR PASTA + FAIXAS ===== */}
+      {/* ===== DISTRIBUIÇÃO POR PASTA + TOP FUNÇÕES ===== */}
       <div className="mb-6 grid gap-4 grid-cols-1 lg:grid-cols-2">
         {/* Top Pastas */}
         <Card>
@@ -323,33 +301,7 @@ const Relatorios = () => {
           </CardContent>
         </Card>
 
-        {/* Faixas Salariais */}
-        <Card>
-          <CardHeader className="p-4 md:p-6 pb-2">
-            <CardTitle className="text-sm md:text-base">Distribuição por Faixa Salarial</CardTitle>
-            <CardDescription className="text-xs">Quantidade de colaboradores por faixa ({periodoLabel})</CardDescription>
-          </CardHeader>
-          <CardContent className="p-2 md:p-6 pt-0">
-            <div className="h-56 md:h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={faixas} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis type="number" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
-                  <YAxis dataKey="name" type="category" tick={{ fontSize: 9 }} stroke="hsl(var(--muted-foreground))" width={110} />
-                  <Tooltip
-                    formatter={(value: number) => [`${value} colaboradores`, 'Quantidade']}
-                    contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }}
-                  />
-                  <Bar dataKey="count" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* ===== TOP FUNÇÕES ===== */}
-      <div className="mb-6 grid gap-4 grid-cols-1 lg:grid-cols-2">
+        {/* Top Funções */}
         <Card>
           <CardHeader className="p-4 md:p-6 pb-2">
             <CardTitle className="text-sm md:text-base flex items-center gap-2">
@@ -375,15 +327,17 @@ const Relatorios = () => {
             </div>
           </CardContent>
         </Card>
+      </div>
 
-        {/* RESUMO AUDITORIA */}
+      {/* ===== RESUMO AUDITORIA ===== */}
+      <div className="mb-6 grid gap-4 grid-cols-1 lg:grid-cols-2">
         <Card>
           <CardHeader className="p-4 md:p-6 pb-2">
             <CardTitle className="text-sm md:text-base flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 text-warning" />
               Resumo de Auditoria
             </CardTitle>
-            <CardDescription className="text-xs">Alertas identificados em toda a base</CardDescription>
+            <CardDescription className="text-xs">Alertas identificados nos dados filtrados</CardDescription>
           </CardHeader>
           <CardContent className="p-4 md:p-6 pt-0">
             <div className="space-y-4">
@@ -411,11 +365,7 @@ const Relatorios = () => {
                 </div>
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-muted-foreground">Registros analisados</span>
-                  <span className="font-medium">{formatNumber(records.length)}</span>
-                </div>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Períodos avaliados</span>
-                  <span className="font-medium">{periods.length}</span>
+                  <span className="font-medium">{formatNumber(filteredRecords.length)}</span>
                 </div>
               </div>
 
@@ -428,31 +378,31 @@ const Relatorios = () => {
             </div>
           </CardContent>
         </Card>
-      </div>
 
-      {/* ===== INDICADORES FINAIS ===== */}
-      <Card className="mb-6">
-        <CardHeader className="p-4 md:p-6 pb-2">
-          <CardTitle className="text-sm md:text-base">Indicadores Gerais</CardTitle>
-        </CardHeader>
-        <CardContent className="p-4 md:p-6 pt-0">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-            {[
-              { label: 'Total Registros', value: formatNumber(records.length) },
-              { label: 'Períodos', value: `${periods.length} meses` },
-              { label: 'CPFs Únicos', value: formatNumber(new Set(records.map(r => r.cpf)).size) },
-              { label: 'Secretarias', value: formatNumber(new Set(records.map(r => r.pasta)).size) },
-              { label: 'Funções', value: formatNumber(new Set(records.map(r => r.funcao)).size) },
-              { label: 'Maior Salário', value: formatCurrency(Math.max(...currentRecords.map(r => r.bruto), 0)) },
-            ].map(item => (
-              <div key={item.label} className="text-center p-3 rounded-lg bg-muted/50">
-                <p className="text-sm md:text-lg font-bold text-foreground">{item.value}</p>
-                <p className="text-[10px] md:text-xs text-muted-foreground mt-1">{item.label}</p>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+        {/* Indicadores Gerais */}
+        <Card>
+          <CardHeader className="p-4 md:p-6 pb-2">
+            <CardTitle className="text-sm md:text-base">Indicadores Gerais</CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 md:p-6 pt-0">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              {[
+                { label: 'Total Registros', value: formatNumber(filteredRecords.length) },
+                { label: 'CPFs Únicos', value: formatNumber(uniqueEmployees) },
+                { label: 'Secretarias', value: formatNumber(uniquePastas) },
+                { label: 'Funções', value: formatNumber(new Set(filteredRecords.map(r => r.funcao)).size) },
+                { label: 'Maior Salário', value: formatCurrency(Math.max(...filteredRecords.map(r => r.bruto), 0)) },
+                { label: 'Menor Salário', value: formatCurrency(Math.min(...filteredRecords.map(r => r.bruto), 0)) },
+              ].map(item => (
+                <div key={item.label} className="text-center p-3 rounded-lg bg-muted/50">
+                  <p className="text-sm md:text-lg font-bold text-foreground">{item.value}</p>
+                  <p className="text-[10px] md:text-xs text-muted-foreground mt-1">{item.label}</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </Layout>
   );
 };

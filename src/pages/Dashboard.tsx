@@ -2,12 +2,12 @@ import { useMemo, useState } from 'react';
 import { usePayrollData } from '@/hooks/usePayrollData';
 import { formatCurrency, formatNumber, getMonthShort } from '@/lib/formatters';
 import Layout from '@/components/Layout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DollarSign, Users, TrendingUp, TrendingDown, UserPlus, UserMinus } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend, LineChart, Line,
+  PieChart, Pie, Cell, Legend, LineChart, Line, AreaChart, Area,
 } from 'recharts';
 
 const COLORS = [
@@ -94,6 +94,20 @@ const Dashboard = () => {
         filtered.filter(r => r.ano === p.ano && r.mes === p.mes).map(r => r.cpf)
       ).size;
       return { name: `${getMonthShort(p.mes)}/${p.ano}`, colaboradores: count };
+    });
+  }, [filtered, periods]);
+
+  // Area chart - Bruto vs Líquido evolution
+  const evolutionData = useMemo(() => {
+    return periods.map(p => {
+      const monthRecords = filtered.filter(r => r.ano === p.ano && r.mes === p.mes);
+      const bruto = monthRecords.reduce((s, r) => s + r.bruto, 0);
+      const liquido = monthRecords.reduce((s, r) => s + r.liquido, 0);
+      return {
+        name: `${getMonthShort(p.mes)}/${p.ano}`,
+        bruto,
+        liquido,
+      };
     });
   }, [filtered, periods]);
 
@@ -231,6 +245,42 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Evolução Bruto vs Líquido */}
+      <Card className="mb-6">
+        <CardHeader className="p-4 md:p-6 pb-2">
+          <CardTitle className="text-sm md:text-base">Evolução Bruto vs Líquido</CardTitle>
+          <CardDescription className="text-xs">Comparação mensal com área de descontos</CardDescription>
+        </CardHeader>
+        <CardContent className="p-2 md:p-6 pt-0">
+          <div className="h-56 md:h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={evolutionData}>
+                <defs>
+                  <linearGradient id="gradBruto" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(267, 70%, 23%)" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="hsl(267, 70%, 23%)" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="gradLiquido" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="name" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+                <YAxis tickFormatter={v => `${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" width={45} />
+                <Tooltip
+                  formatter={(value: number, name: string) => [formatCurrency(value), name === 'bruto' ? 'Bruto' : 'Líquido']}
+                  contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }}
+                />
+                <Area type="monotone" dataKey="bruto" stroke="hsl(267, 70%, 23%)" fill="url(#gradBruto)" strokeWidth={2} />
+                <Area type="monotone" dataKey="liquido" stroke="hsl(142, 76%, 36%)" fill="url(#gradLiquido)" strokeWidth={2} />
+                <Legend formatter={v => v === 'bruto' ? 'Bruto' : 'Líquido'} wrapperStyle={{ fontSize: '11px' }} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Headcount evolution */}
       <Card>
