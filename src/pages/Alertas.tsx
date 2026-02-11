@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react';
 import { usePayrollData } from '@/hooks/usePayrollData';
-import { runCPFCrossCheck, runVariationCheck, runInconsistencyCheck, runDuplicateCheck } from '@/lib/auditChecks';
+import { runCPFCrossCheck, runVariationCheck, runInconsistencyCheck, runDuplicateCheck, runNewEmployeeCheck } from '@/lib/auditChecks';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ShieldAlert, AlertTriangle, Eye, Copy, ArrowUpDown, Info } from 'lucide-react';
+import { ShieldAlert, AlertTriangle, Eye, Copy, ArrowUpDown, Info, UserPlus } from 'lucide-react';
 import { getMonthName } from '@/lib/formatters';
 
 const SEVERITY_STYLES: Record<string, string> = {
@@ -19,6 +19,7 @@ const TYPE_LABELS: Record<string, string> = {
   variacao: 'Variação > 20%',
   inconsistencia: 'Líquido = Bruto',
   duplicado: 'Duplicado no Mês',
+  novo_na_folha: 'Novo na Folha',
 };
 
 const TYPE_DESCRIPTIONS: Record<string, string> = {
@@ -26,6 +27,7 @@ const TYPE_DESCRIPTIONS: Record<string, string> = {
   variacao: 'Detecta servidores cujo valor líquido variou mais de 20% em relação ao mês anterior. Variações atípicas podem indicar pagamentos indevidos ou erros de lançamento.',
   inconsistencia: 'Aponta registros onde o valor líquido é igual ao bruto, ou seja, nenhuma retenção (INSS, IR, etc.) foi aplicada. Pode indicar erro no cálculo da folha.',
   duplicado: 'Encontra o mesmo CPF registrado mais de uma vez na mesma pasta e mês. Pode representar pagamento em duplicidade.',
+  novo_na_folha: 'Identifica CPFs que aparecem pela primeira vez na folha do mês selecionado, não constando no mês anterior. Pode indicar novas contratações ou inclusões a serem verificadas.',
 };
 
 const TYPE_ICONS: Record<string, any> = {
@@ -33,6 +35,7 @@ const TYPE_ICONS: Record<string, any> = {
   variacao: AlertTriangle,
   inconsistencia: Eye,
   duplicado: Copy,
+  novo_na_folha: UserPlus,
 };
 
 const Alertas = () => {
@@ -54,11 +57,19 @@ const Alertas = () => {
     return records.filter(r => r.ano === ano && r.mes === mes);
   }, [records, selectedMonth]);
 
-  // Variation alerts need all records but filtered to show only alerts for the selected month
+  // Variation and new employee alerts need all records but filtered to show only alerts for the selected month
   const variationAlerts = useMemo(() => {
     if (!selectedMonth) return runVariationCheck(records);
     const [ano, mes] = selectedMonth.split('-').map(Number);
     return runVariationCheck(records).filter(a =>
+      a.records.some(r => r.ano === ano && r.mes === mes)
+    );
+  }, [records, selectedMonth]);
+
+  const newEmployeeAlerts = useMemo(() => {
+    if (!selectedMonth) return runNewEmployeeCheck(records);
+    const [ano, mes] = selectedMonth.split('-').map(Number);
+    return runNewEmployeeCheck(records).filter(a =>
       a.records.some(r => r.ano === ano && r.mes === mes)
     );
   }, [records, selectedMonth]);
@@ -69,7 +80,8 @@ const Alertas = () => {
     ...variationAlerts,
     ...runInconsistencyCheck(filteredRecords),
     ...runDuplicateCheck(filteredRecords),
-  ], [filteredRecords, variationAlerts]);
+    ...newEmployeeAlerts,
+  ], [filteredRecords, variationAlerts, newEmployeeAlerts]);
 
   const filteredAlerts = useMemo(() => {
     if (typeFilter === 'all') return allAlerts;
@@ -81,7 +93,8 @@ const Alertas = () => {
     variacao: variationAlerts.length,
     inconsistencia: runInconsistencyCheck(filteredRecords).length,
     duplicado: runDuplicateCheck(filteredRecords).length,
-  }), [filteredRecords, variationAlerts]);
+    novo_na_folha: newEmployeeAlerts.length,
+  }), [filteredRecords, variationAlerts, newEmployeeAlerts]);
 
   if (isLoading) {
     return (
@@ -129,7 +142,7 @@ const Alertas = () => {
           </Select>
         </div>
 
-        <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 md:gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
           {(Object.entries(counts) as [string, number][]).map(([type, count]) => {
             const Icon = TYPE_ICONS[type];
             return (
