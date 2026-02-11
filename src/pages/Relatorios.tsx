@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { FileText, FileSpreadsheet, Download, Search, ArrowUp, ArrowDown, ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -246,6 +246,26 @@ const TabComparativo = ({ records }: { records: any[] }) => {
                   ))
                 )}
               </TableBody>
+              <TableFooter>
+                <TableRow className="bg-muted/50 font-semibold">
+                  <TableCell className="text-xs md:text-sm">Total ({filtered.length} colaboradores)</TableCell>
+                  <TableCell />
+                  <TableCell className="text-right text-xs md:text-sm whitespace-nowrap">{formatCurrency(filtered.reduce((s, r) => s + r.brutoA, 0))}</TableCell>
+                  <TableCell className="text-right text-xs md:text-sm whitespace-nowrap">{formatCurrency(filtered.reduce((s, r) => s + r.brutoB, 0))}</TableCell>
+                  <TableCell className="text-right text-xs md:text-sm whitespace-nowrap font-semibold">
+                    {(() => {
+                      const total = filtered.reduce((s, r) => s + r.variacaoRS, 0);
+                      return (
+                        <span className={`inline-flex items-center gap-1 ${total < 0 ? 'text-destructive' : total > 0 ? 'text-emerald-600' : 'text-muted-foreground'}`}>
+                          {total < 0 ? <ArrowDown className="h-3 w-3" /> : total > 0 ? <ArrowUp className="h-3 w-3" /> : null}
+                          {formatCurrency(Math.abs(total))}
+                        </span>
+                      );
+                    })()}
+                  </TableCell>
+                  <TableCell />
+                </TableRow>
+              </TableFooter>
             </Table>
           </CardContent>
         </Card>
