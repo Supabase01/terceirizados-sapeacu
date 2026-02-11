@@ -712,18 +712,18 @@ const Relatorios = () => {
 
   return (
     <Layout>
-      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="mb-4 md:mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-2 md:gap-3">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <FileText className="h-5 w-5 text-primary" />
-            <h1 className="text-xl md:text-2xl font-bold text-foreground">Relatórios</h1>
+          <div className="flex items-center gap-2 mb-0.5 md:mb-1">
+            <FileText className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+            <h1 className="text-lg md:text-2xl font-bold text-foreground">Relatórios</h1>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs md:text-sm text-muted-foreground">
             {records[0]?.prefeitura || 'Prefeitura'} — <span className="font-medium text-foreground">{periodLabel}</span>
           </p>
         </div>
         <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-          <SelectTrigger className="w-48"><SelectValue placeholder="Período" /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-48"><SelectValue placeholder="Período" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos os períodos</SelectItem>
             {periods.map(p => (
@@ -736,14 +736,16 @@ const Relatorios = () => {
       </div>
 
       <Tabs defaultValue="detalhamento" className="w-full">
-        <TabsList className="mb-4 w-full sm:w-auto flex-wrap">
-          <TabsTrigger value="detalhamento" className="flex-1 sm:flex-none">Detalhamento</TabsTrigger>
-          <TabsTrigger value="secretaria" className="flex-1 sm:flex-none">Por Secretaria</TabsTrigger>
-          <TabsTrigger value="funcao" className="flex-1 sm:flex-none">Por Função</TabsTrigger>
-          <TabsTrigger value="salarios" className="flex-1 sm:flex-none">Top Salários</TabsTrigger>
-          <TabsTrigger value="comparativo" className="flex-1 sm:flex-none">Comparativo</TabsTrigger>
-          <TabsTrigger value="alertas" className="flex-1 sm:flex-none">Alertas</TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto scrollbar-hide -mx-3 px-3 md:mx-0 md:px-0 mb-4">
+          <TabsList className="w-max sm:w-auto inline-flex">
+            <TabsTrigger value="detalhamento" className="text-xs md:text-sm px-2.5 md:px-3">Detalhamento</TabsTrigger>
+            <TabsTrigger value="secretaria" className="text-xs md:text-sm px-2.5 md:px-3">Secretaria</TabsTrigger>
+            <TabsTrigger value="funcao" className="text-xs md:text-sm px-2.5 md:px-3">Função</TabsTrigger>
+            <TabsTrigger value="salarios" className="text-xs md:text-sm px-2.5 md:px-3">Top Salários</TabsTrigger>
+            <TabsTrigger value="comparativo" className="text-xs md:text-sm px-2.5 md:px-3">Comparativo</TabsTrigger>
+            <TabsTrigger value="alertas" className="text-xs md:text-sm px-2.5 md:px-3">Alertas</TabsTrigger>
+          </TabsList>
+        </div>
 
         {/* DETALHAMENTO */}
         <TabsContent value="detalhamento">

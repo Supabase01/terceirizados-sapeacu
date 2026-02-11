@@ -601,15 +601,15 @@ const Indicadores = () => {
 
   return (
     <Layout>
-      <div className="mb-6">
-        <h1 className="text-xl md:text-2xl font-bold text-foreground">{prefeitura}</h1>
-        <p className="text-sm text-muted-foreground">Painel de acompanhamento da folha de pagamento</p>
+      <div className="mb-4 md:mb-6">
+        <h1 className="text-lg md:text-2xl font-bold text-foreground">{prefeitura}</h1>
+        <p className="text-xs md:text-sm text-muted-foreground">Painel de acompanhamento da folha de pagamento</p>
       </div>
 
       <Tabs defaultValue="gerais" className="w-full">
-        <TabsList className="mb-6 w-full sm:w-auto">
-          <TabsTrigger value="gerais" className="flex-1 sm:flex-none">Indicadores Gerais</TabsTrigger>
-          <TabsTrigger value="mensais" className="flex-1 sm:flex-none">Indicadores Mensais</TabsTrigger>
+        <TabsList className="mb-4 md:mb-6 w-full sm:w-auto">
+          <TabsTrigger value="gerais" className="flex-1 sm:flex-none text-xs md:text-sm">Indicadores Gerais</TabsTrigger>
+          <TabsTrigger value="mensais" className="flex-1 sm:flex-none text-xs md:text-sm">Indicadores Mensais</TabsTrigger>
         </TabsList>
 
         <TabsContent value="gerais">
