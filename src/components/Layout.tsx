@@ -8,7 +8,7 @@ const navItems = [
   { href: '/indicadores', label: 'Indicadores', icon: BarChart3 },
   { href: '/detalhamento', label: 'Detalhamento', icon: TableProperties },
   { href: '/import', label: 'Importar', icon: Upload },
-  { href: '/audit', label: 'Auditoria', icon: ShieldAlert },
+  { href: '/alertas', label: 'Alertas', icon: ShieldAlert },
   
   { href: '/relatorios', label: 'Relatórios', icon: FileText },
 ];

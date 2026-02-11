@@ -7,7 +7,7 @@ import PinAccess from "./pages/PinAccess";
 import Indicadores from "./pages/Indicadores";
 import Detalhamento from "./pages/Detalhamento";
 import Import from "./pages/Import";
-import Audit from "./pages/Audit";
+import Alertas from "./pages/Alertas";
 
 import Relatorios from "./pages/Relatorios";
 import NotFound from "./pages/NotFound";
@@ -30,7 +30,7 @@ const App = () => (
           <Route path="/indicadores" element={<ProtectedRoute><Indicadores /></ProtectedRoute>} />
           <Route path="/detalhamento" element={<ProtectedRoute><Detalhamento /></ProtectedRoute>} />
           <Route path="/import" element={<ProtectedRoute><Import /></ProtectedRoute>} />
-          <Route path="/audit" element={<ProtectedRoute><Audit /></ProtectedRoute>} />
+          <Route path="/alertas" element={<ProtectedRoute><Alertas /></ProtectedRoute>} />
           
           <Route path="/relatorios" element={<ProtectedRoute><Relatorios /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
