@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { usePayrollData } from '@/hooks/usePayrollData';
-import { runAllChecks, runCPFCrossCheck, runVariationCheck, runInconsistencyCheck, runDuplicateCheck } from '@/lib/auditChecks';
+import { runCPFCrossCheck, runVariationCheck, runInconsistencyCheck, runDuplicateCheck } from '@/lib/auditChecks';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -47,7 +47,22 @@ const Alertas = () => {
     return records.filter(r => r.ano === ano && r.mes === mes);
   }, [records, selectedMonth]);
 
-  const allAlerts = useMemo(() => runAllChecks(filteredRecords), [filteredRecords]);
+  // Variation alerts need all records but filtered to show only alerts for the selected month
+  const variationAlerts = useMemo(() => {
+    if (!selectedMonth) return runVariationCheck(records);
+    const [ano, mes] = selectedMonth.split('-').map(Number);
+    return runVariationCheck(records).filter(a =>
+      a.records.some(r => r.ano === ano && r.mes === mes)
+    );
+  }, [records, selectedMonth]);
+
+  // Other checks only need the selected month's records
+  const allAlerts = useMemo(() => [
+    ...runCPFCrossCheck(filteredRecords),
+    ...variationAlerts,
+    ...runInconsistencyCheck(filteredRecords),
+    ...runDuplicateCheck(filteredRecords),
+  ], [filteredRecords, variationAlerts]);
 
   const filteredAlerts = useMemo(() => {
     if (typeFilter === 'all') return allAlerts;
@@ -56,10 +71,10 @@ const Alertas = () => {
 
   const counts = useMemo(() => ({
     cpf_cruzamento: runCPFCrossCheck(filteredRecords).length,
-    variacao: runVariationCheck(filteredRecords).length,
+    variacao: variationAlerts.length,
     inconsistencia: runInconsistencyCheck(filteredRecords).length,
     duplicado: runDuplicateCheck(filteredRecords).length,
-  }), [filteredRecords]);
+  }), [filteredRecords, variationAlerts]);
 
   if (isLoading) {
     return (
