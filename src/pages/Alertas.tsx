@@ -5,7 +5,7 @@ import Layout from '@/components/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ShieldAlert, AlertTriangle, Eye, Copy, ArrowUpDown } from 'lucide-react';
+import { ShieldAlert, AlertTriangle, Eye, Copy, ArrowUpDown, Info } from 'lucide-react';
 import { getMonthName } from '@/lib/formatters';
 
 const SEVERITY_STYLES: Record<string, string> = {
@@ -19,6 +19,13 @@ const TYPE_LABELS: Record<string, string> = {
   variacao: 'Variação > 20%',
   inconsistencia: 'Líquido = Bruto',
   duplicado: 'Duplicado no Mês',
+};
+
+const TYPE_DESCRIPTIONS: Record<string, string> = {
+  cpf_cruzamento: 'Identifica servidores cujo CPF aparece em mais de uma pasta/secretaria no mesmo mês. Pode indicar acúmulo irregular de cargos ou erro de cadastro.',
+  variacao: 'Detecta servidores cujo valor líquido variou mais de 20% em relação ao mês anterior. Variações atípicas podem indicar pagamentos indevidos ou erros de lançamento.',
+  inconsistencia: 'Aponta registros onde o valor líquido é igual ao bruto, ou seja, nenhuma retenção (INSS, IR, etc.) foi aplicada. Pode indicar erro no cálculo da folha.',
+  duplicado: 'Encontra o mesmo CPF registrado mais de uma vez na mesma pasta e mês. Pode representar pagamento em duplicidade.',
 };
 
 const TYPE_ICONS: Record<string, any> = {
@@ -143,6 +150,18 @@ const Alertas = () => {
             );
           })}
         </div>
+
+        {typeFilter !== 'all' && (
+          <Card className="border-primary/20 bg-primary/5">
+            <CardContent className="flex items-start gap-3 p-4">
+              <Info className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+              <div>
+                <p className="font-medium text-sm text-foreground">{TYPE_LABELS[typeFilter]}</p>
+                <p className="text-sm text-muted-foreground mt-1">{TYPE_DESCRIPTIONS[typeFilter]}</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {filteredAlerts.length === 0 ? (
           <Card>
