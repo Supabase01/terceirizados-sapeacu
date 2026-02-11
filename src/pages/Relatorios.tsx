@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react';
 import { usePayrollData } from '@/hooks/usePayrollData';
 import { formatCurrency, formatNumber, getMonthName, getMonthShort } from '@/lib/formatters';
 import { exportToPDF, exportToExcel } from '@/lib/exportUtils';
-import type { DashboardFilters } from '@/types/payroll';
+import { runCPFCrossCheck, runVariationCheck, runInconsistencyCheck, runDuplicateCheck, runNewEmployeeCheck } from '@/lib/auditChecks';
+import type { DashboardFilters, AuditAlert } from '@/types/payroll';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,7 +11,8 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { FileText, FileSpreadsheet, Download, Search, ArrowUp, ArrowDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { FileText, FileSpreadsheet, Download, Search, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, ShieldAlert } from 'lucide-react';
 
 // =================== COMPARATIVO TYPES ===================
 type VariationType = 'todos' | 'admissoes' | 'desligamentos' | 'aumentos' | 'reducoes' | 'sem_alteracao';
@@ -442,6 +444,133 @@ const ExportButtons = ({ onExport }: { onExport: (type: 'pdf' | 'excel') => void
   </div>
 );
 
+const SEVERITY_STYLES: Record<string, string> = {
+  alta: 'bg-destructive text-destructive-foreground',
+  media: 'bg-warning text-warning-foreground',
+  baixa: 'bg-secondary text-secondary-foreground',
+};
+
+const ALERT_TYPE_LABELS: Record<string, string> = {
+  cpf_cruzamento: 'CPF Múltiplas Pastas',
+  variacao: 'Variação > 20%',
+  inconsistencia: 'Líquido = Bruto',
+  duplicado: 'Duplicado',
+  novo_na_folha: 'Novo na Folha',
+};
+
+// =================== ALERTAS TAB ===================
+const TabAlertas = ({ records }: { records: any[] }) => {
+  const [typeFilter, setTypeFilter] = useState<string>('all');
+
+  const allAlerts = useMemo(() => [
+    ...runCPFCrossCheck(records),
+    ...runVariationCheck(records),
+    ...runInconsistencyCheck(records),
+    ...runDuplicateCheck(records),
+    ...runNewEmployeeCheck(records),
+  ], [records]);
+
+  const filteredAlerts = useMemo(() => {
+    if (typeFilter === 'all') return allAlerts;
+    return allAlerts.filter(a => a.type === typeFilter);
+  }, [allAlerts, typeFilter]);
+
+  const handleExport = (type: 'pdf' | 'excel') => {
+    const exportData = filteredAlerts.map(a => ({
+      tipo: ALERT_TYPE_LABELS[a.type] || a.type,
+      severidade: a.severity,
+      titulo: a.title,
+      descricao: a.description,
+    }));
+    const opts = {
+      title: 'Relatório de Alertas',
+      subtitle: `${filteredAlerts.length} alertas encontrados`,
+      fileName: 'relatorio_alertas',
+      columns: [
+        { header: 'Tipo', key: 'tipo' },
+        { header: 'Severidade', key: 'severidade' },
+        { header: 'Título', key: 'titulo' },
+        { header: 'Descrição', key: 'descricao' },
+      ],
+      data: exportData,
+    };
+    type === 'pdf' ? exportToPDF(opts) : exportToExcel(opts);
+  };
+
+  return (
+    <>
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <Select value={typeFilter} onValueChange={setTypeFilter}>
+          <SelectTrigger className="w-56">
+            <SelectValue placeholder="Filtrar por tipo" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os alertas ({allAlerts.length})</SelectItem>
+            {Object.entries(ALERT_TYPE_LABELS).map(([key, label]) => {
+              const count = allAlerts.filter(a => a.type === key).length;
+              return <SelectItem key={key} value={key}>{label} ({count})</SelectItem>;
+            })}
+          </SelectContent>
+        </Select>
+        {filteredAlerts.length > 0 && (
+          <div className="flex gap-2 ml-auto">
+            <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => handleExport('excel')}>
+              <Download className="h-3.5 w-3.5" /> Excel
+            </Button>
+            <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => handleExport('pdf')}>
+              <FileText className="h-3.5 w-3.5" /> PDF
+            </Button>
+          </div>
+        )}
+      </div>
+
+      <Card>
+        <CardHeader className="p-4 md:p-6">
+          <CardTitle className="text-sm md:text-base">Alertas ({filteredAlerts.length})</CardTitle>
+          <CardDescription className="text-xs md:text-sm">Verificações automáticas nos dados da folha</CardDescription>
+        </CardHeader>
+        <CardContent className="p-0 overflow-x-auto">
+          <Table className="min-w-[600px]">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Tipo</TableHead>
+                <TableHead>Severidade</TableHead>
+                <TableHead>Título</TableHead>
+                <TableHead>Descrição</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredAlerts.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                    <div className="flex flex-col items-center gap-2">
+                      <ShieldAlert className="h-8 w-8" />
+                      <p>Nenhum alerta encontrado.</p>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredAlerts.map((alert, i) => (
+                  <TableRow key={i}>
+                    <TableCell className="text-xs md:text-sm whitespace-nowrap">
+                      <Badge variant="outline" className="text-xs">{ALERT_TYPE_LABELS[alert.type]}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={`text-xs ${SEVERITY_STYLES[alert.severity]}`}>{alert.severity}</Badge>
+                    </TableCell>
+                    <TableCell className="text-xs md:text-sm font-medium">{alert.title}</TableCell>
+                    <TableCell className="text-xs md:text-sm text-muted-foreground">{alert.description}</TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </>
+  );
+};
+
 // =================== MAIN COMPONENT ===================
 const Relatorios = () => {
   const { data: records = [], isLoading } = usePayrollData();
@@ -613,6 +742,7 @@ const Relatorios = () => {
           <TabsTrigger value="funcao" className="flex-1 sm:flex-none">Por Função</TabsTrigger>
           <TabsTrigger value="salarios" className="flex-1 sm:flex-none">Top Salários</TabsTrigger>
           <TabsTrigger value="comparativo" className="flex-1 sm:flex-none">Comparativo</TabsTrigger>
+          <TabsTrigger value="alertas" className="flex-1 sm:flex-none">Alertas</TabsTrigger>
         </TabsList>
 
         {/* DETALHAMENTO */}
@@ -745,6 +875,11 @@ const Relatorios = () => {
         {/* COMPARATIVO */}
         <TabsContent value="comparativo">
           <TabComparativo records={records} />
+        </TabsContent>
+
+        {/* ALERTAS */}
+        <TabsContent value="alertas">
+          <TabAlertas records={records} />
         </TabsContent>
       </Tabs>
     </Layout>

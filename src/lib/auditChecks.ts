@@ -89,11 +89,44 @@ export const runDuplicateCheck = (records: PayrollRecord[]): AuditAlert[] => {
     }));
 };
 
+export const runNewEmployeeCheck = (records: PayrollRecord[]): AuditAlert[] => {
+  const alerts: AuditAlert[] = [];
+  const byMonth: Record<string, PayrollRecord[]> = {};
+
+  records.forEach(r => {
+    const key = `${r.ano}-${String(r.mes).padStart(2, '0')}`;
+    if (!byMonth[key]) byMonth[key] = [];
+    byMonth[key].push(r);
+  });
+
+  const sortedMonths = Object.keys(byMonth).sort();
+
+  for (let i = 1; i < sortedMonths.length; i++) {
+    const prevCPFs = new Set(byMonth[sortedMonths[i - 1]].map(r => r.cpf));
+    const currRecords = byMonth[sortedMonths[i]];
+
+    currRecords.forEach(r => {
+      if (!prevCPFs.has(r.cpf)) {
+        alerts.push({
+          type: 'novo_na_folha',
+          severity: 'baixa',
+          title: `Novo na folha: ${r.nome}`,
+          description: `${r.nome} (${r.cpf}) apareceu pela primeira vez em ${r.pasta} - ${r.mes}/${r.ano} (Bruto: R$ ${r.bruto.toFixed(2)})`,
+          records: [r],
+        });
+      }
+    });
+  }
+
+  return alerts;
+};
+
 export const runAllChecks = (records: PayrollRecord[]): AuditAlert[] => {
   return [
     ...runCPFCrossCheck(records),
     ...runVariationCheck(records),
     ...runInconsistencyCheck(records),
     ...runDuplicateCheck(records),
+    ...runNewEmployeeCheck(records),
   ];
 };
