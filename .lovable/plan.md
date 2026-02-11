@@ -1,49 +1,58 @@
 
-# Reestruturar: Dashboard vira "Indicadores" com abas, e Relatorios vira tabelas
+
+# Reestruturar Indicadores com abas e mover Comparativo para Relatorios
 
 ## Resumo
 
-Renomear "Dashboard" para **"Indicadores"** e dividir em duas abas internas: **Indicadores Gerais** (conteudo atual do Dashboard) e **Indicadores Mensais** (conteudo atual de Relatorios com graficos e KPIs por periodo). A pagina de **Relatorios** passa a focar exclusivamente em relatorios tabulares com exportacao PDF/Excel.
+1. **Indicadores** ganha duas abas: "Gerais" (conteudo atual) e "Mensais" (indicadores graficos por periodo com filtro de mes)
+2. **Relatorios** mantem as 3 abas tabulares atuais e ganha uma 4a aba "Comparativo" (conteudo atual da pagina Comparativo)
+3. Remover a rota e o item de menu do Comparativo separado
 
 ---
 
-## Mudancas
+## Mudancas detalhadas
 
-### 1. Renomear Dashboard para Indicadores
-- **Layout.tsx**: Trocar label "Dashboard" por "Indicadores" e icone `LayoutDashboard` por `BarChart3` no menu
-- **App.tsx**: Renomear rota `/dashboard` para `/indicadores` e atualizar o import
+### 1. Indicadores.tsx - Adicionar Tabs (Gerais + Mensais)
 
-### 2. Pagina Indicadores com abas (Tabs)
-- **Renomear `Dashboard.tsx` para `Indicadores.tsx`** (ou manter o arquivo e renomear o componente)
-- Usar o componente `Tabs` do Radix para criar duas abas:
-  - **"Gerais"**: Todo o conteudo atual do Dashboard (KPIs de custo, impacto, admissoes/desligamentos, graficos de evolucao, composicao por pasta, headcount)
-  - **"Mensais"**: Mover o conteudo atual de Relatorios (filtro por mes, resumo executivo com Folha Bruta/Liquida/Colaboradores/Salario Medio, graficos de composicao, faixas salariais, custo por secretaria, top funcoes, resumo de auditoria, indicadores gerais)
+Envolver o conteudo existente do componente `Dashboard` em uma aba "Gerais" e criar uma aba "Mensais" com:
 
-### 3. Pagina Relatorios - foco em tabelas
-- Reescrever `Relatorios.tsx` para ser uma pagina de relatorios tabulares com:
-  - Filtro por periodo (mes/ano)
-  - **Relatorio por Secretaria**: Tabela com Secretaria, Qtd Colaboradores, Total Bruto, Total Liquido, Total Descontos, % do Total
-  - **Relatorio por Funcao**: Tabela com Funcao, Qtd, Total Bruto, Media Bruto
-  - **Relatorio de Maiores Salarios**: Top 20 maiores salarios com Nome, CPF, Funcao, Pasta, Bruto, Liquido
-  - Botoes de exportacao PDF e Excel em cada tabela
-  - Reutilizar as funcoes `exportToPDF` e `exportToExcel` ja existentes
+- **Filtro de periodo** (mes/ano) via Select
+- **4 KPI cards**: Folha Bruta, Folha Liquida, Colaboradores, Salario Medio (com variacao % vs periodo anterior)
+- **Grafico de pizza**: Liquido vs Descontos
+- **Grafico de barras**: Faixas salariais (ate 1.500, 1.500-3.000, 3.000-5.000, 5.000-10.000, acima de 10.000)
+- **Grafico de barras horizontal**: Top 10 funcoes por custo
+- **Ranking de custo por Secretaria** com barras de progresso visuais
+- **Resumo de auditoria** por severidade (alta, media, baixa) usando as funcoes de `auditChecks.ts`
 
-### 4. Ajustes de navegacao
-- Atualizar `PinAccess.tsx` (redirect apos login) se redireciona para `/dashboard` -> `/indicadores`
-- Atualizar quaisquer links internos
+O componente sera renomeado de `Dashboard` para `Indicadores`.
+
+### 2. Relatorios.tsx - Adicionar aba Comparativo
+
+Manter as 3 abas atuais (Por Secretaria, Por Funcao, Top Salarios) e adicionar uma 4a aba:
+
+- **"Comparativo"**: Todo o conteudo atual de `Comparativo.tsx` (selecao de pares de meses consecutivos, filtro por tipo de variacao, busca por nome/CPF, tabela paginada com variacao nominal e percentual, exportacao PDF/Excel)
+
+### 3. Navegacao e rotas
+
+- **App.tsx**: Remover a rota `/comparativo` e o import do Comparativo
+- **Layout.tsx**: Remover o item "Comparativo" (icone ArrowLeftRight) do menu de navegacao
+- **PinAccess.tsx**: Sem alteracoes (ja redireciona para `/indicadores`)
 
 ---
 
-## Detalhes tecnicos
+## Arquivos modificados
 
-### Arquivos modificados:
-1. **`src/components/Layout.tsx`** - Renomear item de nav: href `/dashboard` -> `/indicadores`, label "Indicadores", icone `BarChart3`
-2. **`src/App.tsx`** - Rota `/indicadores`, import do novo componente
-3. **`src/pages/Dashboard.tsx`** -> **`src/pages/Indicadores.tsx`** - Adicionar Tabs com aba "Gerais" (conteudo atual) e "Mensais" (conteudo vindo de Relatorios)
-4. **`src/pages/Relatorios.tsx`** - Reescrever com 3 tabelas (por Secretaria, por Funcao, Top Salarios) com filtro de periodo e exportacao
-5. **`src/pages/PinAccess.tsx`** - Verificar redirect para `/indicadores`
+| Arquivo | Acao |
+|---|---|
+| `src/pages/Indicadores.tsx` | Reescrever com Tabs: aba Gerais (conteudo atual) + aba Mensais (KPIs + graficos mensais) |
+| `src/pages/Relatorios.tsx` | Adicionar 4a aba "Comparativo" com logica vinda de Comparativo.tsx |
+| `src/App.tsx` | Remover rota `/comparativo` e import |
+| `src/components/Layout.tsx` | Remover item Comparativo do menu |
 
-### Componentes utilizados:
-- `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent` (ja disponivel em `src/components/ui/tabs.tsx`)
-- `Table`, `TableHeader`, `TableRow`, `TableHead`, `TableBody`, `TableCell` (ja disponivel)
-- `exportToPDF`, `exportToExcel` de `src/lib/exportUtils.ts`
+### Componentes reutilizados
+- `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent` do Radix
+- `recharts` (PieChart, BarChart, ResponsiveContainer) para graficos na aba Mensais
+- `runAllChecks` de `@/lib/auditChecks` para resumo de auditoria
+- `exportToPDF`, `exportToExcel` de `@/lib/exportUtils` para o comparativo
+- `Table` components para o comparativo
+
