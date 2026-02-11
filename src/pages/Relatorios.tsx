@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { usePayrollData } from '@/hooks/usePayrollData';
-import { formatCurrency, formatNumber, getMonthName } from '@/lib/formatters';
+import { formatCurrency, formatNumber, getMonthName, getMonthShort } from '@/lib/formatters';
 import { exportToPDF, exportToExcel } from '@/lib/exportUtils';
+import type { DashboardFilters } from '@/types/payroll';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -281,7 +282,155 @@ const TabComparativo = ({ records }: { records: any[] }) => {
   );
 };
 
-// =================== EXPORT BUTTONS HELPER ===================
+// =================== DETALHAMENTO TAB ===================
+const DETAIL_PAGE_SIZE = 15;
+
+const TabDetalhamento = ({ records }: { records: any[] }) => {
+  const [filters, setFilters] = useState<DashboardFilters>({ ano: null, mes: null, pasta: null, search: '' });
+  const [page, setPage] = useState(0);
+
+  const anos = useMemo(() => [...new Set(records.map(r => r.ano))].sort(), [records]);
+  const meses = useMemo(() => [...new Set(records.map(r => r.mes))].sort((a, b) => a - b), [records]);
+  const pastas = useMemo(() => [...new Set(records.map(r => r.pasta))].sort(), [records]);
+
+  const filtered = useMemo(() => {
+    return records.filter(r => {
+      if (filters.ano && r.ano !== filters.ano) return false;
+      if (filters.mes && r.mes !== filters.mes) return false;
+      if (filters.pasta && r.pasta !== filters.pasta) return false;
+      if (filters.search) {
+        const s = filters.search.toLowerCase();
+        if (!r.nome.toLowerCase().includes(s) && !r.cpf.includes(s)) return false;
+      }
+      return true;
+    });
+  }, [records, filters]);
+
+  const paged = filtered.slice(page * DETAIL_PAGE_SIZE, (page + 1) * DETAIL_PAGE_SIZE);
+  const totalPages = Math.ceil(filtered.length / DETAIL_PAGE_SIZE);
+
+  const handleExport = (type: 'pdf' | 'excel') => {
+    const exportData = filtered.map(r => ({
+      nome: r.nome, cpf: r.cpf, funcao: r.funcao, pasta: r.pasta,
+      mesAno: `${getMonthShort(r.mes)}/${r.ano}`,
+      bruto: formatCurrency(r.bruto), liquido: formatCurrency(r.liquido),
+    }));
+    const opts = {
+      title: 'Detalhamento da Folha',
+      subtitle: `${formatNumber(filtered.length)} registros`,
+      fileName: 'detalhamento_folha',
+      columns: [
+        { header: 'Nome', key: 'nome' },
+        { header: 'CPF', key: 'cpf' },
+        { header: 'Função', key: 'funcao' },
+        { header: 'Pasta', key: 'pasta' },
+        { header: 'Mês/Ano', key: 'mesAno' },
+        { header: 'Bruto', key: 'bruto', align: 'right' as const },
+        { header: 'Líquido', key: 'liquido', align: 'right' as const },
+      ],
+      data: exportData,
+    };
+    type === 'pdf' ? exportToPDF(opts) : exportToExcel(opts);
+  };
+
+  return (
+    <>
+      {/* Filters */}
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <Select value={filters.ano?.toString() || 'all'} onValueChange={v => { setFilters(f => ({ ...f, ano: v === 'all' ? null : Number(v) })); setPage(0); }}>
+          <SelectTrigger className="w-32"><SelectValue placeholder="Ano" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            {anos.map(a => <SelectItem key={a} value={a.toString()}>{a}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={filters.mes?.toString() || 'all'} onValueChange={v => { setFilters(f => ({ ...f, mes: v === 'all' ? null : Number(v) })); setPage(0); }}>
+          <SelectTrigger className="w-36"><SelectValue placeholder="Mês" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            {meses.map(m => <SelectItem key={m} value={m.toString()}>{getMonthShort(m)}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={filters.pasta || 'all'} onValueChange={v => { setFilters(f => ({ ...f, pasta: v === 'all' ? null : v })); setPage(0); }}>
+          <SelectTrigger className="w-48"><SelectValue placeholder="Pasta" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas</SelectItem>
+            {pastas.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input placeholder="Buscar por nome ou CPF..." value={filters.search} onChange={e => { setFilters(f => ({ ...f, search: e.target.value })); setPage(0); }} className="pl-10" />
+        </div>
+      </div>
+
+      {/* Export */}
+      {filtered.length > 0 && (
+        <div className="mb-4 flex gap-2">
+          <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => handleExport('excel')}>
+            <Download className="h-3.5 w-3.5" /> Excel
+          </Button>
+          <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => handleExport('pdf')}>
+            <FileText className="h-3.5 w-3.5" /> PDF
+          </Button>
+        </div>
+      )}
+
+      {/* Table */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between p-4 md:p-6">
+          <CardTitle className="text-sm md:text-base">Registros ({formatNumber(filtered.length)})</CardTitle>
+          <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
+            Página {page + 1} de {totalPages || 1}
+            <Button variant="outline" size="icon" className="h-7 w-7 md:h-8 md:w-8" disabled={page === 0} onClick={() => setPage(p => p - 1)}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="icon" className="h-7 w-7 md:h-8 md:w-8" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0 overflow-x-auto">
+          <Table className="min-w-[700px]">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nome</TableHead>
+                <TableHead>CPF</TableHead>
+                <TableHead>Função</TableHead>
+                <TableHead>Pasta</TableHead>
+                <TableHead>Mês/Ano</TableHead>
+                <TableHead className="text-right">Bruto</TableHead>
+                <TableHead className="text-right">Líquido</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {paged.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                    {records.length === 0 ? 'Nenhum dado importado ainda.' : 'Nenhum registro encontrado com os filtros aplicados.'}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                paged.map((r, i) => (
+                  <TableRow key={r.id || i}>
+                    <TableCell className="font-medium text-xs md:text-sm">{r.nome}</TableCell>
+                    <TableCell className="font-mono text-xs">{r.cpf}</TableCell>
+                    <TableCell className="text-xs md:text-sm">{r.funcao}</TableCell>
+                    <TableCell className="text-xs md:text-sm">{r.pasta}</TableCell>
+                    <TableCell className="text-xs md:text-sm">{getMonthShort(r.mes)}/{r.ano}</TableCell>
+                    <TableCell className="text-right text-xs md:text-sm">{formatCurrency(r.bruto)}</TableCell>
+                    <TableCell className="text-right text-xs md:text-sm">{formatCurrency(r.liquido)}</TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </>
+  );
+};
+
 const ExportButtons = ({ onExport }: { onExport: (type: 'pdf' | 'excel') => void }) => (
   <div className="flex gap-2">
     <Button variant="outline" size="sm" onClick={() => onExport('pdf')} className="gap-1.5 text-xs">
@@ -457,13 +606,19 @@ const Relatorios = () => {
         </Select>
       </div>
 
-      <Tabs defaultValue="secretaria" className="w-full">
+      <Tabs defaultValue="detalhamento" className="w-full">
         <TabsList className="mb-4 w-full sm:w-auto flex-wrap">
+          <TabsTrigger value="detalhamento" className="flex-1 sm:flex-none">Detalhamento</TabsTrigger>
           <TabsTrigger value="secretaria" className="flex-1 sm:flex-none">Por Secretaria</TabsTrigger>
           <TabsTrigger value="funcao" className="flex-1 sm:flex-none">Por Função</TabsTrigger>
           <TabsTrigger value="salarios" className="flex-1 sm:flex-none">Top Salários</TabsTrigger>
           <TabsTrigger value="comparativo" className="flex-1 sm:flex-none">Comparativo</TabsTrigger>
         </TabsList>
+
+        {/* DETALHAMENTO */}
+        <TabsContent value="detalhamento">
+          <TabDetalhamento records={records} />
+        </TabsContent>
 
         {/* POR SECRETARIA */}
         <TabsContent value="secretaria">
