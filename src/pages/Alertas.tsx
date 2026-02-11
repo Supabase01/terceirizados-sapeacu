@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ShieldAlert, AlertTriangle, Eye, Copy, ArrowUpDown, Info, UserPlus } from 'lucide-react';
 import { getMonthName } from '@/lib/formatters';
+import { cn } from '@/lib/utils';
 
 const SEVERITY_STYLES: Record<string, string> = {
   alta: 'bg-destructive text-destructive-foreground',
@@ -106,15 +107,15 @@ const Alertas = () => {
 
   return (
     <Layout>
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6">
         <div>
-          <h1 className="text-xl md:text-2xl font-bold text-foreground">Alertas</h1>
-          <p className="text-sm text-muted-foreground">Verificações automáticas nos dados da folha de pagamento</p>
+          <h1 className="text-lg md:text-2xl font-bold text-foreground">Alertas</h1>
+          <p className="text-xs md:text-sm text-muted-foreground">Verificações automáticas nos dados da folha de pagamento</p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
           <Select value={selectedMonth} onValueChange={setMonthFilter}>
-            <SelectTrigger className="w-48">
+            <SelectTrigger className="w-full sm:w-48">
               <SelectValue placeholder="Selecione o mês" />
             </SelectTrigger>
             <SelectContent>
@@ -130,7 +131,7 @@ const Alertas = () => {
           </Select>
 
           <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-56">
+            <SelectTrigger className="w-full sm:w-56">
               <SelectValue placeholder="Filtrar por tipo" />
             </SelectTrigger>
             <SelectContent>
@@ -142,22 +143,26 @@ const Alertas = () => {
           </Select>
         </div>
 
-        <div className="grid gap-3 md:gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
+        <div className="grid gap-2 md:gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
           {(Object.entries(counts) as [string, number][]).map(([type, count]) => {
             const Icon = TYPE_ICONS[type];
+            const isActive = typeFilter === type;
             return (
               <Card
                 key={type}
-                className="cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => setTypeFilter(typeFilter === type ? 'all' : type)}
+                className={cn(
+                  'cursor-pointer transition-all hover:shadow-md',
+                  isActive && 'ring-2 ring-primary shadow-md'
+                )}
+                onClick={() => setTypeFilter(isActive ? 'all' : type)}
               >
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">{TYPE_LABELS[type]}</CardTitle>
-                  <Icon className="h-4 w-4 text-muted-foreground" />
+                <CardHeader className="flex flex-row items-center justify-between pb-1 p-3 md:p-6 md:pb-2">
+                  <CardTitle className="text-[11px] md:text-sm font-medium text-muted-foreground leading-tight">{TYPE_LABELS[type]}</CardTitle>
+                  <Icon className="h-3.5 w-3.5 md:h-4 md:w-4 text-muted-foreground shrink-0" />
                 </CardHeader>
-                <CardContent className="p-4 pt-0 md:p-6 md:pt-0">
-                  <div className="text-2xl md:text-3xl font-bold">{count}</div>
-                  <p className="text-xs text-muted-foreground">alertas encontrados</p>
+                <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+                  <div className="text-xl md:text-3xl font-bold">{count}</div>
+                  <p className="text-[10px] md:text-xs text-muted-foreground">alertas</p>
                 </CardContent>
               </Card>
             );
@@ -185,25 +190,25 @@ const Alertas = () => {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2 md:space-y-3">
             {filteredAlerts.map((alert, i) => {
               const Icon = TYPE_ICONS[alert.type];
               return (
-                <Card key={i} className="border-l-4" style={{ borderLeftColor: alert.severity === 'alta' ? 'hsl(var(--destructive))' : alert.severity === 'media' ? 'hsl(var(--warning))' : 'hsl(var(--muted))' }}>
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Icon className="h-4 w-4" />
-                        <CardTitle className="text-sm">{alert.title}</CardTitle>
+                <Card key={i} className="border-l-4 overflow-hidden" style={{ borderLeftColor: alert.severity === 'alta' ? 'hsl(var(--destructive))' : alert.severity === 'media' ? 'hsl(var(--warning))' : 'hsl(var(--muted))' }}>
+                  <CardHeader className="p-3 md:p-6 pb-1.5 md:pb-2">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <Icon className="h-3.5 w-3.5 md:h-4 md:w-4 shrink-0" />
+                        <CardTitle className="text-xs md:text-sm truncate">{alert.title}</CardTitle>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-xs">{TYPE_LABELS[alert.type]}</Badge>
-                        <Badge className={SEVERITY_STYLES[alert.severity]}>{alert.severity}</Badge>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <Badge variant="outline" className="text-[10px] md:text-xs px-1.5 py-0">{TYPE_LABELS[alert.type]}</Badge>
+                        <Badge className={cn('text-[10px] md:text-xs px-1.5 py-0', SEVERITY_STYLES[alert.severity])}>{alert.severity}</Badge>
                       </div>
                     </div>
                   </CardHeader>
-                  <CardContent>
-                    <CardDescription>{alert.description}</CardDescription>
+                  <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+                    <CardDescription className="text-[11px] md:text-sm leading-relaxed">{alert.description}</CardDescription>
                   </CardContent>
                 </Card>
               );
