@@ -1,12 +1,11 @@
 import { ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { BarChart3, Upload, ShieldAlert, LogOut, TableProperties, FileText } from 'lucide-react';
+import { BarChart3, Upload, ShieldAlert, LogOut, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/indicadores', label: 'Indicadores', icon: BarChart3 },
-  { href: '/detalhamento', label: 'Detalhamento', icon: TableProperties },
   { href: '/import', label: 'Importar', icon: Upload },
   { href: '/alertas', label: 'Alertas', icon: ShieldAlert },
   
