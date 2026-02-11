@@ -9,6 +9,7 @@ import Detalhamento from "./pages/Detalhamento";
 import Import from "./pages/Import";
 import Audit from "./pages/Audit";
 import Comparativo from "./pages/Comparativo";
+import Relatorios from "./pages/Relatorios";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +32,7 @@ const App = () => (
           <Route path="/import" element={<ProtectedRoute><Import /></ProtectedRoute>} />
           <Route path="/audit" element={<ProtectedRoute><Audit /></ProtectedRoute>} />
           <Route path="/comparativo" element={<ProtectedRoute><Comparativo /></ProtectedRoute>} />
+          <Route path="/relatorios" element={<ProtectedRoute><Relatorios /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
