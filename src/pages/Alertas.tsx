@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react';
 import { usePayrollData } from '@/hooks/usePayrollData';
 import { runAllChecks, runCPFCrossCheck, runVariationCheck, runInconsistencyCheck, runDuplicateCheck } from '@/lib/auditChecks';
-import type { AuditAlert } from '@/types/payroll';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ShieldAlert, AlertTriangle, Eye, Copy, ArrowUpDown } from 'lucide-react';
+import { getMonthName } from '@/lib/formatters';
 
 const SEVERITY_STYLES: Record<string, string> = {
   alta: 'bg-destructive text-destructive-foreground',
@@ -28,11 +28,26 @@ const TYPE_ICONS: Record<string, any> = {
   duplicado: Copy,
 };
 
-const Audit = () => {
+const Alertas = () => {
   const { data: records = [], isLoading } = usePayrollData();
   const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [monthFilter, setMonthFilter] = useState<string>('');
 
-  const allAlerts = useMemo(() => runAllChecks(records), [records]);
+  const availableMonths = useMemo(() => {
+    const set = new Set<string>();
+    records.forEach(r => set.add(`${r.ano}-${String(r.mes).padStart(2, '0')}`));
+    return [...set].sort().reverse();
+  }, [records]);
+
+  const selectedMonth = monthFilter || (availableMonths.length > 0 ? availableMonths[0] : '');
+
+  const filteredRecords = useMemo(() => {
+    if (!selectedMonth) return records;
+    const [ano, mes] = selectedMonth.split('-').map(Number);
+    return records.filter(r => r.ano === ano && r.mes === mes);
+  }, [records, selectedMonth]);
+
+  const allAlerts = useMemo(() => runAllChecks(filteredRecords), [filteredRecords]);
 
   const filteredAlerts = useMemo(() => {
     if (typeFilter === 'all') return allAlerts;
@@ -40,11 +55,11 @@ const Audit = () => {
   }, [allAlerts, typeFilter]);
 
   const counts = useMemo(() => ({
-    cpf_cruzamento: runCPFCrossCheck(records).length,
-    variacao: runVariationCheck(records).length,
-    inconsistencia: runInconsistencyCheck(records).length,
-    duplicado: runDuplicateCheck(records).length,
-  }), [records]);
+    cpf_cruzamento: runCPFCrossCheck(filteredRecords).length,
+    variacao: runVariationCheck(filteredRecords).length,
+    inconsistencia: runInconsistencyCheck(filteredRecords).length,
+    duplicado: runDuplicateCheck(filteredRecords).length,
+  }), [filteredRecords]);
 
   if (isLoading) {
     return (
@@ -58,11 +73,40 @@ const Audit = () => {
     <Layout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-xl md:text-2xl font-bold text-foreground">Módulo de Auditoria</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-foreground">Alertas</h1>
           <p className="text-sm text-muted-foreground">Verificações automáticas nos dados da folha de pagamento</p>
         </div>
 
-        {/* Summary cards */}
+        <div className="flex flex-wrap items-center gap-3">
+          <Select value={selectedMonth} onValueChange={setMonthFilter}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Selecione o mês" />
+            </SelectTrigger>
+            <SelectContent>
+              {availableMonths.map(m => {
+                const [ano, mes] = m.split('-').map(Number);
+                return (
+                  <SelectItem key={m} value={m}>
+                    {getMonthName(mes)} {ano}
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <SelectTrigger className="w-56">
+              <SelectValue placeholder="Filtrar por tipo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os alertas ({allAlerts.length})</SelectItem>
+              {Object.entries(TYPE_LABELS).map(([key, label]) => (
+                <SelectItem key={key} value={key}>{label} ({counts[key as keyof typeof counts]})</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           {(Object.entries(counts) as [string, number][]).map(([type, count]) => {
             const Icon = TYPE_ICONS[type];
@@ -85,22 +129,6 @@ const Audit = () => {
           })}
         </div>
 
-        {/* Filter */}
-        <div className="flex items-center gap-3">
-          <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-56">
-              <SelectValue placeholder="Filtrar por tipo" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os alertas ({allAlerts.length})</SelectItem>
-              {Object.entries(TYPE_LABELS).map(([key, label]) => (
-                <SelectItem key={key} value={key}>{label} ({counts[key as keyof typeof counts]})</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Alerts */}
         {filteredAlerts.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center py-12 text-muted-foreground">
@@ -140,4 +168,4 @@ const Audit = () => {
   );
 };
 
-export default Audit;
+export default Alertas;
