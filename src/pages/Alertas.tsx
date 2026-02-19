@@ -62,9 +62,11 @@ const Alertas = () => {
   const variationAlerts = useMemo(() => {
     if (!selectedMonth) return runVariationCheck(records);
     const [ano, mes] = selectedMonth.split('-').map(Number);
-    return runVariationCheck(records).filter(a =>
-      a.records.some(r => r.ano === ano && r.mes === mes)
-    );
+    return runVariationCheck(records).filter(a => {
+      // Only show if the destination month (records[1]) matches selected month
+      const dest = a.records[1];
+      return dest && dest.ano === ano && dest.mes === mes;
+    });
   }, [records, selectedMonth]);
 
   const newEmployeeAlerts = useMemo(() => {
