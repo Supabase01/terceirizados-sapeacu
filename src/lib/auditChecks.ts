@@ -36,12 +36,27 @@ export const runVariationCheck = (records: PayrollRecord[]): AuditAlert[] => {
   });
 
   Object.values(byCPF).forEach(cpfRecords => {
-    cpfRecords.sort((a, b) => a.ano * 12 + a.mes - (b.ano * 12 + b.mes));
-    for (let i = 1; i < cpfRecords.length; i++) {
-      const prev = cpfRecords[i - 1];
-      const curr = cpfRecords[i];
-      // Skip if same month (different pasta entries)
-      if (prev.ano === curr.ano && prev.mes === curr.mes) continue;
+    // Aggregate by month (sum liquido per month for CPFs in multiple pastas)
+    const byMonth: Record<string, { liquido: number; record: PayrollRecord }> = {};
+    cpfRecords.forEach(r => {
+      const key = `${r.ano}-${r.mes}`;
+      if (!byMonth[key]) {
+        byMonth[key] = { liquido: r.liquido, record: r };
+      } else {
+        byMonth[key].liquido += r.liquido;
+      }
+    });
+
+    const sortedMonths = Object.entries(byMonth)
+      .sort(([, a], [, b]) => a.record.ano * 12 + a.record.mes - (b.record.ano * 12 + b.record.mes));
+
+    for (let i = 1; i < sortedMonths.length; i++) {
+      const [, prev] = sortedMonths[i - 1];
+      const [, curr] = sortedMonths[i];
+      const prevTotal = prev.record.ano * 12 + prev.record.mes;
+      const currTotal = curr.record.ano * 12 + curr.record.mes;
+      // Only compare strictly consecutive months
+      if (currTotal - prevTotal !== 1) continue;
       if (prev.liquido > 0) {
         const variation = ((curr.liquido - prev.liquido) / prev.liquido) * 100;
         if (variation > 20) {
@@ -49,8 +64,8 @@ export const runVariationCheck = (records: PayrollRecord[]): AuditAlert[] => {
             type: 'variacao',
             severity: 'media',
             title: `Variação de ${variation.toFixed(1)}% no líquido`,
-            description: `${curr.nome} (${curr.cpf}): de R$ ${prev.liquido.toFixed(2)} para R$ ${curr.liquido.toFixed(2)} (${prev.mes}/${prev.ano} → ${curr.mes}/${curr.ano})`,
-            records: [prev, curr],
+            description: `${curr.record.nome} (${curr.record.cpf}): de R$ ${prev.liquido.toFixed(2)} para R$ ${curr.liquido.toFixed(2)} (${prev.record.mes}/${prev.record.ano} → ${curr.record.mes}/${curr.record.ano})`,
+            records: [prev.record, curr.record],
           });
         }
       }
