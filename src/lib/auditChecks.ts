@@ -40,6 +40,8 @@ export const runVariationCheck = (records: PayrollRecord[]): AuditAlert[] => {
     for (let i = 1; i < cpfRecords.length; i++) {
       const prev = cpfRecords[i - 1];
       const curr = cpfRecords[i];
+      // Skip if same month (different pasta entries)
+      if (prev.ano === curr.ano && prev.mes === curr.mes) continue;
       if (prev.liquido > 0) {
         const variation = ((curr.liquido - prev.liquido) / prev.liquido) * 100;
         if (variation > 20) {
