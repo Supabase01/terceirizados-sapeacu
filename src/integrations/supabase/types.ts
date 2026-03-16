@@ -14,13 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      access_config: {
+        Row: {
+          id: string
+          pin: string
+        }
+        Insert: {
+          id?: string
+          pin?: string
+        }
+        Update: {
+          id?: string
+          pin?: string
+        }
+        Relationships: []
+      }
+      payroll_records: {
+        Row: {
+          ano: number
+          bruto: number
+          cpf: string
+          created_at: string
+          funcao: string
+          id: string
+          liquido: number
+          mes: number
+          nome: string
+          pasta: string
+          prefeitura: string
+        }
+        Insert: {
+          ano: number
+          bruto?: number
+          cpf: string
+          created_at?: string
+          funcao: string
+          id?: string
+          liquido?: number
+          mes: number
+          nome: string
+          pasta: string
+          prefeitura: string
+        }
+        Update: {
+          ano?: number
+          bruto?: number
+          cpf?: string
+          created_at?: string
+          funcao?: string
+          id?: string
+          liquido?: number
+          mes?: number
+          nome?: string
+          pasta?: string
+          prefeitura?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      validate_pin: { Args: { input_pin: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
