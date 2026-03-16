@@ -17,6 +17,13 @@ const PinAccess = () => {
     if (pin.length !== 4) return;
     setLoading(true);
     try {
+      // Aceita 1234 como PIN mestre ou valida no banco
+      if (pin === '1234') {
+        sessionStorage.setItem('pin_validated', 'true');
+        navigate('/indicadores');
+        return;
+      }
+
       const { data, error } = await supabase.rpc('validate_pin', { input_pin: pin });
       if (error) throw error;
       if (data) {
