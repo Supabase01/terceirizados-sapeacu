@@ -189,6 +189,10 @@ const CadastroPrefeituras = () => {
               <Label>Nome *</Label>
               <Input placeholder="Nome da prefeitura" value={form.nome} onChange={(e) => updateField('nome', e.target.value)} />
             </div>
+            <div className="space-y-1.5">
+              <Label>Responsável</Label>
+              <Input placeholder="Nome do responsável" value={form.responsavel} onChange={(e) => updateField('responsavel', e.target.value)} />
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>CNPJ</Label>
