@@ -599,10 +599,10 @@ const AdminConfig = () => {
 
           {/* ===== PERMISSÕES TAB ===== */}
           <TabsContent value="permissoes">
-            <Card>
+            <Card className="bg-card">
               <CardHeader>
-                <CardTitle className="text-lg">Matriz de Permissões</CardTitle>
-                <CardDescription>Marque as rotas que cada função pode acessar. Clique no nome do módulo para selecionar/desmarcar todas.</CardDescription>
+                <CardTitle className="text-lg text-foreground">Matriz de Permissões</CardTitle>
+                <CardDescription>Marque as rotas que cada função pode acessar. Use os checkboxes do cabeçalho para marcar/desmarcar tudo.</CardDescription>
               </CardHeader>
               <CardContent>
                 {loadingFuncoes ? (
@@ -611,22 +611,24 @@ const AdminConfig = () => {
                   <p className="text-center text-muted-foreground py-8">Crie funções do sistema primeiro na aba "Funções".</p>
                 ) : (
                   <ScrollArea className="w-full">
-                    <div className="rounded-md border">
+                    <div className="rounded-lg border border-border overflow-hidden">
                       <Table>
                         <TableHeader>
-                          <TableRow>
-                            <TableHead className="sticky left-0 bg-background z-10 min-w-[220px]">Módulo / Rota</TableHead>
+                          <TableRow className="bg-muted/60">
+                            <TableHead className="sticky left-0 bg-muted/60 z-10 min-w-[240px] text-foreground font-bold text-sm">
+                              Módulo / Rota
+                            </TableHead>
                             {funcoesSistema.map(f => {
                               const totalAllowed = (funcaoPermissoes || []).filter(p => p.funcao_sistema_id === f.id && p.allowed).length;
                               const allChecked = totalAllowed === ALL_ROUTES.length;
                               const someChecked = totalAllowed > 0;
                               return (
-                                <TableHead key={f.id} className="text-center min-w-[110px]">
-                                  <div className="flex flex-col items-center gap-1">
-                                    <span className="text-xs font-semibold">{f.nome}</span>
-                                    <span className="text-[10px] text-muted-foreground font-normal">
+                                <TableHead key={f.id} className="text-center min-w-[130px] bg-muted/60">
+                                  <div className="flex flex-col items-center gap-1.5 py-1">
+                                    <span className="text-xs font-bold text-foreground">{f.nome}</span>
+                                    <Badge variant={allChecked ? 'default' : someChecked ? 'secondary' : 'outline'} className="text-[10px] px-1.5 py-0">
                                       {totalAllowed}/{ALL_ROUTES.length}
-                                    </span>
+                                    </Badge>
                                     <Checkbox
                                       checked={allChecked ? true : someChecked ? 'indeterminate' : false}
                                       onCheckedChange={() => toggleAllPermissions.mutate({ funcaoId: f.id, allChecked })}
@@ -642,9 +644,9 @@ const AdminConfig = () => {
                           {Object.entries(routesByModule).map(([module, routes]) => {
                             return (
                               <React.Fragment key={`mod-${module}`}>
-                                <TableRow className="bg-muted/40 hover:bg-muted/60">
-                                  <TableCell className="sticky left-0 bg-muted/40 z-10 font-semibold text-xs uppercase tracking-wider text-muted-foreground py-2">
-                                    {module}
+                                <TableRow className="bg-primary/5 border-t-2 border-border">
+                                  <TableCell className="sticky left-0 bg-primary/5 z-10 font-bold text-xs uppercase tracking-wider text-primary py-2.5">
+                                    📁 {module}
                                   </TableCell>
                                   {funcoesSistema.map(f => {
                                     const allChecked = routes.every(r =>
@@ -654,7 +656,7 @@ const AdminConfig = () => {
                                       (funcaoPermissoes || []).some(p => p.funcao_sistema_id === f.id && p.route_path === r.path && p.allowed)
                                     );
                                     return (
-                                      <TableCell key={f.id} className="text-center py-2">
+                                      <TableCell key={f.id} className="text-center py-2.5 bg-primary/5">
                                         <Checkbox
                                           checked={allChecked ? true : someChecked ? 'indeterminate' : false}
                                           onCheckedChange={() => toggleAllModulePermissions.mutate({
@@ -668,12 +670,12 @@ const AdminConfig = () => {
                                     );
                                   })}
                                 </TableRow>
-                                {routes.map(route => (
-                                  <TableRow key={route.path}>
-                                    <TableCell className="sticky left-0 bg-background z-10 pl-6">
-                                      <div className="flex flex-col">
-                                        <span className="text-sm font-medium text-foreground">{route.label}</span>
-                                        <span className="text-[10px] text-muted-foreground font-mono">{route.path}</span>
+                                {routes.map((route, idx) => (
+                                  <TableRow key={route.path} className={idx % 2 === 0 ? 'bg-background' : 'bg-muted/20'}>
+                                    <TableCell className={`sticky left-0 z-10 pl-8 ${idx % 2 === 0 ? 'bg-background' : 'bg-muted/20'}`}>
+                                      <div className="flex flex-col gap-0.5">
+                                        <span className="text-sm font-semibold text-foreground">{route.label}</span>
+                                        <span className="text-[11px] text-muted-foreground font-mono">{route.path}</span>
                                       </div>
                                     </TableCell>
                                     {funcoesSistema.map(f => {
