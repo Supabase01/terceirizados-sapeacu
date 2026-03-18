@@ -14,7 +14,8 @@ import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Users, Shield, Route, Loader2, Plus, Pencil, Trash2, Briefcase } from 'lucide-react';
+import { Users, Shield, Route, Loader2, Plus, Pencil, Trash2, Briefcase, Lock } from 'lucide-react';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { useIsAdmin } from '@/hooks/useUserRoles';
 
