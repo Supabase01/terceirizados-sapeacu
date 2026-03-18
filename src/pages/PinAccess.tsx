@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,6 +33,12 @@ const PinAccess = () => {
     }
   };
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    sessionStorage.removeItem('pin_validated');
+    navigate('/');
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md shadow-lg border-border/50">
@@ -40,7 +46,7 @@ const PinAccess = () => {
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
             <ShieldCheck className="h-8 w-8 text-primary" />
           </div>
-          <CardTitle className="text-2xl">Auditoria de Folha</CardTitle>
+          <CardTitle className="text-2xl">Verificação de PIN</CardTitle>
           <CardDescription>Digite o PIN de 4 dígitos para acessar o sistema</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col items-center gap-6">
@@ -56,6 +62,13 @@ const PinAccess = () => {
             <Lock className="mr-2 h-4 w-4" />
             {loading ? 'Validando...' : 'Acessar'}
           </Button>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="text-sm text-muted-foreground hover:text-foreground hover:underline"
+          >
+            Sair da conta
+          </button>
         </CardContent>
       </Card>
     </div>
