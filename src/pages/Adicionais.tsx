@@ -20,10 +20,12 @@ interface AdicionalForm {
   tipo: string;
   mes: string;
   ano: string;
+  mes_fim: string;
+  ano_fim: string;
 }
 
 const emptyForm: AdicionalForm = {
-  colaborador_id: '', descricao: '', valor: '', tipo: 'fixo', mes: '', ano: '',
+  colaborador_id: '', descricao: '', valor: '', tipo: 'fixo', mes: '', ano: '', mes_fim: '', ano_fim: '',
 };
 
 const Adicionais = () => {
@@ -58,13 +60,16 @@ const Adicionais = () => {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
+      const isEventual = form.tipo === 'eventual';
       const payload = {
         colaborador_id: form.colaborador_id,
         descricao: form.descricao,
         valor: Number(form.valor) || 0,
         tipo: form.tipo,
-        mes: form.tipo === 'eventual' && form.mes ? Number(form.mes) : null,
-        ano: form.tipo === 'eventual' && form.ano ? Number(form.ano) : null,
+        mes: isEventual && form.mes ? Number(form.mes) : null,
+        ano: isEventual && form.ano ? Number(form.ano) : null,
+        mes_fim: isEventual && form.mes_fim ? Number(form.mes_fim) : null,
+        ano_fim: isEventual && form.ano_fim ? Number(form.ano_fim) : null,
       };
       if (editId) {
         const { error } = await supabase.from('adicionais').update(payload).eq('id', editId);
@@ -104,6 +109,8 @@ const Adicionais = () => {
       tipo: item.tipo,
       mes: item.mes ? String(item.mes) : '',
       ano: item.ano ? String(item.ano) : '',
+      mes_fim: item.mes_fim ? String(item.mes_fim) : '',
+      ano_fim: item.ano_fim ? String(item.ano_fim) : '',
     });
     setDialogOpen(true);
   };
@@ -116,6 +123,16 @@ const Adicionais = () => {
   });
 
   const formatCurrency = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
+
+  const formatCompetencia = (item: any) => {
+    if (!item.mes || !item.ano) return 'Recorrente';
+    const inicio = `${String(item.mes).padStart(2, '0')}/${item.ano}`;
+    if (item.mes_fim && item.ano_fim) {
+      const fim = `${String(item.mes_fim).padStart(2, '0')}/${item.ano_fim}`;
+      return `${inicio} → ${fim}`;
+    }
+    return inicio;
+  };
 
   return (
     <Layout>
@@ -167,7 +184,7 @@ const Adicionais = () => {
                         <TableCell className="font-medium">{(item.colaboradores as any)?.nome || '—'}</TableCell>
                         <TableCell>{item.descricao}</TableCell>
                         <TableCell><Badge variant={item.tipo === 'fixo' ? 'default' : 'secondary'}>{item.tipo === 'fixo' ? 'Fixo' : 'Eventual'}</Badge></TableCell>
-                        <TableCell className="hidden md:table-cell">{item.mes && item.ano ? `${String(item.mes).padStart(2, '0')}/${item.ano}` : 'Recorrente'}</TableCell>
+                        <TableCell className="hidden md:table-cell">{formatCompetencia(item)}</TableCell>
                         <TableCell className="text-right font-mono">{formatCurrency(item.valor)}</TableCell>
                         <TableCell>
                           <div className="flex gap-1">
@@ -219,16 +236,28 @@ const Adicionais = () => {
               </div>
             </div>
             {form.tipo === 'eventual' && (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Mês</Label>
-                  <Input type="number" min="1" max="12" placeholder="1-12" value={form.mes} onChange={(e) => setForm(p => ({ ...p, mes: e.target.value }))} />
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Mês Início *</Label>
+                    <Input type="number" min="1" max="12" placeholder="1-12" value={form.mes} onChange={(e) => setForm(p => ({ ...p, mes: e.target.value }))} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Ano Início *</Label>
+                    <Input type="number" min="2020" placeholder="2026" value={form.ano} onChange={(e) => setForm(p => ({ ...p, ano: e.target.value }))} />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>Ano</Label>
-                  <Input type="number" min="2020" placeholder="2026" value={form.ano} onChange={(e) => setForm(p => ({ ...p, ano: e.target.value }))} />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Mês Fim (opcional)</Label>
+                    <Input type="number" min="1" max="12" placeholder="1-12" value={form.mes_fim} onChange={(e) => setForm(p => ({ ...p, mes_fim: e.target.value }))} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Ano Fim (opcional)</Label>
+                    <Input type="number" min="2020" placeholder="2026" value={form.ano_fim} onChange={(e) => setForm(p => ({ ...p, ano_fim: e.target.value }))} />
+                  </div>
                 </div>
-              </div>
+              </>
             )}
           </div>
           <DialogFooter>
