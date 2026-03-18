@@ -249,7 +249,7 @@ const CadastroColaboradores = () => {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-foreground">Colaboradores</h1>
-          <Button onClick={() => setDialogOpen(true)} size="sm">
+          <Button onClick={openNew} size="sm">
             <Plus className="h-4 w-4 mr-1" /> Novo Colaborador
           </Button>
         </div>
