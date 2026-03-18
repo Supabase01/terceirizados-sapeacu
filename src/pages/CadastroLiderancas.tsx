@@ -30,17 +30,16 @@ export default function CadastroLiderancas() {
   const [selectedLideranca, setSelectedLideranca] = useState<any>(null);
 
   const { data: liderancas = [], isLoading } = useQuery({
-    queryKey: ['liderancas'],
+    queryKey: ['liderancas', unidadeId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('liderancas')
-        .select('*')
-        .order('nome');
+      let query = supabase.from('liderancas').select('*').order('nome');
+      if (unidadeId) query = query.eq('unidade_id', unidadeId);
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },
+    enabled: !!unidadeId,
   });
-
   // Count indicações per liderança
   const { data: indicacoes = [] } = useQuery({
     queryKey: ['colaboradores-indicacoes'],
