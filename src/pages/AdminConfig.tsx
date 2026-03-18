@@ -470,6 +470,47 @@ const AdminConfig = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* ===== DIALOG CREATE USER ===== */}
+      <Dialog open={userDialog} onOpenChange={setUserDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Novo Usuário</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Nome</Label>
+              <Input value={newUserNome} onChange={e => setNewUserNome(e.target.value)} placeholder="Nome do usuário" />
+            </div>
+            <div className="space-y-2">
+              <Label>E-mail *</Label>
+              <Input type="email" value={newUserEmail} onChange={e => setNewUserEmail(e.target.value)} placeholder="email@exemplo.com" required />
+            </div>
+            <div className="space-y-2">
+              <Label>Senha *</Label>
+              <Input type="password" value={newUserPassword} onChange={e => setNewUserPassword(e.target.value)} placeholder="Mínimo 6 caracteres" minLength={6} required />
+            </div>
+            <div className="space-y-2">
+              <Label>Papel</Label>
+              <Select value={newUserRole} onValueChange={setNewUserRole}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="usuario">Usuário</SelectItem>
+                  <SelectItem value="admin">Administrador</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setUserDialog(false)}>Cancelar</Button>
+            <Button onClick={() => createUser.mutate()} disabled={createUser.isPending}>
+              {createUser.isPending ? 'Criando...' : 'Criar Usuário'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 };
