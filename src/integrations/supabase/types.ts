@@ -41,6 +41,7 @@ export type Database = {
           mes: number | null
           mes_fim: number | null
           tipo: string
+          unidade_id: string | null
           valor: number
         }
         Insert: {
@@ -54,6 +55,7 @@ export type Database = {
           mes?: number | null
           mes_fim?: number | null
           tipo?: string
+          unidade_id?: string | null
           valor?: number
         }
         Update: {
@@ -67,6 +69,7 @@ export type Database = {
           mes?: number | null
           mes_fim?: number | null
           tipo?: string
+          unidade_id?: string | null
           valor?: number
         }
         Relationships: [
@@ -75,6 +78,13 @@ export type Database = {
             columns: ["colaborador_id"]
             isOneToOne: false
             referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "adicionais_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades_folha"
             referencedColumns: ["id"]
           },
         ]
@@ -163,6 +173,7 @@ export type Database = {
           pix: string | null
           salario_base: number
           secretaria_id: string | null
+          unidade_id: string | null
         }
         Insert: {
           ativo?: boolean
@@ -187,6 +198,7 @@ export type Database = {
           pix?: string | null
           salario_base?: number
           secretaria_id?: string | null
+          unidade_id?: string | null
         }
         Update: {
           ativo?: boolean
@@ -211,6 +223,7 @@ export type Database = {
           pix?: string | null
           salario_base?: number
           secretaria_id?: string | null
+          unidade_id?: string | null
         }
         Relationships: [
           {
@@ -248,6 +261,13 @@ export type Database = {
             referencedRelation: "secretarias"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "colaboradores_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades_folha"
+            referencedColumns: ["id"]
+          },
         ]
       }
       descontos: {
@@ -261,6 +281,7 @@ export type Database = {
           id: string
           is_percentual: boolean
           mes: number | null
+          unidade_id: string | null
           valor: number
         }
         Insert: {
@@ -273,6 +294,7 @@ export type Database = {
           id?: string
           is_percentual?: boolean
           mes?: number | null
+          unidade_id?: string | null
           valor?: number
         }
         Update: {
@@ -285,6 +307,7 @@ export type Database = {
           id?: string
           is_percentual?: boolean
           mes?: number | null
+          unidade_id?: string | null
           valor?: number
         }
         Relationships: [
@@ -293,6 +316,13 @@ export type Database = {
             columns: ["colaborador_id"]
             isOneToOne: false
             referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "descontos_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades_folha"
             referencedColumns: ["id"]
           },
         ]
@@ -315,6 +345,7 @@ export type Database = {
           status: string
           total_adicionais: number
           total_descontos: number
+          unidade_id: string | null
           updated_at: string
         }
         Insert: {
@@ -334,6 +365,7 @@ export type Database = {
           status?: string
           total_adicionais?: number
           total_descontos?: number
+          unidade_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -353,6 +385,7 @@ export type Database = {
           status?: string
           total_adicionais?: number
           total_descontos?: number
+          unidade_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -361,6 +394,13 @@ export type Database = {
             columns: ["colaborador_id"]
             isOneToOne: false
             referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "folha_processamento_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades_folha"
             referencedColumns: ["id"]
           },
         ]
@@ -404,6 +444,7 @@ export type Database = {
           created_at: string
           id: string
           nome: string
+          unidade_id: string | null
         }
         Insert: {
           ativo?: boolean
@@ -411,6 +452,7 @@ export type Database = {
           created_at?: string
           id?: string
           nome: string
+          unidade_id?: string | null
         }
         Update: {
           ativo?: boolean
@@ -418,8 +460,17 @@ export type Database = {
           created_at?: string
           id?: string
           nome?: string
+          unidade_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "funcoes_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades_folha"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       funcoes_sistema: {
         Row: {
@@ -452,6 +503,7 @@ export type Database = {
           created_at: string
           id: string
           nome: string
+          unidade_id: string | null
         }
         Insert: {
           ativo?: boolean
@@ -459,6 +511,7 @@ export type Database = {
           created_at?: string
           id?: string
           nome: string
+          unidade_id?: string | null
         }
         Update: {
           ativo?: boolean
@@ -466,8 +519,17 @@ export type Database = {
           created_at?: string
           id?: string
           nome?: string
+          unidade_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "liderancas_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades_folha"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       lotacoes: {
         Row: {
@@ -476,6 +538,7 @@ export type Database = {
           id: string
           nome: string
           secretaria_id: string | null
+          unidade_id: string | null
         }
         Insert: {
           ativo?: boolean
@@ -483,6 +546,7 @@ export type Database = {
           id?: string
           nome: string
           secretaria_id?: string | null
+          unidade_id?: string | null
         }
         Update: {
           ativo?: boolean
@@ -490,6 +554,7 @@ export type Database = {
           id?: string
           nome?: string
           secretaria_id?: string | null
+          unidade_id?: string | null
         }
         Relationships: [
           {
@@ -497,6 +562,13 @@ export type Database = {
             columns: ["secretaria_id"]
             isOneToOne: false
             referencedRelation: "secretarias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lotacoes_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades_folha"
             referencedColumns: ["id"]
           },
         ]
@@ -514,6 +586,7 @@ export type Database = {
           nome: string
           pasta: string
           prefeitura: string
+          unidade_id: string | null
         }
         Insert: {
           ano: number
@@ -527,6 +600,7 @@ export type Database = {
           nome: string
           pasta: string
           prefeitura: string
+          unidade_id?: string | null
         }
         Update: {
           ano?: number
@@ -540,8 +614,17 @@ export type Database = {
           nome?: string
           pasta?: string
           prefeitura?: string
+          unidade_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "payroll_records_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades_folha"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       prefeituras: {
         Row: {
@@ -651,20 +734,31 @@ export type Database = {
           created_at: string
           id: string
           nome: string
+          unidade_id: string | null
         }
         Insert: {
           ativo?: boolean
           created_at?: string
           id?: string
           nome: string
+          unidade_id?: string | null
         }
         Update: {
           ativo?: boolean
           created_at?: string
           id?: string
           nome?: string
+          unidade_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "secretarias_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades_folha"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       terceirizadas: {
         Row: {
@@ -880,9 +974,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_master: { Args: { _user_id: string }; Returns: boolean }
       set_user_pin: {
         Args: { _pin: string; _user_id: string }
         Returns: undefined
+      }
+      user_has_unidade_access: {
+        Args: { _unidade_id: string; _user_id: string }
+        Returns: boolean
       }
       validate_pin: { Args: { input_pin: string }; Returns: boolean }
       validate_user_pin: {

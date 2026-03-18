@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useUnidade } from '@/contexts/UnidadeContext';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,7 @@ const emptyForm: LiderancaForm = { nome: '', cargo: '' };
 export default function CadastroLiderancas() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { unidadeId } = useUnidade();
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -30,30 +32,27 @@ export default function CadastroLiderancas() {
   const [selectedLideranca, setSelectedLideranca] = useState<any>(null);
 
   const { data: liderancas = [], isLoading } = useQuery({
-    queryKey: ['liderancas'],
+    queryKey: ['liderancas', unidadeId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('liderancas')
-        .select('*')
-        .order('nome');
+      let query = supabase.from('liderancas').select('*').order('nome');
+      if (unidadeId) query = query.eq('unidade_id', unidadeId);
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },
+    enabled: !!unidadeId,
   });
-
-  // Count indicações per liderança
   const { data: indicacoes = [] } = useQuery({
-    queryKey: ['colaboradores-indicacoes'],
+    queryKey: ['colaboradores-indicacoes', unidadeId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('colaboradores')
-        .select('lideranca_id, nome, cpf')
-        .not('lideranca_id', 'is', null);
+      let query = supabase.from('colaboradores').select('lideranca_id, nome, cpf').not('lideranca_id', 'is', null);
+      if (unidadeId) query = query.eq('unidade_id', unidadeId);
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },
+    enabled: !!unidadeId,
   });
-
   const contagemMap = indicacoes.reduce((acc: Record<string, number>, c: any) => {
     if (c.lideranca_id) {
       acc[c.lideranca_id] = (acc[c.lideranca_id] || 0) + 1;
@@ -67,7 +66,7 @@ export default function CadastroLiderancas() {
         const { error } = await supabase.from('liderancas').update({ nome: form.nome, cargo: form.cargo || null }).eq('id', editId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from('liderancas').insert({ nome: form.nome, cargo: form.cargo || null });
+        const { error } = await supabase.from('liderancas').insert({ nome: form.nome, cargo: form.cargo || null, unidade_id: unidadeId });
         if (error) throw error;
       }
     },
