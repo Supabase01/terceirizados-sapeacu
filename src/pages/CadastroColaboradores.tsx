@@ -286,8 +286,11 @@ const CadastroColaboradores = () => {
                 <Input type="number" placeholder="0.00" value={form.salario_bruto} onChange={(e) => updateField('salario_bruto', e.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label>Encargo</Label>
-                <Input type="number" placeholder="0.00" value={form.encargo} onChange={(e) => updateField('encargo', e.target.value)} />
+                <Label>Encargo (%)</Label>
+                <div className="relative">
+                  <Input type="number" placeholder="0" value={form.encargo} onChange={(e) => updateField('encargo', e.target.value)} className="pr-8" />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>
+                </div>
               </div>
               <div className="space-y-2">
                 <Label>Adicionais</Label>
@@ -295,7 +298,7 @@ const CadastroColaboradores = () => {
               </div>
               <div className="space-y-2">
                 <Label>Salário Líquido</Label>
-                <Input type="number" placeholder="0.00" value={form.salario_liquido} onChange={(e) => updateField('salario_liquido', e.target.value)} />
+                <Input type="number" placeholder="0.00" value={form.salario_liquido} readOnly className="bg-muted" />
               </div>
               <div className="space-y-2">
                 <Label>Data Admissão</Label>
