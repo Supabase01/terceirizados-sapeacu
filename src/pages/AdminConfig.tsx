@@ -60,6 +60,8 @@ const AdminConfig = () => {
   const [newUserUnidades, setNewUserUnidades] = useState<string[]>([]);
 
   const [userSearch, setUserSearch] = useState('');
+  const [permSubTab, setPermSubTab] = useState<'funcao' | 'usuario'>('funcao');
+  const [permUserSelected, setPermUserSelected] = useState<string | null>(null);
 
   // Dialog for linking unidades to a user
   const [unidadeDialogUserId, setUnidadeDialogUserId] = useState<string | null>(null);
