@@ -680,112 +680,272 @@ const AdminConfig = () => {
             <Card className="bg-card">
               <CardHeader>
                 <CardTitle className="text-lg text-foreground">Matriz de Permissões</CardTitle>
-                <CardDescription>Marque as rotas que cada função pode acessar. Use os checkboxes do cabeçalho para marcar/desmarcar tudo.</CardDescription>
+                <CardDescription>Gerencie permissões por função ou personalize por usuário.</CardDescription>
               </CardHeader>
-              <CardContent>
-                {loadingFuncoes ? (
-                  <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
-                ) : !funcoesSistema || funcoesSistema.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">Crie funções do sistema primeiro na aba "Funções".</p>
-                ) : (
-                  <ScrollArea className="w-full">
-                    <div className="rounded-lg border border-border overflow-hidden">
-                      <Table>
-                        <TableHeader>
-                          <TableRow className="bg-muted/60">
-                            <TableHead className="sticky left-0 bg-muted/60 z-10 min-w-[240px] text-foreground font-bold text-sm">
-                              Módulo / Rota
-                            </TableHead>
-                            {funcoesSistema.map(f => {
-                              const totalAllowed = (funcaoPermissoes || []).filter(p => p.funcao_sistema_id === f.id && p.allowed).length;
-                              const allChecked = totalAllowed === ALL_ROUTES.length;
-                              const someChecked = totalAllowed > 0;
-                              return (
-                                <TableHead key={f.id} className="text-center min-w-[130px] bg-muted/60">
-                                  <div className="flex flex-col items-center gap-1.5 py-1">
-                                    <span className="text-xs font-bold text-foreground">{f.nome}</span>
-                                    <Badge variant={allChecked ? 'default' : someChecked ? 'secondary' : 'outline'} className="text-[10px] px-1.5 py-0">
-                                      {totalAllowed}/{ALL_ROUTES.length}
-                                    </Badge>
-                                    <Checkbox
-                                      checked={allChecked ? true : someChecked ? 'indeterminate' : false}
-                                      onCheckedChange={() => toggleAllPermissions.mutate({ funcaoId: f.id, allChecked })}
-                                      className="mx-auto"
-                                    />
-                                  </div>
+              <CardContent className="space-y-4">
+                {/* Sub-tabs */}
+                <div className="flex gap-1 p-1 bg-muted rounded-lg w-fit">
+                  <button
+                    onClick={() => setPermSubTab('funcao')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                      permSubTab === 'funcao' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <Briefcase className="h-3.5 w-3.5" />
+                    Por Função
+                  </button>
+                  <button
+                    onClick={() => setPermSubTab('usuario')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                      permSubTab === 'usuario' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <User className="h-3.5 w-3.5" />
+                    Por Usuário
+                  </button>
+                </div>
+
+                {/* === POR FUNÇÃO === */}
+                {permSubTab === 'funcao' && (
+                  <>
+                    {loadingFuncoes ? (
+                      <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+                    ) : funcoesSistema.length === 0 ? (
+                      <p className="text-center text-muted-foreground py-8">Crie funções do sistema primeiro na aba "Funções".</p>
+                    ) : (
+                      <ScrollArea className="w-full">
+                        <div className="rounded-lg border border-border overflow-hidden">
+                          <Table>
+                            <TableHeader>
+                              <TableRow className="bg-muted/60">
+                                <TableHead className="sticky left-0 bg-muted/60 z-10 min-w-[240px] text-foreground font-bold text-sm">
+                                  Módulo / Rota
                                 </TableHead>
-                              );
-                            })}
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {Object.entries(routesByModule).map(([module, routes]) => {
-                            return (
-                              <React.Fragment key={`mod-${module}`}>
-                                <TableRow className="bg-primary/5 border-t-2 border-border">
-                                  <TableCell className="sticky left-0 bg-primary/5 z-10 font-bold text-xs uppercase tracking-wider text-primary py-2.5">
-                                    📁 {module}
-                                  </TableCell>
-                                  {funcoesSistema.map(f => {
-                                    const allChecked = routes.every(r =>
-                                      (funcaoPermissoes || []).some(p => p.funcao_sistema_id === f.id && p.route_path === r.path && p.allowed)
-                                    );
-                                    const someChecked = routes.some(r =>
-                                      (funcaoPermissoes || []).some(p => p.funcao_sistema_id === f.id && p.route_path === r.path && p.allowed)
-                                    );
-                                    return (
-                                      <TableCell key={f.id} className="text-center py-2.5 bg-primary/5">
+                                {funcoesSistema.map(f => {
+                                  const totalAllowed = (funcaoPermissoes || []).filter(p => p.funcao_sistema_id === f.id && p.allowed).length;
+                                  const allChecked = totalAllowed === ALL_ROUTES.length;
+                                  const someChecked = totalAllowed > 0;
+                                  return (
+                                    <TableHead key={f.id} className="text-center min-w-[130px] bg-muted/60">
+                                      <div className="flex flex-col items-center gap-1.5 py-1">
+                                        <span className="text-xs font-bold text-foreground">{f.nome}</span>
+                                        <Badge variant={allChecked ? 'default' : someChecked ? 'secondary' : 'outline'} className="text-[10px] px-1.5 py-0">
+                                          {totalAllowed}/{ALL_ROUTES.length}
+                                        </Badge>
                                         <Checkbox
                                           checked={allChecked ? true : someChecked ? 'indeterminate' : false}
-                                          onCheckedChange={() => toggleAllModulePermissions.mutate({
-                                            funcaoId: f.id,
-                                            modulePaths: routes,
-                                            allChecked,
-                                          })}
+                                          onCheckedChange={() => toggleAllPermissions.mutate({ funcaoId: f.id, allChecked })}
                                           className="mx-auto"
                                         />
-                                      </TableCell>
-                                    );
-                                  })}
-                                </TableRow>
-                                {routes.map((route, idx) => (
-                                  <TableRow key={route.path} className={idx % 2 === 0 ? 'bg-background' : 'bg-muted/20'}>
-                                    <TableCell className={`sticky left-0 z-10 pl-8 ${idx % 2 === 0 ? 'bg-background' : 'bg-muted/20'}`}>
-                                      <div className="flex flex-col gap-0.5">
-                                        <span className="text-sm font-semibold text-foreground">{route.label}</span>
-                                        <span className="text-[11px] text-muted-foreground font-mono">{route.path}</span>
                                       </div>
+                                    </TableHead>
+                                  );
+                                })}
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {Object.entries(routesByModule).map(([module, routes]) => (
+                                <React.Fragment key={`mod-${module}`}>
+                                  <TableRow className="bg-primary/5 border-t-2 border-border">
+                                    <TableCell className="sticky left-0 bg-primary/5 z-10 font-bold text-xs uppercase tracking-wider text-primary py-2.5">
+                                      📁 {module}
                                     </TableCell>
                                     {funcoesSistema.map(f => {
-                                      const isAllowed = (funcaoPermissoes || []).some(
-                                        p => p.funcao_sistema_id === f.id && p.route_path === route.path && p.allowed
+                                      const allChecked = routes.every(r =>
+                                        (funcaoPermissoes || []).some(p => p.funcao_sistema_id === f.id && p.route_path === r.path && p.allowed)
+                                      );
+                                      const someChecked = routes.some(r =>
+                                        (funcaoPermissoes || []).some(p => p.funcao_sistema_id === f.id && p.route_path === r.path && p.allowed)
                                       );
                                       return (
-                                        <TableCell key={f.id} className="text-center">
-                                          <div className={`inline-flex items-center justify-center w-8 h-8 rounded-md ${isAllowed ? 'bg-primary/10' : ''}`}>
-                                            <Checkbox
-                                              checked={isAllowed}
-                                              onCheckedChange={() => togglePermission.mutate({
-                                                funcaoId: f.id,
-                                                routePath: route.path,
-                                                module,
-                                                currentlyAllowed: isAllowed,
-                                              })}
-                                            />
-                                          </div>
+                                        <TableCell key={f.id} className="text-center py-2.5 bg-primary/5">
+                                          <Checkbox
+                                            checked={allChecked ? true : someChecked ? 'indeterminate' : false}
+                                            onCheckedChange={() => toggleAllModulePermissions.mutate({ funcaoId: f.id, modulePaths: routes, allChecked })}
+                                            className="mx-auto"
+                                          />
                                         </TableCell>
                                       );
                                     })}
                                   </TableRow>
-                                ))}
-                              </React.Fragment>
-                            );
-                          })}
-                        </TableBody>
-                      </Table>
+                                  {routes.map((route, idx) => (
+                                    <TableRow key={route.path} className={idx % 2 === 0 ? 'bg-background' : 'bg-muted/20'}>
+                                      <TableCell className={`sticky left-0 z-10 pl-8 ${idx % 2 === 0 ? 'bg-background' : 'bg-muted/20'}`}>
+                                        <div className="flex flex-col gap-0.5">
+                                          <span className="text-sm font-semibold text-foreground">{route.label}</span>
+                                          <span className="text-[11px] text-muted-foreground font-mono">{route.path}</span>
+                                        </div>
+                                      </TableCell>
+                                      {funcoesSistema.map(f => {
+                                        const isAllowed = (funcaoPermissoes || []).some(
+                                          p => p.funcao_sistema_id === f.id && p.route_path === route.path && p.allowed
+                                        );
+                                        return (
+                                          <TableCell key={f.id} className="text-center">
+                                            <div className={`inline-flex items-center justify-center w-8 h-8 rounded-md ${isAllowed ? 'bg-primary/10' : ''}`}>
+                                              <Checkbox
+                                                checked={isAllowed}
+                                                onCheckedChange={() => togglePermission.mutate({ funcaoId: f.id, routePath: route.path, module, currentlyAllowed: isAllowed })}
+                                              />
+                                            </div>
+                                          </TableCell>
+                                        );
+                                      })}
+                                    </TableRow>
+                                  ))}
+                                </React.Fragment>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                        <ScrollBar orientation="horizontal" />
+                      </ScrollArea>
+                    )}
+                  </>
+                )}
+
+                {/* === POR USUÁRIO === */}
+                {permSubTab === 'usuario' && (
+                  <>
+                    {/* User selector */}
+                    <div className="flex items-center gap-3">
+                      <Label className="text-sm font-medium whitespace-nowrap">Usuário:</Label>
+                      <Select value={permUserSelected || ''} onValueChange={setPermUserSelected}>
+                        <SelectTrigger className="w-full max-w-[350px]">
+                          <SelectValue placeholder="Selecione um usuário" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(users || []).map(u => (
+                            <SelectItem key={u.id} value={u.id}>
+                              {u.nome || u.email} {u.nome ? `(${u.email})` : ''}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
-                    <ScrollBar orientation="horizontal" />
-                  </ScrollArea>
+
+                    {!permUserSelected ? (
+                      <p className="text-center text-muted-foreground py-8">Selecione um usuário para gerenciar suas permissões individuais.</p>
+                    ) : (() => {
+                      const selectedUser = users?.find(u => u.id === permUserSelected);
+                      const userFuncNames = selectedUser?.funcoes_sistema
+                        .map((fid: string) => funcoesSistema.find(f => f.id === fid)?.nome)
+                        .filter(Boolean) || [];
+
+                      return (
+                        <div className="space-y-3">
+                          {/* User info */}
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <span>Funções herdadas:</span>
+                            {userFuncNames.length > 0 ? userFuncNames.map((name: string) => (
+                              <Badge key={name} variant="secondary" className="text-[10px]">{name}</Badge>
+                            )) : <span className="italic">Nenhuma</span>}
+                          </div>
+                          <div className="flex gap-4 text-[11px] text-muted-foreground">
+                            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-primary/20 inline-block" /> Herdado (função)</span>
+                            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-green-500/20 inline-block" /> Permitido (individual)</span>
+                            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-destructive/20 inline-block" /> Bloqueado (individual)</span>
+                          </div>
+
+                          <ScrollArea className="w-full">
+                            <div className="rounded-lg border border-border overflow-hidden">
+                              <Table>
+                                <TableHeader>
+                                  <TableRow className="bg-muted/60">
+                                    <TableHead className="min-w-[240px] text-foreground font-bold text-sm">Módulo / Rota</TableHead>
+                                    <TableHead className="text-center w-[100px]">Herdado</TableHead>
+                                    <TableHead className="text-center w-[160px]">Ação</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {Object.entries(routesByModule).map(([module, routes]) => (
+                                    <React.Fragment key={`umod-${module}`}>
+                                      <TableRow className="bg-primary/5 border-t-2 border-border">
+                                        <TableCell colSpan={3} className="font-bold text-xs uppercase tracking-wider text-primary py-2.5">
+                                          📁 {module}
+                                        </TableCell>
+                                      </TableRow>
+                                      {routes.map((route, idx) => {
+                                        const inherited = getUserInheritedPermission(permUserSelected, route.path);
+                                        const override = usuarioPermissoes.find(
+                                          (up: any) => up.user_id === permUserSelected && up.route_path === route.path
+                                        );
+                                        const hasOverride = !!override;
+                                        const overrideAllowed = override?.allowed;
+
+                                        // Determine effective state
+                                        let effectiveState: 'inherit' | 'allow' | 'block' = 'inherit';
+                                        if (hasOverride) {
+                                          effectiveState = overrideAllowed ? 'allow' : 'block';
+                                        }
+
+                                        const effectiveAccess = hasOverride ? overrideAllowed : inherited;
+
+                                        let rowBg = idx % 2 === 0 ? 'bg-background' : 'bg-muted/20';
+                                        if (effectiveState === 'allow') rowBg = 'bg-green-500/5';
+                                        if (effectiveState === 'block') rowBg = 'bg-destructive/5';
+
+                                        return (
+                                          <TableRow key={route.path} className={rowBg}>
+                                            <TableCell>
+                                              <div className="flex flex-col gap-0.5 pl-4">
+                                                <span className="text-sm font-semibold text-foreground">{route.label}</span>
+                                                <span className="text-[11px] text-muted-foreground font-mono">{route.path}</span>
+                                              </div>
+                                            </TableCell>
+                                            <TableCell className="text-center">
+                                              <Badge variant={inherited ? 'default' : 'outline'} className="text-[10px]">
+                                                {inherited ? '✓ Sim' : '✗ Não'}
+                                              </Badge>
+                                            </TableCell>
+                                            <TableCell className="text-center">
+                                              <div className="flex gap-1 justify-center">
+                                                <button
+                                                  onClick={() => toggleUserPermission.mutate({ userId: permUserSelected, routePath: route.path, module, action: 'inherit' })}
+                                                  className={`px-2 py-1 rounded text-[10px] font-medium transition-colors border ${
+                                                    effectiveState === 'inherit'
+                                                      ? 'bg-muted text-foreground border-border'
+                                                      : 'bg-transparent text-muted-foreground border-transparent hover:border-border'
+                                                  }`}
+                                                >
+                                                  Herdar
+                                                </button>
+                                                <button
+                                                  onClick={() => toggleUserPermission.mutate({ userId: permUserSelected, routePath: route.path, module, action: 'allow' })}
+                                                  className={`px-2 py-1 rounded text-[10px] font-medium transition-colors border ${
+                                                    effectiveState === 'allow'
+                                                      ? 'bg-green-500/20 text-green-700 border-green-500/30'
+                                                      : 'bg-transparent text-muted-foreground border-transparent hover:border-border'
+                                                  }`}
+                                                >
+                                                  Permitir
+                                                </button>
+                                                <button
+                                                  onClick={() => toggleUserPermission.mutate({ userId: permUserSelected, routePath: route.path, module, action: 'block' })}
+                                                  className={`px-2 py-1 rounded text-[10px] font-medium transition-colors border ${
+                                                    effectiveState === 'block'
+                                                      ? 'bg-destructive/20 text-destructive border-destructive/30'
+                                                      : 'bg-transparent text-muted-foreground border-transparent hover:border-border'
+                                                  }`}
+                                                >
+                                                  Bloquear
+                                                </button>
+                                              </div>
+                                            </TableCell>
+                                          </TableRow>
+                                        );
+                                      })}
+                                    </React.Fragment>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </div>
+                            <ScrollBar orientation="horizontal" />
+                          </ScrollArea>
+                        </div>
+                      );
+                    })()}
+                  </>
                 )}
               </CardContent>
             </Card>
