@@ -264,6 +264,7 @@ export type Database = {
           estado: string | null
           id: string
           nome: string
+          responsavel: string | null
           telefone: string | null
         }
         Insert: {
@@ -276,6 +277,7 @@ export type Database = {
           estado?: string | null
           id?: string
           nome: string
+          responsavel?: string | null
           telefone?: string | null
         }
         Update: {
@@ -288,6 +290,7 @@ export type Database = {
           estado?: string | null
           id?: string
           nome?: string
+          responsavel?: string | null
           telefone?: string | null
         }
         Relationships: []
