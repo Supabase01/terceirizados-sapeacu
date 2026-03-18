@@ -129,7 +129,10 @@ const CadastroColaboradores = () => {
       secretaria_id: item.secretaria_id || '',
       funcao_id: item.funcao_id || '',
       lotacao_id: item.lotacao_id || '',
-      salario_base: String(item.salario_base || ''),
+      salario_bruto: String(item.salario_bruto || ''),
+      encargo: String(item.encargo || ''),
+      adicionais: String(item.adicionais || ''),
+      salario_liquido: String(item.salario_liquido || ''),
       data_admissao: item.data_admissao || '',
     });
     setDialogOpen(true);
