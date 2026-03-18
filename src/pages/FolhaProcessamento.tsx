@@ -192,6 +192,7 @@ const FolhaProcessamento = () => {
   // Finalize (process) the draft
   const finalizeMutation = useMutation({
     mutationFn: async () => {
+      // 1. Mark as processed
       const { error } = await supabase
         .from('folha_processamento')
         .update({ status: 'processado', updated_at: new Date().toISOString() })
@@ -200,11 +201,59 @@ const FolhaProcessamento = () => {
         .eq('status', 'rascunho')
         .eq('unidade_id', unidadeId!);
       if (error) throw error;
+
+      // 2. Get unit name for prefeitura field
+      const { data: unidade } = await supabase
+        .from('unidades_folha')
+        .select('nome')
+        .eq('id', unidadeId!)
+        .single();
+      const prefeituraName = unidade?.nome || '';
+
+      // 3. Delete previous payroll_records for same period/unit
+      await supabase
+        .from('payroll_records')
+        .delete()
+        .eq('mes', mes)
+        .eq('ano', ano)
+        .eq('unidade_id', unidadeId!);
+
+      // 4. Load processed records and insert into payroll_records
+      const { data: processed } = await supabase
+        .from('folha_processamento')
+        .select('*')
+        .eq('mes', mes)
+        .eq('ano', ano)
+        .eq('status', 'processado')
+        .eq('unidade_id', unidadeId!);
+
+      if (processed && processed.length > 0) {
+        const payrollRows = processed.map((r: any) => ({
+          nome: r.nome,
+          cpf: r.cpf,
+          funcao: r.funcao || '',
+          pasta: r.secretaria || '',
+          prefeitura: prefeituraName,
+          bruto: r.bruto,
+          liquido: r.liquido,
+          mes: r.mes,
+          ano: r.ano,
+          unidade_id: r.unidade_id,
+        }));
+
+        const BATCH = 500;
+        for (let i = 0; i < payrollRows.length; i += BATCH) {
+          const batch = payrollRows.slice(i, i + BATCH);
+          const { error: insErr } = await supabase.from('payroll_records').insert(batch);
+          if (insErr) throw insErr;
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['folha-processamento'] });
+      queryClient.invalidateQueries({ queryKey: ['payroll-records'] });
       setConfirmDialogOpen(false);
-      toast({ title: 'Folha processada', description: `Folha de ${getMonthLabel(mes)}/${ano} finalizada com sucesso.` });
+      toast({ title: 'Folha processada', description: `Folha de ${getMonthLabel(mes)}/${ano} finalizada e registros enviados para relatórios.` });
     },
     onError: (err: any) => {
       toast({ title: 'Erro ao processar', description: err.message, variant: 'destructive' });
