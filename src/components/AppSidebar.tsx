@@ -19,6 +19,7 @@ const modules = [
     icon: Settings,
     items: [
       { title: 'Configurações', url: '/admin/config', icon: Settings },
+      { title: 'Prefeituras', url: '/admin/prefeituras', icon: Landmark },
     ],
   },
   {
