@@ -1,57 +1,58 @@
 
 
-# Integrar Folha Processada nos Relatoios e Alertas
+# Reestruturar Indicadores com abas e mover Comparativo para Relatorios
 
-## Situacao atual
+## Resumo
 
-- **Relatorios** e **Alertas** consomem dados exclusivamente da tabela `payroll_records` (via `usePayrollData`)
-- `payroll_records` e alimentada apenas por importacao de Excel
-- `folha_processamento` tem dados calculados (base + adicionais - descontos) mas nao alimenta nenhum relatorio
-- O campo `pasta` em `payroll_records` equivale a `secretaria` em `folha_processamento`
-- `payroll_records` nao tem campos como `salario_base`, `total_adicionais`, `total_descontos`
+1. **Indicadores** ganha duas abas: "Gerais" (conteudo atual) e "Mensais" (indicadores graficos por periodo com filtro de mes)
+2. **Relatorios** mantem as 3 abas tabulares atuais e ganha uma 4a aba "Comparativo" (conteudo atual da pagina Comparativo)
+3. Remover a rota e o item de menu do Comparativo separado
 
-## Decisoes necessarias
+---
 
-Existem duas abordagens possiveis:
+## Mudancas detalhadas
 
-### Opcao A — Inserir em `payroll_records` ao processar
+### 1. Indicadores.tsx - Adicionar Tabs (Gerais + Mensais)
 
-Quando a folha e finalizada (status "processado"), copiar os registros para `payroll_records` mapeando:
-- `secretaria` → `pasta`
-- `unidade_nome` → `prefeitura`
-- Demais campos ja existem (nome, cpf, funcao, bruto, liquido, mes, ano)
+Envolver o conteudo existente do componente `Dashboard` em uma aba "Gerais" e criar uma aba "Mensais" com:
 
-**Vantagens**: Zero alteracao em Relatorios/Alertas/Indicadores — tudo funciona automaticamente.
-**Desvantagens**: Dados duplicados entre tabelas; precisa de logica para evitar duplicatas ao reprocessar.
+- **Filtro de periodo** (mes/ano) via Select
+- **4 KPI cards**: Folha Bruta, Folha Liquida, Colaboradores, Salario Medio (com variacao % vs periodo anterior)
+- **Grafico de pizza**: Liquido vs Descontos
+- **Grafico de barras**: Faixas salariais (ate 1.500, 1.500-3.000, 3.000-5.000, 5.000-10.000, acima de 10.000)
+- **Grafico de barras horizontal**: Top 10 funcoes por custo
+- **Ranking de custo por Secretaria** com barras de progresso visuais
+- **Resumo de auditoria** por severidade (alta, media, baixa) usando as funcoes de `auditChecks.ts`
 
-### Opcao B — Unificar leitura no `usePayrollData`
+O componente sera renomeado de `Dashboard` para `Indicadores`.
 
-Alterar o hook para buscar de ambas as tabelas e mesclar os resultados, normalizando os campos.
+### 2. Relatorios.tsx - Adicionar aba Comparativo
 
-**Vantagens**: Sem duplicacao de dados.
-**Desvantagens**: Mais complexo; precisa adaptar filtros e campos em varios componentes; performance de duas queries.
+Manter as 3 abas atuais (Por Secretaria, Por Funcao, Top Salarios) e adicionar uma 4a aba:
 
-### Opcao C — Substituir `payroll_records` por `folha_processamento`
+- **"Comparativo"**: Todo o conteudo atual de `Comparativo.tsx` (selecao de pares de meses consecutivos, filtro por tipo de variacao, busca por nome/CPF, tabela paginada com variacao nominal e percentual, exportacao PDF/Excel)
 
-Migrar completamente para usar apenas `folha_processamento` como fonte de dados, eliminando a importacao Excel.
+### 3. Navegacao e rotas
 
-**Vantagens**: Arquitetura mais limpa a longo prazo.
-**Desvantagens**: Perde o historico importado; mudanca grande.
+- **App.tsx**: Remover a rota `/comparativo` e o import do Comparativo
+- **Layout.tsx**: Remover o item "Comparativo" (icone ArrowLeftRight) do menu de navegacao
+- **PinAccess.tsx**: Sem alteracoes (ja redireciona para `/indicadores`)
 
-## Recomendacao
+---
 
-**Opcao A** e a mais pragmatica. Ao clicar "Processar" na folha:
+## Arquivos modificados
 
-1. Buscar o nome da unidade para preencher `prefeitura`
-2. Inserir em `payroll_records` com `pasta = secretaria`
-3. Antes de inserir, deletar registros anteriores do mesmo mes/ano/unidade para permitir reprocessamento
-4. Relatorios, Alertas e Indicadores funcionam sem nenhuma alteracao
-
-### Mudancas tecnicas
-
-| Arquivo | Alteracao |
+| Arquivo | Acao |
 |---|---|
-| `src/pages/FolhaProcessamento.tsx` | Na `finalizeMutation`: apos marcar como processado, inserir registros em `payroll_records` (deletando anteriores do mesmo periodo/unidade) |
-| `src/types/payroll.ts` | Nenhuma (campos ja compatíveis) |
-| Relatorios/Alertas/Indicadores | Nenhuma alteracao |
+| `src/pages/Indicadores.tsx` | Reescrever com Tabs: aba Gerais (conteudo atual) + aba Mensais (KPIs + graficos mensais) |
+| `src/pages/Relatorios.tsx` | Adicionar 4a aba "Comparativo" com logica vinda de Comparativo.tsx |
+| `src/App.tsx` | Remover rota `/comparativo` e import |
+| `src/components/Layout.tsx` | Remover item Comparativo do menu |
+
+### Componentes reutilizados
+- `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent` do Radix
+- `recharts` (PieChart, BarChart, ResponsiveContainer) para graficos na aba Mensais
+- `runAllChecks` de `@/lib/auditChecks` para resumo de auditoria
+- `exportToPDF`, `exportToExcel` de `@/lib/exportUtils` para o comparativo
+- `Table` components para o comparativo
 
