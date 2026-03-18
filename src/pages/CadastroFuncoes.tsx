@@ -86,9 +86,9 @@ const CadastroFuncoes = () => {
               </TableHeader>
               <TableBody>
                 {isLoading ? (
-                  <TableRow><TableCell colSpan={3} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
-                ) : filtered.length === 0 ? (
-                  <TableRow><TableCell colSpan={3} className="text-center py-8 text-muted-foreground">Nenhuma função encontrada</TableCell></TableRow>
+                   <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
+                 ) : filtered.length === 0 ? (
+                   <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">Nenhuma função encontrada</TableCell></TableRow>
                 ) : (
                   filtered.map((item: any) => (
                     <TableRow key={item.id}>
