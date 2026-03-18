@@ -179,16 +179,19 @@ const CadastroColaboradores = () => {
                     <TableHead className="hidden md:table-cell">Secretaria</TableHead>
                     <TableHead className="hidden md:table-cell">Função</TableHead>
                     <TableHead className="hidden lg:table-cell">Lotação</TableHead>
-                    <TableHead className="hidden lg:table-cell">Salário Base</TableHead>
+                    <TableHead className="hidden lg:table-cell text-right">Sal. Bruto</TableHead>
+                    <TableHead className="hidden lg:table-cell text-right">Encargo</TableHead>
+                    <TableHead className="hidden xl:table-cell text-right">Adicionais</TableHead>
+                    <TableHead className="hidden xl:table-cell text-right">Sal. Líquido</TableHead>
                     <TableHead className="w-24">Status</TableHead>
                     <TableHead className="w-28">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
-                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={11} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
                   ) : filtered.length === 0 ? (
-                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Nenhum colaborador encontrado</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={11} className="text-center py-8 text-muted-foreground">Nenhum colaborador encontrado</TableCell></TableRow>
                   ) : (
                     filtered.map((item: any) => (
                       <TableRow key={item.id}>
@@ -197,7 +200,10 @@ const CadastroColaboradores = () => {
                         <TableCell className="hidden md:table-cell">{(item.secretarias as any)?.nome || '—'}</TableCell>
                         <TableCell className="hidden md:table-cell">{(item.funcoes as any)?.nome || '—'}</TableCell>
                         <TableCell className="hidden lg:table-cell">{(item.lotacoes as any)?.nome || '—'}</TableCell>
-                        <TableCell className="hidden lg:table-cell">{formatCurrency(item.salario_base)}</TableCell>
+                        <TableCell className="hidden lg:table-cell text-right">{formatCurrency(item.salario_bruto)}</TableCell>
+                        <TableCell className="hidden lg:table-cell text-right">{formatCurrency(item.encargo)}</TableCell>
+                        <TableCell className="hidden xl:table-cell text-right">{formatCurrency(item.adicionais)}</TableCell>
+                        <TableCell className="hidden xl:table-cell text-right">{formatCurrency(item.salario_liquido)}</TableCell>
                         <TableCell><Badge variant={item.ativo ? 'default' : 'secondary'}>{item.ativo ? 'Ativo' : 'Inativo'}</Badge></TableCell>
                         <TableCell>
                           <div className="flex gap-1">
