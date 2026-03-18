@@ -265,6 +265,10 @@ export type Database = {
           id: string
           nome: string
           responsavel: string | null
+          responsavel_cargo: string | null
+          responsavel_cpf: string | null
+          responsavel_email: string | null
+          responsavel_telefone: string | null
           telefone: string | null
         }
         Insert: {
@@ -278,6 +282,10 @@ export type Database = {
           id?: string
           nome: string
           responsavel?: string | null
+          responsavel_cargo?: string | null
+          responsavel_cpf?: string | null
+          responsavel_email?: string | null
+          responsavel_telefone?: string | null
           telefone?: string | null
         }
         Update: {
@@ -291,6 +299,10 @@ export type Database = {
           id?: string
           nome?: string
           responsavel?: string | null
+          responsavel_cargo?: string | null
+          responsavel_cpf?: string | null
+          responsavel_email?: string | null
+          responsavel_telefone?: string | null
           telefone?: string | null
         }
         Relationships: []
@@ -376,6 +388,10 @@ export type Database = {
           id: string
           nome: string
           responsavel: string | null
+          responsavel_cargo: string | null
+          responsavel_cpf: string | null
+          responsavel_email: string | null
+          responsavel_telefone: string | null
           telefone: string | null
           tipo: string | null
         }
@@ -390,6 +406,10 @@ export type Database = {
           id?: string
           nome: string
           responsavel?: string | null
+          responsavel_cargo?: string | null
+          responsavel_cpf?: string | null
+          responsavel_email?: string | null
+          responsavel_telefone?: string | null
           telefone?: string | null
           tipo?: string | null
         }
@@ -404,6 +424,10 @@ export type Database = {
           id?: string
           nome?: string
           responsavel?: string | null
+          responsavel_cargo?: string | null
+          responsavel_cpf?: string | null
+          responsavel_email?: string | null
+          responsavel_telefone?: string | null
           telefone?: string | null
           tipo?: string | null
         }
