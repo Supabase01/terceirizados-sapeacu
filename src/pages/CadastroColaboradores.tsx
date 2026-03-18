@@ -27,11 +27,18 @@ interface ColaboradorForm {
   banco: string;
   conta: string;
   pix: string;
+  endereco: string;
+  numero: string;
+  complemento: string;
+  bairro: string;
+  cidade_id: string;
+  cep: string;
 }
 
 const emptyForm: ColaboradorForm = {
   nome: '', cpf: '', matricula: '', secretaria_id: '', funcao_id: '', lotacao_id: '',
   salario_base: '', data_admissao: '', beneficio_social: false, banco: '', conta: '', pix: '',
+  endereco: '', numero: '', complemento: '', bairro: '', cidade_id: '', cep: '',
 };
 
 const CadastroColaboradores = () => {
@@ -47,7 +54,7 @@ const CadastroColaboradores = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('colaboradores')
-        .select('*, secretarias(nome), funcoes(nome), lotacoes(nome)')
+        .select('*, secretarias(nome), funcoes(nome), lotacoes(nome), cidades(nome, estado)')
         .order('nome');
       if (error) throw error;
       return data;
@@ -81,9 +88,18 @@ const CadastroColaboradores = () => {
     },
   });
 
+  const { data: cidades = [] } = useQuery({
+    queryKey: ['cidades-ativas'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('cidades').select('*').eq('ativo', true).order('nome');
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const payload = {
+      const payload: any = {
         nome: form.nome,
         cpf: form.cpf,
         matricula: form.matricula || null,
@@ -96,6 +112,12 @@ const CadastroColaboradores = () => {
         banco: form.banco || null,
         conta: form.conta || null,
         pix: form.pix || null,
+        endereco: form.endereco || null,
+        numero: form.numero || null,
+        complemento: form.complemento || null,
+        bairro: form.bairro || null,
+        cidade_id: form.cidade_id || null,
+        cep: form.cep || null,
       };
       if (editId) {
         const { error } = await supabase.from('colaboradores').update(payload).eq('id', editId);
@@ -138,6 +160,12 @@ const CadastroColaboradores = () => {
       banco: item.banco || '',
       conta: item.conta || '',
       pix: item.pix || '',
+      endereco: item.endereco || '',
+      numero: item.numero || '',
+      complemento: item.complemento || '',
+      bairro: item.bairro || '',
+      cidade_id: item.cidade_id || '',
+      cep: item.cep || '',
     });
     setDialogOpen(true);
   };
@@ -158,6 +186,12 @@ const CadastroColaboradores = () => {
 
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+
+  const formatCEP = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 8);
+    if (digits.length > 5) return digits.replace(/(\d{5})(\d)/, '$1-$2');
+    return digits;
+  };
 
   return (
     <Layout>
@@ -234,9 +268,10 @@ const CadastroColaboradores = () => {
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={(open) => !open && closeDialog()}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editId ? 'Editar Colaborador' : 'Novo Colaborador'}</DialogTitle></DialogHeader>
           <div className="grid gap-4 py-2">
+            {/* Dados Pessoais */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2 md:col-span-2">
                 <Label>Nome *</Label>
@@ -252,6 +287,7 @@ const CadastroColaboradores = () => {
               </div>
             </div>
 
+            {/* Vínculo */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Secretaria</Label>
@@ -294,6 +330,43 @@ const CadastroColaboradores = () => {
               </div>
             </div>
 
+            {/* Endereço */}
+            <div className="border-t pt-4 mt-2">
+              <h3 className="text-sm font-semibold text-muted-foreground mb-3">Endereço</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>CEP</Label>
+                  <Input placeholder="00000-000" value={form.cep} onChange={(e) => updateField('cep', formatCEP(e.target.value))} />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Logradouro</Label>
+                  <Input placeholder="Rua, Avenida..." value={form.endereco} onChange={(e) => updateField('endereco', e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Número</Label>
+                  <Input placeholder="Nº" value={form.numero} onChange={(e) => updateField('numero', e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Complemento</Label>
+                  <Input placeholder="Apto, Bloco..." value={form.complemento} onChange={(e) => updateField('complemento', e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Bairro</Label>
+                  <Input placeholder="Bairro" value={form.bairro} onChange={(e) => updateField('bairro', e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Cidade</Label>
+                  <Select value={form.cidade_id} onValueChange={(v) => updateField('cidade_id', v)}>
+                    <SelectTrigger><SelectValue placeholder="Selecione a cidade" /></SelectTrigger>
+                    <SelectContent>
+                      {cidades.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nome} - {c.estado}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            {/* Dados Bancários */}
             <div className="border-t pt-4 mt-2">
               <h3 className="text-sm font-semibold text-muted-foreground mb-3">Dados Bancários</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

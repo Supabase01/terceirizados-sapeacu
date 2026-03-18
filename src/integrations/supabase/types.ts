@@ -142,56 +142,81 @@ export type Database = {
       colaboradores: {
         Row: {
           ativo: boolean
+          bairro: string | null
           banco: string | null
           beneficio_social: boolean
+          cep: string | null
+          cidade_id: string | null
+          complemento: string | null
           conta: string | null
           cpf: string
           created_at: string
           data_admissao: string | null
+          endereco: string | null
           funcao_id: string | null
           id: string
           lotacao_id: string | null
           matricula: string | null
           nome: string
+          numero: string | null
           pix: string | null
           salario_base: number
           secretaria_id: string | null
         }
         Insert: {
           ativo?: boolean
+          bairro?: string | null
           banco?: string | null
           beneficio_social?: boolean
+          cep?: string | null
+          cidade_id?: string | null
+          complemento?: string | null
           conta?: string | null
           cpf: string
           created_at?: string
           data_admissao?: string | null
+          endereco?: string | null
           funcao_id?: string | null
           id?: string
           lotacao_id?: string | null
           matricula?: string | null
           nome: string
+          numero?: string | null
           pix?: string | null
           salario_base?: number
           secretaria_id?: string | null
         }
         Update: {
           ativo?: boolean
+          bairro?: string | null
           banco?: string | null
           beneficio_social?: boolean
+          cep?: string | null
+          cidade_id?: string | null
+          complemento?: string | null
           conta?: string | null
           cpf?: string
           created_at?: string
           data_admissao?: string | null
+          endereco?: string | null
           funcao_id?: string | null
           id?: string
           lotacao_id?: string | null
           matricula?: string | null
           nome?: string
+          numero?: string | null
           pix?: string | null
           salario_base?: number
           secretaria_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "colaboradores_cidade_id_fkey"
+            columns: ["cidade_id"]
+            isOneToOne: false
+            referencedRelation: "cidades"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "colaboradores_funcao_id_fkey"
             columns: ["funcao_id"]
