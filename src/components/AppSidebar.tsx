@@ -24,11 +24,17 @@ const modules = [
     ],
   },
   {
+    label: 'Importação',
+    icon: Upload,
+    items: [
+      { title: 'Importar', url: '/import', icon: Upload },
+    ],
+  },
+  {
     label: 'Folha de Pagamentos',
     icon: FileText,
     items: [
       { title: 'Indicadores', url: '/indicadores', icon: BarChart3 },
-      { title: 'Importar', url: '/import', icon: Upload },
       { title: 'Em Processamento', url: '/folha/processamento', icon: ClipboardList },
       { title: 'Adicionais', url: '/folha/adicionais', icon: PlusCircle },
       { title: 'Descontos', url: '/folha/descontos', icon: MinusCircle },
