@@ -67,6 +67,10 @@ const AdminConfig = () => {
   const [unidadeDialogUserId, setUnidadeDialogUserId] = useState<string | null>(null);
   const [unidadeDialogSelected, setUnidadeDialogSelected] = useState<Set<string>>(new Set());
 
+  // Dialog for linking funções to a user
+  const [funcaoDialogUserId, setFuncaoDialogUserId] = useState<string | null>(null);
+  const [funcaoDialogSelected, setFuncaoDialogSelected] = useState<Set<string>>(new Set());
+
   // --- Queries ---
   const { data: users, isLoading: loadingUsers } = useQuery({
     queryKey: ['admin-users'],
