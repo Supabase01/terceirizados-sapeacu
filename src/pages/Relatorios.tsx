@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { usePayrollData } from '@/hooks/usePayrollData';
 import { formatCurrency, formatNumber, getMonthName, getMonthShort } from '@/lib/formatters';
-import { exportToPDF, exportToExcel } from '@/lib/exportUtils';
+import { exportToPDF, exportToExcel, exportContracheque } from '@/lib/exportUtils';
 import type { DashboardFilters } from '@/types/payroll';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { FileText, FileSpreadsheet, Download, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { FileText, FileSpreadsheet, Download, Search, ChevronLeft, ChevronRight, Receipt } from 'lucide-react';
 
 // =================== DETALHAMENTO TAB ===================
 const DETAIL_PAGE_SIZE = 15;
@@ -157,6 +157,142 @@ const TabDetalhamento = ({ records }: { records: any[] }) => {
           </Table>
         </CardContent>
       </Card>
+    </>
+  );
+};
+
+// =================== CONTRACHEQUE TAB ===================
+const CHEQUE_PAGE_SIZE = 10;
+
+const TabContracheque = ({ records }: { records: any[] }) => {
+  const [filters, setFilters] = useState<DashboardFilters>({ ano: null, mes: null, pasta: null, search: '' });
+  const [page, setPage] = useState(0);
+
+  const anos = useMemo(() => [...new Set(records.map(r => r.ano))].sort(), [records]);
+  const meses = useMemo(() => [...new Set(records.map(r => r.mes))].sort((a, b) => a - b), [records]);
+  const pastas = useMemo(() => [...new Set(records.map(r => r.pasta))].sort(), [records]);
+
+  const filtered = useMemo(() => {
+    return records.filter(r => {
+      if (filters.ano && r.ano !== filters.ano) return false;
+      if (filters.mes && r.mes !== filters.mes) return false;
+      if (filters.pasta && r.pasta !== filters.pasta) return false;
+      if (filters.search) {
+        const s = filters.search.toLowerCase();
+        if (!r.nome.toLowerCase().includes(s) && !r.cpf.includes(s)) return false;
+      }
+      return true;
+    });
+  }, [records, filters]);
+
+  const paged = filtered.slice(page * CHEQUE_PAGE_SIZE, (page + 1) * CHEQUE_PAGE_SIZE);
+  const totalPages = Math.ceil(filtered.length / CHEQUE_PAGE_SIZE);
+
+  return (
+    <>
+      {/* Filters */}
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <Select value={filters.ano?.toString() || 'all'} onValueChange={v => { setFilters(f => ({ ...f, ano: v === 'all' ? null : Number(v) })); setPage(0); }}>
+          <SelectTrigger className="w-32"><SelectValue placeholder="Ano" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            {anos.map(a => <SelectItem key={a} value={a.toString()}>{a}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={filters.mes?.toString() || 'all'} onValueChange={v => { setFilters(f => ({ ...f, mes: v === 'all' ? null : Number(v) })); setPage(0); }}>
+          <SelectTrigger className="w-36"><SelectValue placeholder="Mês" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            {meses.map(m => <SelectItem key={m} value={m.toString()}>{getMonthShort(m)}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={filters.pasta || 'all'} onValueChange={v => { setFilters(f => ({ ...f, pasta: v === 'all' ? null : v })); setPage(0); }}>
+          <SelectTrigger className="w-48"><SelectValue placeholder="Pasta" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas</SelectItem>
+            {pastas.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input placeholder="Buscar por nome ou CPF..." value={filters.search} onChange={e => { setFilters(f => ({ ...f, search: e.target.value })); setPage(0); }} className="pl-10" />
+        </div>
+      </div>
+
+      {/* Cards grid */}
+      {filtered.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+            <Receipt className="h-10 w-10 mb-2" />
+            <p>Nenhum registro encontrado.</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 mb-4">
+            {paged.map((r, i) => {
+              const descontos = r.bruto - r.liquido;
+              return (
+                <Card key={r.id || i} className="overflow-hidden">
+                  <div className="bg-primary px-4 py-2.5 flex items-center justify-between">
+                    <span className="text-primary-foreground font-semibold text-sm truncate">{r.nome}</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-primary-foreground hover:bg-primary-foreground/20"
+                      onClick={() => exportContracheque(r)}
+                    >
+                      <Download className="h-3.5 w-3.5 mr-1" /> PDF
+                    </Button>
+                  </div>
+                  <CardContent className="p-4 space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">CPF</span>
+                      <span className="font-mono text-xs">{r.cpf}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Função</span>
+                      <span className="text-right truncate ml-2">{r.funcao}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Secretaria</span>
+                      <span className="text-right truncate ml-2">{r.pasta}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Competência</span>
+                      <span>{getMonthShort(r.mes)}/{r.ano}</span>
+                    </div>
+                    <hr className="border-border" />
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Bruto</span>
+                      <span className="font-medium">{formatCurrency(r.bruto)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Descontos</span>
+                      <span className="text-destructive">({formatCurrency(descontos)})</span>
+                    </div>
+                    <div className="flex justify-between items-center bg-muted/50 -mx-4 px-4 py-2 mt-1">
+                      <span className="font-semibold">Líquido</span>
+                      <span className="font-bold text-primary text-base">{formatCurrency(r.liquido)}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* Pagination */}
+          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+            <Button variant="outline" size="icon" className="h-8 w-8" disabled={page === 0} onClick={() => setPage(p => p - 1)}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span>Página {page + 1} de {totalPages || 1}</span>
+            <Button variant="outline" size="icon" className="h-8 w-8" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </>
+      )}
     </>
   );
 };
@@ -319,6 +455,7 @@ const Relatorios = () => {
         <div className="overflow-x-auto scrollbar-hide -mx-3 px-3 md:mx-0 md:px-0 mb-4">
           <TabsList className="w-max sm:w-auto inline-flex">
             <TabsTrigger value="detalhamento" className="text-xs md:text-sm px-2.5 md:px-3">Detalhamento</TabsTrigger>
+            <TabsTrigger value="contracheque" className="text-xs md:text-sm px-2.5 md:px-3">Contracheque</TabsTrigger>
             <TabsTrigger value="secretaria" className="text-xs md:text-sm px-2.5 md:px-3">Secretaria</TabsTrigger>
             <TabsTrigger value="funcao" className="text-xs md:text-sm px-2.5 md:px-3">Função</TabsTrigger>
           </TabsList>
@@ -327,6 +464,11 @@ const Relatorios = () => {
         {/* DETALHAMENTO */}
         <TabsContent value="detalhamento">
           <TabDetalhamento records={records} />
+        </TabsContent>
+
+        {/* CONTRACHEQUE */}
+        <TabsContent value="contracheque">
+          <TabContracheque records={records} />
         </TabsContent>
 
         {/* POR SECRETARIA */}
