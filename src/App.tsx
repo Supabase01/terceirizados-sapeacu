@@ -18,8 +18,7 @@ import CadastroSecretarias from "./pages/CadastroSecretarias";
 import CadastroFuncoes from "./pages/CadastroFuncoes";
 import CadastroLotacoes from "./pages/CadastroLotacoes";
 import AdminConfig from "./pages/AdminConfig";
-import CadastroPrefeituras from "./pages/CadastroPrefeituras";
-import CadastroTerceirizadas from "./pages/CadastroTerceirizadas";
+import CadastroInstituicoes from "./pages/CadastroInstituicoes";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
