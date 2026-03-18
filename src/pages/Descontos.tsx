@@ -32,6 +32,7 @@ const emptyForm: DescontoForm = {
 const Descontos = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { unidadeId } = useUnidade();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<DescontoForm>(emptyForm);
@@ -39,29 +40,35 @@ const Descontos = () => {
   const [filterEscopo, setFilterEscopo] = useState<string>('todos');
 
   const { data: descontos = [], isLoading } = useQuery({
-    queryKey: ['descontos'],
+    queryKey: ['descontos', unidadeId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('descontos')
         .select('*, colaboradores(nome, cpf)')
         .order('created_at', { ascending: false });
+      if (unidadeId) query = query.eq('unidade_id', unidadeId);
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },
+    enabled: !!unidadeId,
   });
 
   const { data: colaboradores = [] } = useQuery({
-    queryKey: ['colaboradores-ativos'],
+    queryKey: ['colaboradores-ativos', unidadeId],
     queryFn: async () => {
-      const { data, error } = await supabase.from('colaboradores').select('id, nome, cpf').eq('ativo', true).order('nome');
+      let query = supabase.from('colaboradores').select('id, nome, cpf').eq('ativo', true).order('nome');
+      if (unidadeId) query = query.eq('unidade_id', unidadeId);
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },
+    enabled: !!unidadeId,
   });
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const payload = {
+      const payload: any = {
         colaborador_id: form.escopo === 'global' ? null : form.colaborador_id || null,
         descricao: form.descricao,
         valor: Number(form.valor) || 0,
@@ -69,6 +76,7 @@ const Descontos = () => {
         escopo: form.escopo,
         mes: form.mes ? Number(form.mes) : null,
         ano: form.ano ? Number(form.ano) : null,
+        unidade_id: unidadeId,
       };
       if (editId) {
         const { error } = await supabase.from('descontos').update(payload).eq('id', editId);

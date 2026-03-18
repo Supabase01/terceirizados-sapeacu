@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useUnidade } from '@/contexts/UnidadeContext';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,6 +29,7 @@ const getMonthLabel = (m: number) =>
 const FolhaProcessamento = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { unidadeId } = useUnidade();
   const [mes, setMes] = useState(defaultMes);
   const [ano, setAno] = useState(defaultAno);
   const [search, setSearch] = useState('');
@@ -36,17 +38,20 @@ const FolhaProcessamento = () => {
 
   // Fetch draft payroll for selected period
   const { data: folha = [], isLoading, refetch } = useQuery({
-    queryKey: ['folha-processamento', mes, ano],
+    queryKey: ['folha-processamento', mes, ano, unidadeId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('folha_processamento')
         .select('*')
         .eq('mes', mes)
         .eq('ano', ano)
         .order('nome', { ascending: true });
+      if (unidadeId) query = query.eq('unidade_id', unidadeId);
+      const { data, error } = await query;
       if (error) throw error;
       return data || [];
     },
+    enabled: !!unidadeId,
   });
 
   // Generate/regenerate draft
@@ -56,7 +61,8 @@ const FolhaProcessamento = () => {
       const { data: colaboradores, error: colErr } = await supabase
         .from('colaboradores')
         .select('*, secretarias(nome), funcoes(nome), lotacoes(nome)')
-        .eq('ativo', true);
+        .eq('ativo', true)
+        .eq('unidade_id', unidadeId!);
       if (colErr) throw colErr;
       if (!colaboradores?.length) throw new Error('Nenhum colaborador ativo encontrado.');
 
@@ -64,14 +70,16 @@ const FolhaProcessamento = () => {
       const { data: adicionais, error: addErr } = await supabase
         .from('adicionais')
         .select('*')
-        .eq('ativo', true);
+        .eq('ativo', true)
+        .eq('unidade_id', unidadeId!);
       if (addErr) throw addErr;
 
       // 3. Load descontos ativos
       const { data: descontos, error: descErr } = await supabase
         .from('descontos')
         .select('*')
-        .eq('ativo', true);
+        .eq('ativo', true)
+        .eq('unidade_id', unidadeId!);
       if (descErr) throw descErr;
 
       // Helper: check if adicional is valid for the period
@@ -149,6 +157,7 @@ const FolhaProcessamento = () => {
           mes,
           ano,
           status: 'rascunho',
+          unidade_id: unidadeId,
         };
       });
 
@@ -158,7 +167,8 @@ const FolhaProcessamento = () => {
         .delete()
         .eq('mes', mes)
         .eq('ano', ano)
-        .eq('status', 'rascunho');
+        .eq('status', 'rascunho')
+        .eq('unidade_id', unidadeId!);
 
       // Insert in batches
       const BATCH = 500;
@@ -187,7 +197,8 @@ const FolhaProcessamento = () => {
         .update({ status: 'processado', updated_at: new Date().toISOString() })
         .eq('mes', mes)
         .eq('ano', ano)
-        .eq('status', 'rascunho');
+        .eq('status', 'rascunho')
+        .eq('unidade_id', unidadeId!);
       if (error) throw error;
     },
     onSuccess: () => {

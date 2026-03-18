@@ -32,6 +32,7 @@ const emptyForm: AdicionalForm = {
 const Adicionais = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { unidadeId } = useUnidade();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<AdicionalForm>(emptyForm);
@@ -39,30 +40,36 @@ const Adicionais = () => {
   const [filterTipo, setFilterTipo] = useState<string>('todos');
 
   const { data: adicionais = [], isLoading } = useQuery({
-    queryKey: ['adicionais'],
+    queryKey: ['adicionais', unidadeId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('adicionais')
         .select('*, colaboradores(nome, cpf)')
         .order('created_at', { ascending: false });
+      if (unidadeId) query = query.eq('unidade_id', unidadeId);
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },
+    enabled: !!unidadeId,
   });
 
   const { data: colaboradores = [] } = useQuery({
-    queryKey: ['colaboradores-ativos'],
+    queryKey: ['colaboradores-ativos', unidadeId],
     queryFn: async () => {
-      const { data, error } = await supabase.from('colaboradores').select('id, nome, cpf').eq('ativo', true).order('nome');
+      let query = supabase.from('colaboradores').select('id, nome, cpf').eq('ativo', true).order('nome');
+      if (unidadeId) query = query.eq('unidade_id', unidadeId);
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },
+    enabled: !!unidadeId,
   });
 
   const saveMutation = useMutation({
     mutationFn: async () => {
       const isEventual = form.tipo === 'eventual';
-      const payload = {
+      const payload: any = {
         colaborador_id: form.colaborador_id,
         descricao: form.descricao,
         valor: Number(form.valor) || 0,
@@ -71,6 +78,7 @@ const Adicionais = () => {
         ano: isEventual && form.ano ? Number(form.ano) : null,
         mes_fim: isEventual && form.mes_fim ? Number(form.mes_fim) : null,
         ano_fim: isEventual && form.ano_fim ? Number(form.ano_fim) : null,
+        unidade_id: unidadeId,
       };
       if (editId) {
         const { error } = await supabase.from('adicionais').update(payload).eq('id', editId);
