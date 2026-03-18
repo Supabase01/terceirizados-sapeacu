@@ -79,6 +79,7 @@ const CadastroFuncoes = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome</TableHead>
+                  <TableHead>Atribuições</TableHead>
                   <TableHead className="w-24">Status</TableHead>
                   <TableHead className="w-28">Ações</TableHead>
                 </TableRow>
