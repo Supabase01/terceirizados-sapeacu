@@ -33,12 +33,13 @@ interface ColaboradorForm {
   bairro: string;
   cidade_id: string;
   cep: string;
+  lideranca_id: string;
 }
 
 const emptyForm: ColaboradorForm = {
   nome: '', cpf: '', matricula: '', secretaria_id: '', funcao_id: '', lotacao_id: '',
   salario_base: '', data_admissao: '', beneficio_social: false, banco: '', conta: '', pix: '',
-  endereco: '', numero: '', complemento: '', bairro: '', cidade_id: '', cep: '',
+  endereco: '', numero: '', complemento: '', bairro: '', cidade_id: '', cep: '', lideranca_id: '',
 };
 
 const CadastroColaboradores = () => {
@@ -97,6 +98,15 @@ const CadastroColaboradores = () => {
     },
   });
 
+  const { data: liderancas = [] } = useQuery({
+    queryKey: ['liderancas-ativas'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('liderancas').select('*').eq('ativo', true).order('nome');
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const saveMutation = useMutation({
     mutationFn: async () => {
       const payload: any = {
@@ -118,6 +128,7 @@ const CadastroColaboradores = () => {
         bairro: form.bairro || null,
         cidade_id: form.cidade_id || null,
         cep: form.cep || null,
+        lideranca_id: form.lideranca_id || null,
       };
       if (editId) {
         const { error } = await supabase.from('colaboradores').update(payload).eq('id', editId);
@@ -166,6 +177,7 @@ const CadastroColaboradores = () => {
       bairro: item.bairro || '',
       cidade_id: item.cidade_id || '',
       cep: item.cep || '',
+      lideranca_id: item.lideranca_id || '',
     });
     setDialogOpen(true);
   };
@@ -327,6 +339,15 @@ const CadastroColaboradores = () => {
               <div className="space-y-2 flex items-center gap-3 pt-6">
                 <Switch checked={form.beneficio_social} onCheckedChange={(v) => updateField('beneficio_social', v)} />
                 <Label>Benefício Social</Label>
+              </div>
+              <div className="space-y-2">
+                <Label>Indicação (Liderança)</Label>
+                <Select value={form.lideranca_id} onValueChange={(v) => updateField('lideranca_id', v)}>
+                  <SelectTrigger><SelectValue placeholder="Selecione a liderança" /></SelectTrigger>
+                  <SelectContent>
+                    {liderancas.map((l: any) => <SelectItem key={l.id} value={l.id}>{l.nome}{l.cargo ? ` — ${l.cargo}` : ''}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 

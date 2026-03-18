@@ -23,6 +23,7 @@ import AdminConfig from "./pages/AdminConfig";
 import CadastroInstituicoes from "./pages/CadastroInstituicoes";
 import CadastroUnidades from "./pages/CadastroUnidades";
 import CadastroCidades from "./pages/CadastroCidades";
+import CadastroLiderancas from "./pages/CadastroLiderancas";
 import FolhaProcessamento from "./pages/FolhaProcessamento";
 import AuditLog from "./pages/AuditLog";
 import NotFound from "./pages/NotFound";
@@ -91,6 +92,7 @@ const App = () => (
           <Route path="/admin/instituicoes" element={<ProtectedRoute><CadastroInstituicoes /></ProtectedRoute>} />
           <Route path="/admin/unidades" element={<ProtectedRoute><CadastroUnidades /></ProtectedRoute>} />
           <Route path="/admin/cidades" element={<ProtectedRoute><CadastroCidades /></ProtectedRoute>} />
+          <Route path="/admin/liderancas" element={<ProtectedRoute><CadastroLiderancas /></ProtectedRoute>} />
           <Route path="/indicadores" element={<ProtectedRoute><Indicadores /></ProtectedRoute>} />
           <Route path="/import" element={<ProtectedRoute><Import /></ProtectedRoute>} />
           <Route path="/alertas" element={<ProtectedRoute><Alertas /></ProtectedRoute>} />
