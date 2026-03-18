@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { usePayrollData } from '@/hooks/usePayrollData';
 import { formatCurrency, formatNumber, getMonthName, getMonthShort } from '@/lib/formatters';
-import { exportToPDF, exportToExcel } from '@/lib/exportUtils';
+import { exportToPDF, exportToExcel, exportContracheque } from '@/lib/exportUtils';
 import type { DashboardFilters } from '@/types/payroll';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
