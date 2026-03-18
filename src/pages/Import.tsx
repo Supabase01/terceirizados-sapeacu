@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const BATCH_SIZE = 500;
 
-const TEMPLATE_HEADERS = ['PREFEITURA', 'PASTA', 'ANO', 'MÊS', 'NOME', 'FUNÇÃO', 'CPF', 'SALÁRIO BASE', 'ADICIONAIS', 'DESCONTOS', 'BRUTO', 'LÍQUIDO'];
+const TEMPLATE_HEADERS = ['PREFEITURA', 'SECRETARIA', 'LOTAÇÃO', 'ANO', 'MÊS', 'NOME', 'FUNÇÃO', 'CPF', 'SALÁRIO BASE', 'ADICIONAIS', 'DESCONTOS', 'BRUTO', 'LÍQUIDO'];
 
 const handleDownloadTemplate = () => {
   const ws = XLSX.utils.aoa_to_sheet([TEMPLATE_HEADERS]);
@@ -103,8 +103,8 @@ const Import = () => {
           nome: colab.nome,
           cpf: cpfClean,
           funcao: colab.funcao_id ? funcaoMap.get(colab.funcao_id) || row.funcao : row.funcao,
-          secretaria: colab.secretaria_id ? secretariaMap.get(colab.secretaria_id) || row.pasta : row.pasta,
-          lotacao: colab.lotacao_id ? lotacaoMap.get(colab.lotacao_id) || '' : '',
+          secretaria: colab.secretaria_id ? secretariaMap.get(colab.secretaria_id) || row.secretaria : row.secretaria,
+          lotacao: colab.lotacao_id ? lotacaoMap.get(colab.lotacao_id) || row.lotacao : row.lotacao,
           salario_base: row.salario_base,
           total_adicionais: row.adicionais,
           total_descontos: row.descontos,
@@ -159,7 +159,7 @@ const Import = () => {
           <CardHeader>
             <CardTitle className="text-base">Upload de Arquivo</CardTitle>
             <CardDescription>
-              Colunas obrigatórias: PREFEITURA, PASTA, ANO, MÊS, NOME, FUNÇÃO, CPF, SALÁRIO BASE, ADICIONAIS, DESCONTOS, BRUTO, LÍQUIDO.
+              Colunas obrigatórias: PREFEITURA, SECRETARIA, LOTAÇÃO, ANO, MÊS, NOME, FUNÇÃO, CPF, SALÁRIO BASE, ADICIONAIS, DESCONTOS, BRUTO, LÍQUIDO.
             </CardDescription>
             <Button variant="outline" size="sm" onClick={handleDownloadTemplate} className="mt-2 w-fit">
               <Download className="mr-2 h-4 w-4" />
