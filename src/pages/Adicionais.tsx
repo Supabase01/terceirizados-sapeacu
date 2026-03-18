@@ -13,9 +13,11 @@ import { Plus, Pencil, Search, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { SearchableSelect } from '@/components/SearchableSelect';
 
 interface AdicionalForm {
-  colaborador_id: string;
+  escopo: string;
+  colaborador_ids: string[];
   descricao: string;
   valor: string;
   tipo: string;
@@ -26,7 +28,7 @@ interface AdicionalForm {
 }
 
 const emptyForm: AdicionalForm = {
-  colaborador_id: '', descricao: '', valor: '', tipo: 'fixo', mes: '', ano: '', mes_fim: '', ano_fim: '',
+  escopo: 'individual', colaborador_ids: [], descricao: '', valor: '', tipo: 'fixo', mes: '', ano: '', mes_fim: '', ano_fim: '',
 };
 
 const Adicionais = () => {
@@ -38,6 +40,7 @@ const Adicionais = () => {
   const [form, setForm] = useState<AdicionalForm>(emptyForm);
   const [search, setSearch] = useState('');
   const [filterTipo, setFilterTipo] = useState<string>('todos');
+  const [filterEscopo, setFilterEscopo] = useState<string>('todos');
 
   const { data: adicionais = [], isLoading } = useQuery({
     queryKey: ['adicionais', unidadeId],
@@ -66,26 +69,45 @@ const Adicionais = () => {
     enabled: !!unidadeId,
   });
 
+  const colaboradorOptions = colaboradores.map((c: any) => ({
+    value: c.id,
+    label: c.nome,
+    sublabel: c.cpf,
+  }));
+
   const saveMutation = useMutation({
     mutationFn: async () => {
       const isEventual = form.tipo === 'eventual';
-      const payload: any = {
-        colaborador_id: form.colaborador_id,
+      const basePayload: any = {
         descricao: form.descricao,
         valor: Number(form.valor) || 0,
         tipo: form.tipo,
+        escopo: form.escopo,
         mes: isEventual && form.mes ? Number(form.mes) : null,
         ano: isEventual && form.ano ? Number(form.ano) : null,
         mes_fim: isEventual && form.mes_fim ? Number(form.mes_fim) : null,
         ano_fim: isEventual && form.ano_fim ? Number(form.ano_fim) : null,
         unidade_id: unidadeId,
       };
+
       if (editId) {
+        const payload = {
+          ...basePayload,
+          colaborador_id: form.escopo === 'global' ? null : (form.colaborador_ids[0] || null),
+        };
         const { error } = await supabase.from('adicionais').update(payload).eq('id', editId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from('adicionais').insert(payload);
-        if (error) throw error;
+        if (form.escopo === 'global') {
+          const { error } = await supabase.from('adicionais').insert({ ...basePayload, colaborador_id: null });
+          if (error) throw error;
+        } else {
+          // Insert one row per selected collaborator
+          const rows = form.colaborador_ids.map(cid => ({ ...basePayload, colaborador_id: cid }));
+          if (rows.length === 0) throw new Error('Selecione ao menos um colaborador');
+          const { error } = await supabase.from('adicionais').insert(rows);
+          if (error) throw error;
+        }
       }
     },
     onSuccess: () => {
@@ -93,7 +115,7 @@ const Adicionais = () => {
       toast({ title: editId ? 'Adicional atualizado' : 'Adicional cadastrado' });
       closeDialog();
     },
-    onError: () => toast({ title: 'Erro ao salvar', variant: 'destructive' }),
+    onError: (e: any) => toast({ title: e?.message || 'Erro ao salvar', variant: 'destructive' }),
   });
 
   const deleteMutation = useMutation({
@@ -112,7 +134,8 @@ const Adicionais = () => {
   const openEdit = (item: any) => {
     setEditId(item.id);
     setForm({
-      colaborador_id: item.colaborador_id,
+      escopo: item.escopo || 'individual',
+      colaborador_ids: item.colaborador_id ? [item.colaborador_id] : [],
       descricao: item.descricao,
       valor: String(item.valor),
       tipo: item.tipo,
@@ -128,7 +151,8 @@ const Adicionais = () => {
     const matchSearch = a.descricao.toLowerCase().includes(search.toLowerCase()) ||
       (a.colaboradores as any)?.nome?.toLowerCase().includes(search.toLowerCase());
     const matchTipo = filterTipo === 'todos' || a.tipo === filterTipo;
-    return matchSearch && matchTipo;
+    const matchEscopo = filterEscopo === 'todos' || (a.escopo || 'individual') === filterEscopo;
+    return matchSearch && matchTipo && matchEscopo;
   });
 
   const formatCurrency = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
@@ -142,6 +166,9 @@ const Adicionais = () => {
     }
     return inicio;
   };
+
+  const canSave = form.descricao.trim() && form.valor &&
+    (form.escopo === 'global' || form.colaborador_ids.length > 0);
 
   return (
     <Layout>
@@ -159,11 +186,19 @@ const Adicionais = () => {
             <Input placeholder="Buscar..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
           </div>
           <Select value={filterTipo} onValueChange={setFilterTipo}>
-            <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="todos">Todos</SelectItem>
+              <SelectItem value="todos">Todos tipos</SelectItem>
               <SelectItem value="fixo">Fixos</SelectItem>
               <SelectItem value="eventual">Eventuais</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={filterEscopo} onValueChange={setFilterEscopo}>
+            <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos escopos</SelectItem>
+              <SelectItem value="global">Globais</SelectItem>
+              <SelectItem value="individual">Individuais</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -174,8 +209,9 @@ const Adicionais = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Colaborador</TableHead>
                     <TableHead>Descrição</TableHead>
+                    <TableHead>Escopo</TableHead>
+                    <TableHead>Colaborador</TableHead>
                     <TableHead>Tipo</TableHead>
                     <TableHead className="hidden md:table-cell">Competência</TableHead>
                     <TableHead className="text-right">Valor</TableHead>
@@ -184,14 +220,19 @@ const Adicionais = () => {
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
-                    <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
                   ) : filtered.length === 0 ? (
-                    <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Nenhum adicional encontrado</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Nenhum adicional encontrado</TableCell></TableRow>
                   ) : (
                     filtered.map((item: any) => (
                       <TableRow key={item.id}>
-                        <TableCell className="font-medium">{(item.colaboradores as any)?.nome || '—'}</TableCell>
-                        <TableCell>{item.descricao}</TableCell>
+                        <TableCell className="font-medium">{item.descricao}</TableCell>
+                        <TableCell>
+                          <Badge variant={(item.escopo || 'individual') === 'global' ? 'destructive' : 'secondary'}>
+                            {(item.escopo || 'individual') === 'global' ? 'Global' : 'Individual'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{(item.escopo || 'individual') === 'global' ? 'Todos' : (item.colaboradores as any)?.nome || '—'}</TableCell>
                         <TableCell><Badge variant={item.tipo === 'fixo' ? 'default' : 'secondary'}>{item.tipo === 'fixo' ? 'Fixo' : 'Eventual'}</Badge></TableCell>
                         <TableCell className="hidden md:table-cell">{formatCompetencia(item)}</TableCell>
                         <TableCell className="text-right font-mono">{formatCurrency(item.valor)}</TableCell>
@@ -216,14 +257,38 @@ const Adicionais = () => {
           <DialogHeader><DialogTitle>{editId ? 'Editar Adicional' : 'Novo Adicional'}</DialogTitle></DialogHeader>
           <div className="grid gap-4 py-2">
             <div className="space-y-2">
-              <Label>Colaborador *</Label>
-              <Select value={form.colaborador_id} onValueChange={(v) => setForm(p => ({ ...p, colaborador_id: v }))}>
-                <SelectTrigger><SelectValue placeholder="Selecione o colaborador" /></SelectTrigger>
+              <Label>Escopo *</Label>
+              <Select value={form.escopo} onValueChange={(v) => setForm(p => ({ ...p, escopo: v, colaborador_ids: v === 'global' ? [] : p.colaborador_ids }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {colaboradores.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
+                  <SelectItem value="global">Global (Todos os colaboradores)</SelectItem>
+                  <SelectItem value="individual">Individual</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+            {form.escopo === 'individual' && (
+              <div className="space-y-2">
+                <Label>{editId ? 'Colaborador *' : 'Colaborador(es) *'}</Label>
+                {editId ? (
+                  <SearchableSelect
+                    options={colaboradorOptions}
+                    value={form.colaborador_ids[0] || ''}
+                    onValueChange={(v) => setForm(p => ({ ...p, colaborador_ids: v ? [v] : [] }))}
+                    placeholder="Selecione o colaborador"
+                    emptyText="Nenhum colaborador encontrado"
+                  />
+                ) : (
+                  <SearchableSelect
+                    multiple
+                    options={colaboradorOptions}
+                    values={form.colaborador_ids}
+                    onValuesChange={(v) => setForm(p => ({ ...p, colaborador_ids: v }))}
+                    placeholder="Selecione os colaboradores"
+                    emptyText="Nenhum colaborador encontrado"
+                  />
+                )}
+              </div>
+            )}
             <div className="space-y-2">
               <Label>Descrição *</Label>
               <Input placeholder="Ex: Insalubridade, Hora Extra" value={form.descricao} onChange={(e) => setForm(p => ({ ...p, descricao: e.target.value }))} />
@@ -271,7 +336,7 @@ const Adicionais = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={closeDialog}>Cancelar</Button>
-            <Button onClick={() => saveMutation.mutate()} disabled={!form.colaborador_id || !form.descricao.trim() || !form.valor || saveMutation.isPending}>
+            <Button onClick={() => saveMutation.mutate()} disabled={!canSave || saveMutation.isPending}>
               {saveMutation.isPending ? 'Salvando...' : 'Salvar'}
             </Button>
           </DialogFooter>

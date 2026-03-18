@@ -14,9 +14,10 @@ import { Plus, Pencil, Search, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { SearchableSelect } from '@/components/SearchableSelect';
 
 interface DescontoForm {
-  colaborador_id: string;
+  colaborador_ids: string[];
   descricao: string;
   valor: string;
   is_percentual: boolean;
@@ -26,7 +27,7 @@ interface DescontoForm {
 }
 
 const emptyForm: DescontoForm = {
-  colaborador_id: '', descricao: '', valor: '', is_percentual: false, escopo: 'individual', mes: '', ano: '',
+  colaborador_ids: [], descricao: '', valor: '', is_percentual: false, escopo: 'individual', mes: '', ano: '',
 };
 
 const Descontos = () => {
@@ -66,10 +67,15 @@ const Descontos = () => {
     enabled: !!unidadeId,
   });
 
+  const colaboradorOptions = colaboradores.map((c: any) => ({
+    value: c.id,
+    label: c.nome,
+    sublabel: c.cpf,
+  }));
+
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const payload: any = {
-        colaborador_id: form.escopo === 'global' ? null : form.colaborador_id || null,
+      const basePayload: any = {
         descricao: form.descricao,
         valor: Number(form.valor) || 0,
         is_percentual: form.is_percentual,
@@ -79,11 +85,22 @@ const Descontos = () => {
         unidade_id: unidadeId,
       };
       if (editId) {
+        const payload = {
+          ...basePayload,
+          colaborador_id: form.escopo === 'global' ? null : (form.colaborador_ids[0] || null),
+        };
         const { error } = await supabase.from('descontos').update(payload).eq('id', editId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from('descontos').insert(payload);
-        if (error) throw error;
+        if (form.escopo === 'global') {
+          const { error } = await supabase.from('descontos').insert({ ...basePayload, colaborador_id: null });
+          if (error) throw error;
+        } else {
+          const rows = form.colaborador_ids.map(cid => ({ ...basePayload, colaborador_id: cid }));
+          if (rows.length === 0) throw new Error('Selecione ao menos um colaborador');
+          const { error } = await supabase.from('descontos').insert(rows);
+          if (error) throw error;
+        }
       }
     },
     onSuccess: () => {
@@ -91,7 +108,7 @@ const Descontos = () => {
       toast({ title: editId ? 'Desconto atualizado' : 'Desconto cadastrado' });
       closeDialog();
     },
-    onError: () => toast({ title: 'Erro ao salvar', variant: 'destructive' }),
+    onError: (e: any) => toast({ title: e?.message || 'Erro ao salvar', variant: 'destructive' }),
   });
 
   const deleteMutation = useMutation({
@@ -110,7 +127,7 @@ const Descontos = () => {
   const openEdit = (item: any) => {
     setEditId(item.id);
     setForm({
-      colaborador_id: item.colaborador_id || '',
+      colaborador_ids: item.colaborador_id ? [item.colaborador_id] : [],
       descricao: item.descricao,
       valor: String(item.valor),
       is_percentual: item.is_percentual,
@@ -129,6 +146,9 @@ const Descontos = () => {
   });
 
   const formatCurrency = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
+
+  const canSave = form.descricao.trim() && form.valor &&
+    (form.escopo === 'global' || form.colaborador_ids.length > 0);
 
   return (
     <Layout>
@@ -210,7 +230,7 @@ const Descontos = () => {
           <div className="grid gap-4 py-2">
             <div className="space-y-2">
               <Label>Escopo *</Label>
-              <Select value={form.escopo} onValueChange={(v) => setForm(p => ({ ...p, escopo: v, colaborador_id: v === 'global' ? '' : p.colaborador_id }))}>
+              <Select value={form.escopo} onValueChange={(v) => setForm(p => ({ ...p, escopo: v, colaborador_ids: v === 'global' ? [] : p.colaborador_ids }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="global">Global (Todos os colaboradores)</SelectItem>
@@ -220,13 +240,25 @@ const Descontos = () => {
             </div>
             {form.escopo === 'individual' && (
               <div className="space-y-2">
-                <Label>Colaborador *</Label>
-                <Select value={form.colaborador_id} onValueChange={(v) => setForm(p => ({ ...p, colaborador_id: v }))}>
-                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                  <SelectContent>
-                    {colaboradores.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <Label>{editId ? 'Colaborador *' : 'Colaborador(es) *'}</Label>
+                {editId ? (
+                  <SearchableSelect
+                    options={colaboradorOptions}
+                    value={form.colaborador_ids[0] || ''}
+                    onValueChange={(v) => setForm(p => ({ ...p, colaborador_ids: v ? [v] : [] }))}
+                    placeholder="Selecione o colaborador"
+                    emptyText="Nenhum colaborador encontrado"
+                  />
+                ) : (
+                  <SearchableSelect
+                    multiple
+                    options={colaboradorOptions}
+                    values={form.colaborador_ids}
+                    onValuesChange={(v) => setForm(p => ({ ...p, colaborador_ids: v }))}
+                    placeholder="Selecione os colaboradores"
+                    emptyText="Nenhum colaborador encontrado"
+                  />
+                )}
               </div>
             )}
             <div className="space-y-2">
@@ -256,10 +288,7 @@ const Descontos = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={closeDialog}>Cancelar</Button>
-            <Button
-              onClick={() => saveMutation.mutate()}
-              disabled={!form.descricao.trim() || !form.valor || (form.escopo === 'individual' && !form.colaborador_id) || saveMutation.isPending}
-            >
+            <Button onClick={() => saveMutation.mutate()} disabled={!canSave || saveMutation.isPending}>
               {saveMutation.isPending ? 'Salvando...' : 'Salvar'}
             </Button>
           </DialogFooter>

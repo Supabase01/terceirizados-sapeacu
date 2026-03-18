@@ -34,9 +34,10 @@ export type Database = {
           ano: number | null
           ano_fim: number | null
           ativo: boolean
-          colaborador_id: string
+          colaborador_id: string | null
           created_at: string
           descricao: string
+          escopo: string
           id: string
           mes: number | null
           mes_fim: number | null
@@ -48,9 +49,10 @@ export type Database = {
           ano?: number | null
           ano_fim?: number | null
           ativo?: boolean
-          colaborador_id: string
+          colaborador_id?: string | null
           created_at?: string
           descricao: string
+          escopo?: string
           id?: string
           mes?: number | null
           mes_fim?: number | null
@@ -62,9 +64,10 @@ export type Database = {
           ano?: number | null
           ano_fim?: number | null
           ativo?: boolean
-          colaborador_id?: string
+          colaborador_id?: string | null
           created_at?: string
           descricao?: string
+          escopo?: string
           id?: string
           mes?: number | null
           mes_fim?: number | null
