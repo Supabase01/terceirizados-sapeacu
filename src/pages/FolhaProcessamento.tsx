@@ -157,6 +157,7 @@ const FolhaProcessamento = () => {
           mes,
           ano,
           status: 'rascunho',
+          unidade_id: unidadeId,
         };
       });
 
