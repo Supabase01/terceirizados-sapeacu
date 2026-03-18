@@ -177,6 +177,7 @@ const CadastroColaboradores = () => {
       bairro: item.bairro || '',
       cidade_id: item.cidade_id || '',
       cep: item.cep || '',
+      lideranca_id: item.lideranca_id || '',
     });
     setDialogOpen(true);
   };
