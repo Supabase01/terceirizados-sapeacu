@@ -142,6 +142,7 @@ const CadastroPrefeituras = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome</TableHead>
+                  <TableHead>Responsável</TableHead>
                   <TableHead>CNPJ</TableHead>
                   <TableHead>Cidade/UF</TableHead>
                   <TableHead>Telefone</TableHead>
@@ -151,13 +152,14 @@ const CadastroPrefeituras = () => {
               </TableHeader>
               <TableBody>
                 {isLoading ? (
-                  <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
                 ) : filtered.length === 0 ? (
-                  <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Nenhuma prefeitura encontrada</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Nenhuma prefeitura encontrada</TableCell></TableRow>
                 ) : (
                   filtered.map((item: any) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">{item.nome}</TableCell>
+                      <TableCell className="text-sm">{item.responsavel || '—'}</TableCell>
                       <TableCell className="text-muted-foreground text-sm">{item.cnpj || '—'}</TableCell>
                       <TableCell className="text-sm">{[item.cidade, item.estado].filter(Boolean).join('/') || '—'}</TableCell>
                       <TableCell className="text-sm">{item.telefone || '—'}</TableCell>
