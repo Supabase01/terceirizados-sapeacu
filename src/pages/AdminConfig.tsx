@@ -24,7 +24,7 @@ const ALL_ROUTES = [
   { path: '/admin/config', module: 'Administrador', label: 'Painel Admin' },
   { path: '/indicadores', module: 'Folha de Pagamentos', label: 'Indicadores' },
   { path: '/import', module: 'Folha de Pagamentos', label: 'Importação' },
-  { path: '/relatorios', module: 'Folha de Pagamentos', label: 'Relatórios' },
+  
   { path: '/cadastro/colaboradores', module: 'Cadastros', label: 'Colaboradores' },
   { path: '/cadastro/secretarias', module: 'Cadastros', label: 'Secretarias' },
   { path: '/cadastro/funcoes', module: 'Cadastros', label: 'Funções' },
