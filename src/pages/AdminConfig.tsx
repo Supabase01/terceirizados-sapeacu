@@ -22,6 +22,7 @@ import { useIsAdmin } from '@/hooks/useUserRoles';
 
 const ALL_ROUTES = [
   { path: '/admin/config', module: 'Administrador', label: 'Painel Admin' },
+  { path: '/admin/prefeituras', module: 'Administrador', label: 'Prefeituras' },
   { path: '/indicadores', module: 'Folha de Pagamentos', label: 'Indicadores' },
   { path: '/import', module: 'Folha de Pagamentos', label: 'Importação' },
   
