@@ -12,37 +12,54 @@ serve(async (req) => {
   }
 
   try {
-    // Verify the caller is admin
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("Não autorizado");
-
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY")!;
-
-    // Verify caller with anon client
-    const callerClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const { data: { user: caller } } = await callerClient.auth.getUser();
-    if (!caller) throw new Error("Não autorizado");
-
-    // Check if caller is admin
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
-    const { data: roles } = await adminClient
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", caller.id)
-      .eq("role", "admin");
 
-    if (!roles || roles.length === 0) {
-      throw new Error("Apenas administradores podem criar usuários");
+    const authHeader = req.headers.get("Authorization");
+    const body = await req.json();
+    const { email, password, nome, role, action } = body;
+
+    // Check if any profiles exist (bootstrap mode)
+    const { count } = await adminClient
+      .from("profiles")
+      .select("id", { count: "exact", head: true });
+
+    const isBootstrap = (count === null || count === 0);
+
+    if (!isBootstrap && action !== "bootstrap") {
+      // Verify caller is admin
+      if (!authHeader) throw new Error("Não autorizado");
+      
+      const callerClient = createClient(supabaseUrl, anonKey, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const { data: { user: caller } } = await callerClient.auth.getUser();
+      if (!caller) throw new Error("Não autorizado");
+
+      const { data: roles } = await adminClient
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", caller.id)
+        .eq("role", "admin");
+
+      if (!roles || roles.length === 0) {
+        throw new Error("Apenas administradores podem criar usuários");
+      }
     }
-
-    const { email, password, nome, role } = await req.json();
 
     if (!email || !password) {
       throw new Error("E-mail e senha são obrigatórios");
+    }
+
+    // Check if user already exists and delete if bootstrap
+    if (isBootstrap || action === "bootstrap") {
+      const { data: { users } } = await adminClient.auth.admin.listUsers();
+      const existing = users?.find(u => u.email === email);
+      if (existing) {
+        await adminClient.auth.admin.deleteUser(existing.id);
+      }
     }
 
     // Create user with admin API (auto-confirms)
@@ -55,9 +72,9 @@ serve(async (req) => {
 
     if (createError) throw createError;
 
-    // The trigger will auto-create profile and assign role
-    // But if a specific role is requested, update it
+    // Update role if specified and not default
     if (role && role !== "usuario" && newUser.user) {
+      await new Promise(resolve => setTimeout(resolve, 500));
       await adminClient
         .from("user_roles")
         .update({ role })
