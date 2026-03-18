@@ -29,6 +29,123 @@ export type Database = {
         }
         Relationships: []
       }
+      colaboradores: {
+        Row: {
+          ativo: boolean
+          cpf: string
+          created_at: string
+          data_admissao: string | null
+          funcao_id: string | null
+          id: string
+          lotacao_id: string | null
+          matricula: string | null
+          nome: string
+          salario_base: number
+          secretaria_id: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          cpf: string
+          created_at?: string
+          data_admissao?: string | null
+          funcao_id?: string | null
+          id?: string
+          lotacao_id?: string | null
+          matricula?: string | null
+          nome: string
+          salario_base?: number
+          secretaria_id?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          cpf?: string
+          created_at?: string
+          data_admissao?: string | null
+          funcao_id?: string | null
+          id?: string
+          lotacao_id?: string | null
+          matricula?: string | null
+          nome?: string
+          salario_base?: number
+          secretaria_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "colaboradores_funcao_id_fkey"
+            columns: ["funcao_id"]
+            isOneToOne: false
+            referencedRelation: "funcoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "colaboradores_lotacao_id_fkey"
+            columns: ["lotacao_id"]
+            isOneToOne: false
+            referencedRelation: "lotacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "colaboradores_secretaria_id_fkey"
+            columns: ["secretaria_id"]
+            isOneToOne: false
+            referencedRelation: "secretarias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      funcoes: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome?: string
+        }
+        Relationships: []
+      }
+      lotacoes: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          nome: string
+          secretaria_id: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome: string
+          secretaria_id?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome?: string
+          secretaria_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lotacoes_secretaria_id_fkey"
+            columns: ["secretaria_id"]
+            isOneToOne: false
+            referencedRelation: "secretarias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payroll_records: {
         Row: {
           ano: number
@@ -68,6 +185,27 @@ export type Database = {
           nome?: string
           pasta?: string
           prefeitura?: string
+        }
+        Relationships: []
+      }
+      secretarias: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome?: string
         }
         Relationships: []
       }
