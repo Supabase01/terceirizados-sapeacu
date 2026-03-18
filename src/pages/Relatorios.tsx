@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { FileText, FileSpreadsheet, Download, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { FileText, FileSpreadsheet, Download, Search, ChevronLeft, ChevronRight, Receipt } from 'lucide-react';
 
 // =================== DETALHAMENTO TAB ===================
 const DETAIL_PAGE_SIZE = 15;
