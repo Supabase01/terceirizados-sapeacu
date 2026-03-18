@@ -192,8 +192,8 @@ const CadastroColaboradores = () => {
                     <TableHead className="hidden lg:table-cell">Lotação</TableHead>
                     <TableHead className="hidden lg:table-cell text-right">Sal. Bruto</TableHead>
                     <TableHead className="hidden lg:table-cell text-right">Encargo</TableHead>
-                    <TableHead className="hidden xl:table-cell text-right">Adicionais</TableHead>
-                    <TableHead className="hidden xl:table-cell text-right">Sal. Líquido</TableHead>
+                    <TableHead className="hidden lg:table-cell text-right">Adicionais</TableHead>
+                    <TableHead className="hidden lg:table-cell text-right">Sal. Líquido</TableHead>
                     <TableHead className="w-24">Status</TableHead>
                     <TableHead className="w-28">Ações</TableHead>
                   </TableRow>
