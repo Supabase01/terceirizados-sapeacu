@@ -88,7 +88,10 @@ const CadastroColaboradores = () => {
         secretaria_id: form.secretaria_id || null,
         funcao_id: form.funcao_id || null,
         lotacao_id: form.lotacao_id || null,
-        salario_base: form.salario_base ? Number(form.salario_base) : 0,
+        salario_bruto: form.salario_bruto ? Number(form.salario_bruto) : 0,
+        encargo: form.encargo ? Number(form.encargo) : 0,
+        adicionais: form.adicionais ? Number(form.adicionais) : 0,
+        salario_liquido: form.salario_liquido ? Number(form.salario_liquido) : 0,
         data_admissao: form.data_admissao || null,
       };
       if (editId) {
