@@ -19,28 +19,21 @@ export function useIsAdmin() {
   return { isAdmin: roles?.includes('admin') ?? false, isLoading };
 }
 
-export function useRoutePermissions() {
+export function useAllowedRoutes() {
   return useQuery({
-    queryKey: ['route-permissions'],
+    queryKey: ['allowed-routes'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
-      const { data: roles } = await supabase.rpc('get_user_roles', { _user_id: user.id });
-      if (!roles || roles.length === 0) return [];
-      
-      const { data, error } = await supabase
-        .from('route_permissions')
-        .select('route_path, module_name, allowed')
-        .in('role', roles as ("admin" | "usuario")[])
-        .eq('allowed', true);
+      const { data, error } = await supabase.rpc('get_user_allowed_routes', { _user_id: user.id });
       if (error) throw error;
-      return data || [];
+      return (data as { route_path: string; module_name: string }[]) || [];
     },
   });
 }
 
 export function useCanAccessRoute(route: string) {
-  const { data: permissions, isLoading } = useRoutePermissions();
-  const canAccess = permissions?.some(p => p.route_path === route) ?? false;
+  const { data: routes, isLoading } = useAllowedRoutes();
+  const canAccess = routes?.some(r => r.route_path === route) ?? false;
   return { canAccess, isLoading };
 }

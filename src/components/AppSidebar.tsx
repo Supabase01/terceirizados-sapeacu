@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
-import { useRoutePermissions } from '@/hooks/useUserRoles';
+import { useAllowedRoutes } from '@/hooks/useUserRoles';
 
 const modules = [
   {
@@ -53,22 +53,20 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
   const location = useLocation();
-  const { data: permissions } = useRoutePermissions();
+  const { data: allowedRoutes } = useAllowedRoutes();
 
-  const allowedRoutes = new Set(permissions?.map(p => p.route_path) || []);
+  const allowedSet = new Set(allowedRoutes?.map(r => r.route_path) || []);
 
-  // Filter modules to only show allowed items
   const visibleModules = modules
     .map(mod => ({
       ...mod,
-      items: mod.items.filter(item => allowedRoutes.has(item.url)),
+      items: mod.items.filter(item => allowedSet.has(item.url)),
     }))
     .filter(mod => mod.items.length > 0);
 
   return (
     <Sidebar collapsible="icon">
       <SidebarContent>
-        {/* Logo */}
         <div className="flex items-center gap-2 px-4 py-4">
           <Shield className="h-6 w-6 shrink-0 text-sidebar-primary" />
           {!collapsed && (
