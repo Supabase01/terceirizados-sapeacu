@@ -31,42 +31,51 @@ export type Database = {
       }
       colaboradores: {
         Row: {
+          adicionais: number
           ativo: boolean
           cpf: string
           created_at: string
           data_admissao: string | null
+          encargo: number
           funcao_id: string | null
           id: string
           lotacao_id: string | null
           matricula: string | null
           nome: string
-          salario_base: number
+          salario_bruto: number
+          salario_liquido: number
           secretaria_id: string | null
         }
         Insert: {
+          adicionais?: number
           ativo?: boolean
           cpf: string
           created_at?: string
           data_admissao?: string | null
+          encargo?: number
           funcao_id?: string | null
           id?: string
           lotacao_id?: string | null
           matricula?: string | null
           nome: string
-          salario_base?: number
+          salario_bruto?: number
+          salario_liquido?: number
           secretaria_id?: string | null
         }
         Update: {
+          adicionais?: number
           ativo?: boolean
           cpf?: string
           created_at?: string
           data_admissao?: string | null
+          encargo?: number
           funcao_id?: string | null
           id?: string
           lotacao_id?: string | null
           matricula?: string | null
           nome?: string
-          salario_base?: number
+          salario_bruto?: number
+          salario_liquido?: number
           secretaria_id?: string | null
         }
         Relationships: [
