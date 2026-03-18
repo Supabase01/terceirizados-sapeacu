@@ -55,9 +55,9 @@ const CadastroFuncoes = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['funcoes'] }),
   });
 
-  const closeDialog = () => { setDialogOpen(false); setEditId(null); setNome(''); };
+  const closeDialog = () => { setDialogOpen(false); setEditId(null); setNome(''); setAtribuicoes(''); };
 
-  const openEdit = (item: any) => { setEditId(item.id); setNome(item.nome); setDialogOpen(true); };
+  const openEdit = (item: any) => { setEditId(item.id); setNome(item.nome); setAtribuicoes(item.atribuicoes || ''); setDialogOpen(true); };
 
   const filtered = funcoes.filter((s: any) => s.nome.toLowerCase().includes(search.toLowerCase()));
 
