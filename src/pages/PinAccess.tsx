@@ -57,7 +57,7 @@ const PinAccess = () => {
 
       sessionStorage.setItem('pin_validated', 'true');
       toast({ title: 'PIN criado com sucesso!', description: 'Seu PIN pessoal foi configurado.' });
-      navigate('/indicadores');
+      navigate('/selecionar-unidade');
     } catch {
       toast({ title: 'Erro', description: 'Não foi possível salvar o PIN.', variant: 'destructive' });
     } finally {
