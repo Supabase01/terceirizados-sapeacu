@@ -29,53 +29,100 @@ export type Database = {
         }
         Relationships: []
       }
+      adicionais: {
+        Row: {
+          ano: number | null
+          ativo: boolean
+          colaborador_id: string
+          created_at: string
+          descricao: string
+          id: string
+          mes: number | null
+          tipo: string
+          valor: number
+        }
+        Insert: {
+          ano?: number | null
+          ativo?: boolean
+          colaborador_id: string
+          created_at?: string
+          descricao: string
+          id?: string
+          mes?: number | null
+          tipo?: string
+          valor?: number
+        }
+        Update: {
+          ano?: number | null
+          ativo?: boolean
+          colaborador_id?: string
+          created_at?: string
+          descricao?: string
+          id?: string
+          mes?: number | null
+          tipo?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "adicionais_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       colaboradores: {
         Row: {
-          adicionais: number
           ativo: boolean
+          banco: string | null
+          beneficio_social: boolean
+          conta: string | null
           cpf: string
           created_at: string
           data_admissao: string | null
-          encargo: number
           funcao_id: string | null
           id: string
           lotacao_id: string | null
           matricula: string | null
           nome: string
-          salario_bruto: number
-          salario_liquido: number
+          pix: string | null
+          salario_base: number
           secretaria_id: string | null
         }
         Insert: {
-          adicionais?: number
           ativo?: boolean
+          banco?: string | null
+          beneficio_social?: boolean
+          conta?: string | null
           cpf: string
           created_at?: string
           data_admissao?: string | null
-          encargo?: number
           funcao_id?: string | null
           id?: string
           lotacao_id?: string | null
           matricula?: string | null
           nome: string
-          salario_bruto?: number
-          salario_liquido?: number
+          pix?: string | null
+          salario_base?: number
           secretaria_id?: string | null
         }
         Update: {
-          adicionais?: number
           ativo?: boolean
+          banco?: string | null
+          beneficio_social?: boolean
+          conta?: string | null
           cpf?: string
           created_at?: string
           data_admissao?: string | null
-          encargo?: number
           funcao_id?: string | null
           id?: string
           lotacao_id?: string | null
           matricula?: string | null
           nome?: string
-          salario_bruto?: number
-          salario_liquido?: number
+          pix?: string | null
+          salario_base?: number
           secretaria_id?: string | null
         }
         Relationships: [
@@ -98,6 +145,53 @@ export type Database = {
             columns: ["secretaria_id"]
             isOneToOne: false
             referencedRelation: "secretarias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      descontos: {
+        Row: {
+          ano: number | null
+          ativo: boolean
+          colaborador_id: string | null
+          created_at: string
+          descricao: string
+          escopo: string
+          id: string
+          is_percentual: boolean
+          mes: number | null
+          valor: number
+        }
+        Insert: {
+          ano?: number | null
+          ativo?: boolean
+          colaborador_id?: string | null
+          created_at?: string
+          descricao: string
+          escopo?: string
+          id?: string
+          is_percentual?: boolean
+          mes?: number | null
+          valor?: number
+        }
+        Update: {
+          ano?: number | null
+          ativo?: boolean
+          colaborador_id?: string | null
+          created_at?: string
+          descricao?: string
+          escopo?: string
+          id?: string
+          is_percentual?: boolean
+          mes?: number | null
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "descontos_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
             referencedColumns: ["id"]
           },
         ]
