@@ -32,10 +32,10 @@ const CadastroFuncoes = () => {
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (editId) {
-        const { error } = await supabase.from('funcoes').update({ nome }).eq('id', editId);
+        const { error } = await supabase.from('funcoes').update({ nome, atribuicoes }).eq('id', editId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from('funcoes').insert({ nome });
+        const { error } = await supabase.from('funcoes').insert({ nome, atribuicoes });
         if (error) throw error;
       }
     },
