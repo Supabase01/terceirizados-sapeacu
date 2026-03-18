@@ -2,7 +2,8 @@ import * as XLSX from 'xlsx';
 
 export interface ParsedRecord {
   prefeitura: string;
-  pasta: string;
+  secretaria: string;
+  lotacao: string;
   ano: number;
   mes: number;
   nome: string;
@@ -15,14 +16,15 @@ export interface ParsedRecord {
   liquido: number;
 }
 
-const REQUIRED_COLUMNS = ['PREFEITURA', 'PASTA', 'ANO', 'MÊS', 'NOME', 'FUNÇÃO', 'CPF', 'SALÁRIO BASE', 'ADICIONAIS', 'DESCONTOS', 'BRUTO', 'LÍQUIDO'];
+const REQUIRED_COLUMNS = ['PREFEITURA', 'SECRETARIA', 'LOTAÇÃO', 'ANO', 'MÊS', 'NOME', 'FUNÇÃO', 'CPF', 'SALÁRIO BASE', 'ADICIONAIS', 'DESCONTOS', 'BRUTO', 'LÍQUIDO'];
 
 const normalizeHeader = (header: string): string =>
   header.trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
 const COLUMN_MAP: Record<string, keyof ParsedRecord> = {
   PREFEITURA: 'prefeitura',
-  PASTA: 'pasta',
+  SECRETARIA: 'secretaria',
+  LOTACAO: 'lotacao',
   ANO: 'ano',
   MES: 'mes',
   NOME: 'nome',
@@ -95,7 +97,8 @@ export const parseFile = async (file: File): Promise<ParseResult> => {
         record.nome = String(record.nome || '').trim();
         record.funcao = String(record.funcao || '').trim();
         record.prefeitura = String(record.prefeitura || '').trim();
-        record.pasta = String(record.pasta || '').trim();
+        record.secretaria = String(record.secretaria || '').trim();
+        record.lotacao = String(record.lotacao || '').trim();
 
         if (record.nome && record.cpf) records.push(record as ParsedRecord);
       } catch {

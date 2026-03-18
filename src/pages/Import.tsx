@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const BATCH_SIZE = 500;
 
-const TEMPLATE_HEADERS = ['PREFEITURA', 'PASTA', 'ANO', 'MÊS', 'NOME', 'FUNÇÃO', 'CPF', 'SALÁRIO BASE', 'ADICIONAIS', 'DESCONTOS', 'BRUTO', 'LÍQUIDO'];
+const TEMPLATE_HEADERS = ['PREFEITURA', 'SECRETARIA', 'LOTAÇÃO', 'ANO', 'MÊS', 'NOME', 'FUNÇÃO', 'CPF', 'SALÁRIO BASE', 'ADICIONAIS', 'DESCONTOS', 'BRUTO', 'LÍQUIDO'];
 
 const handleDownloadTemplate = () => {
   const ws = XLSX.utils.aoa_to_sheet([TEMPLATE_HEADERS]);
