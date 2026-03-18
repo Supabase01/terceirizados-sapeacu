@@ -167,7 +167,8 @@ const FolhaProcessamento = () => {
         .delete()
         .eq('mes', mes)
         .eq('ano', ano)
-        .eq('status', 'rascunho');
+        .eq('status', 'rascunho')
+        .eq('unidade_id', unidadeId!);
 
       // Insert in batches
       const BATCH = 500;
