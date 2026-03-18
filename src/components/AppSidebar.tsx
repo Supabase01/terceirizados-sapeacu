@@ -1,4 +1,4 @@
-import { BarChart3, Upload, ShieldAlert, FileText, Users, Building2, Briefcase, MapPin, Settings, Shield, ChevronDown, Landmark, FolderKanban, PlusCircle, MinusCircle, ClipboardList, History } from 'lucide-react';
+import { BarChart3, Upload, ShieldAlert, FileText, Users, Building2, Briefcase, MapPin, Settings, Shield, ChevronDown, Landmark, FolderKanban, PlusCircle, MinusCircle, ClipboardList, History, Map } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useLocation } from 'react-router-dom';
 import {
@@ -21,6 +21,7 @@ const modules = [
       { title: 'Configurações', url: '/admin/config', icon: Settings },
       { title: 'Instituições', url: '/admin/instituicoes', icon: Landmark },
       { title: 'Unidades de Folha', url: '/admin/unidades', icon: FolderKanban },
+      { title: 'Cidades', url: '/admin/cidades', icon: Map },
     ],
   },
   {
