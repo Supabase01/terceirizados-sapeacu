@@ -87,106 +87,126 @@ const getMonthNameExport = (m: number) => {
 export const exportContracheque = (record: ContrachequeData) => {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const w = doc.internal.pageSize.width;
+  const m = 20; // margin
+  const cw = w - m * 2; // content width
   const descontos = record.bruto - record.liquido;
   const ref = `${getMonthNameExport(record.mes)} / ${record.ano}`;
 
-  // Header
+  // ── Thin top accent line ──
   doc.setFillColor(41, 65, 122);
-  doc.rect(0, 0, w, 32, 'F');
-  doc.setTextColor(255);
-  doc.setFontSize(14);
+  doc.rect(0, 0, w, 3, 'F');
+
+  // ── Header ──
+  let y = 16;
+  doc.setTextColor(41, 65, 122);
+  doc.setFontSize(13);
   doc.setFont('helvetica', 'bold');
-  doc.text(record.prefeitura || 'Prefeitura Municipal', w / 2, 14, { align: 'center' });
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  doc.text('RECIBO DE PAGAMENTO', w / 2, 22, { align: 'center' });
+  doc.text(record.prefeitura || 'Prefeitura Municipal', m, y);
+
   doc.setFontSize(9);
-  doc.text(`Competência: ${ref}`, w / 2, 28, { align: 'center' });
-
-  doc.setTextColor(0);
-  let y = 42;
-
-  // Employee info box
-  doc.setDrawColor(200);
-  doc.setLineWidth(0.3);
-  doc.roundedRect(14, y, w - 28, 28, 2, 2);
-  
-  doc.setFontSize(8);
-  doc.setTextColor(120);
-  doc.text('NOME DO COLABORADOR', 18, y + 5);
-  doc.text('CPF', 18, y + 17);
-  doc.text('FUNÇÃO', w / 2, y + 17);
-
-  doc.setFontSize(10);
-  doc.setTextColor(0);
-  doc.setFont('helvetica', 'bold');
-  doc.text(record.nome, 18, y + 11);
   doc.setFont('helvetica', 'normal');
-  doc.text(record.cpf, 18, y + 23);
-  doc.text(record.funcao, w / 2, y + 23);
+  doc.setTextColor(100);
+  doc.text('RECIBO DE PAGAMENTO', m, y + 6);
 
-  y += 34;
+  doc.setFontSize(9);
+  doc.setTextColor(60);
+  doc.text(`Competência: ${ref}`, w - m, y + 3, { align: 'right' });
 
-  // Lotação
-  doc.setDrawColor(200);
-  doc.roundedRect(14, y, w - 28, 14, 2, 2);
-  doc.setFontSize(8);
-  doc.setTextColor(120);
-  doc.text('SECRETARIA / LOTAÇÃO', 18, y + 5);
-  doc.setFontSize(10);
-  doc.setTextColor(0);
-  doc.text(record.pasta, 18, y + 11);
+  y += 14;
+  doc.setDrawColor(220);
+  doc.setLineWidth(0.3);
+  doc.line(m, y, w - m, y);
 
-  y += 22;
+  // ── Employee data ──
+  y += 8;
+  const labelStyle = () => { doc.setFontSize(7); doc.setTextColor(140); doc.setFont('helvetica', 'normal'); };
+  const valueStyle = () => { doc.setFontSize(10); doc.setTextColor(30); doc.setFont('helvetica', 'normal'); };
+  const valueBold = () => { doc.setFontSize(10); doc.setTextColor(30); doc.setFont('helvetica', 'bold'); };
 
-  // Payment table
-  const tableData = [
-    ['Salário Bruto', formatCurrencyExport(record.bruto)],
-    ['Descontos', `(${formatCurrencyExport(descontos)})`],
-  ];
+  const col2 = m + cw * 0.55;
 
+  labelStyle(); doc.text('COLABORADOR', m, y);
+  valueBold(); doc.text(record.nome, m, y + 5);
+
+  labelStyle(); doc.text('COMPETÊNCIA', col2, y);
+  valueStyle(); doc.text(ref, col2, y + 5);
+
+  y += 14;
+  labelStyle(); doc.text('CPF', m, y);
+  valueStyle(); doc.text(record.cpf, m, y + 5);
+
+  labelStyle(); doc.text('FUNÇÃO', col2, y);
+  valueStyle(); doc.text(record.funcao, col2, y + 5);
+
+  y += 14;
+  labelStyle(); doc.text('SECRETARIA / LOTAÇÃO', m, y);
+  valueStyle(); doc.text(record.pasta, m, y + 5);
+
+  y += 12;
+  doc.setDrawColor(220);
+  doc.line(m, y, w - m, y);
+  y += 4;
+
+  // ── Values table (minimal) ──
   autoTable(doc, {
     startY: y,
     head: [['Descrição', 'Valor (R$)']],
-    body: tableData,
-    theme: 'grid',
-    styles: { fontSize: 10, cellPadding: 5 },
-    headStyles: { fillColor: [41, 65, 122], textColor: 255, fontStyle: 'bold', halign: 'center' },
+    body: [
+      ['Salário Bruto', formatCurrencyExport(record.bruto)],
+      ['Descontos', descontos > 0 ? `(${formatCurrencyExport(descontos)})` : '-'],
+    ],
+    theme: 'plain',
+    styles: { fontSize: 9, cellPadding: { top: 4, bottom: 4, left: 0, right: 0 }, textColor: [30, 30, 30] },
+    headStyles: { fillColor: false, textColor: [140, 140, 140], fontStyle: 'normal', fontSize: 7 },
     columnStyles: {
-      0: { halign: 'left', cellWidth: 110 },
-      1: { halign: 'right', cellWidth: 52 },
+      0: { halign: 'left' },
+      1: { halign: 'right' },
     },
-    margin: { left: 14, right: 14 },
+    margin: { left: m, right: m },
+    tableLineColor: [220, 220, 220],
+    tableLineWidth: 0.2,
+    didDrawCell: (data: any) => {
+      if (data.section === 'body') {
+        doc.setDrawColor(235);
+        doc.setLineWidth(0.2);
+        doc.line(data.cell.x, data.cell.y + data.cell.height, data.cell.x + data.cell.width, data.cell.y + data.cell.height);
+      }
+    },
   });
 
-  y = (doc as any).lastAutoTable.finalY + 2;
+  y = (doc as any).lastAutoTable.finalY + 6;
 
-  // Total líquido
-  doc.setFillColor(41, 65, 122);
-  doc.roundedRect(14, y, w - 28, 14, 2, 2, 'F');
-  doc.setTextColor(255);
-  doc.setFontSize(11);
+  // ── Total líquido ──
+  doc.setFillColor(245, 247, 250);
+  doc.roundedRect(m, y, cw, 14, 1.5, 1.5, 'F');
+  doc.setDrawColor(41, 65, 122);
+  doc.setLineWidth(0.4);
+  doc.roundedRect(m, y, cw, 14, 1.5, 1.5, 'S');
+
+  doc.setTextColor(41, 65, 122);
+  doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
-  doc.text('VALOR LÍQUIDO A RECEBER', 18, y + 9);
-  doc.text(formatCurrencyExport(record.liquido), w - 18, y + 9, { align: 'right' });
+  doc.text('VALOR LÍQUIDO', m + 5, y + 9);
+  doc.setFontSize(12);
+  doc.text(formatCurrencyExport(record.liquido), w - m - 5, y + 9, { align: 'right' });
 
-  y += 26;
+  y += 30;
 
-  // Signature line
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(0);
-  doc.setDrawColor(0);
-  doc.setLineWidth(0.5);
-
-  const sigW = 80;
+  // ── Signature ──
+  doc.setDrawColor(180);
+  doc.setLineWidth(0.3);
+  const sigW = 70;
   const sigX = (w - sigW) / 2;
-  doc.line(sigX, y + 20, sigX + sigW, y + 20);
-  doc.setFontSize(9);
-  doc.text('Assinatura do Colaborador', w / 2, y + 26, { align: 'center' });
-  
+  doc.line(sigX, y, sigX + sigW, y);
+  doc.setFontSize(8);
+  doc.setTextColor(120);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Assinatura do Colaborador', w / 2, y + 5, { align: 'center' });
+
+  // ── Footer ──
   doc.setFontSize(7);
-  doc.setTextColor(150);
-  doc.text(`Documento gerado em ${new Date().toLocaleDateString('pt-BR')}`, w / 2, y + 38, { align: 'center' });
+  doc.setTextColor(180);
+  doc.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')}`, w / 2, doc.internal.pageSize.height - 10, { align: 'center' });
 
   doc.save(`contracheque_${record.nome.replace(/\s+/g, '_')}_${record.mes}_${record.ano}.pdf`);
 };
