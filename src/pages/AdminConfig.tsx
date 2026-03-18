@@ -87,7 +87,7 @@ const AdminConfig = () => {
     enabled: isAdmin,
   });
 
-  const { data: funcoesSistema, isLoading: loadingFuncoes } = useQuery({
+  const { data: funcoesSistema = [], isLoading: loadingFuncoes } = useQuery({
     queryKey: ['funcoes-sistema'],
     queryFn: async () => {
       const { data, error } = await supabase.from('funcoes_sistema').select('*').order('nome');
