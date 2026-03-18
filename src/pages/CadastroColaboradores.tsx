@@ -138,7 +138,18 @@ const CadastroColaboradores = () => {
     setDialogOpen(true);
   };
 
-  const updateField = (field: keyof ColaboradorForm, value: string) => setForm(prev => ({ ...prev, [field]: value }));
+  const updateField = (field: keyof ColaboradorForm, value: string) => {
+    setForm(prev => {
+      const next = { ...prev, [field]: value };
+      // Auto-calculate salário líquido
+      const bruto = Number(next.salario_bruto) || 0;
+      const encargoPct = Number(next.encargo) || 0;
+      const adicionais = Number(next.adicionais) || 0;
+      const liquido = bruto + adicionais - (bruto * encargoPct / 100);
+      next.salario_liquido = liquido > 0 ? liquido.toFixed(2) : '0';
+      return next;
+    });
+  };
 
   const filtered = colaboradores.filter((c: any) =>
     c.nome.toLowerCase().includes(search.toLowerCase()) ||
@@ -201,7 +212,7 @@ const CadastroColaboradores = () => {
                         <TableCell className="hidden md:table-cell">{(item.funcoes as any)?.nome || '—'}</TableCell>
                         <TableCell className="hidden lg:table-cell">{(item.lotacoes as any)?.nome || '—'}</TableCell>
                         <TableCell className="hidden lg:table-cell text-right">{formatCurrency(item.salario_bruto)}</TableCell>
-                        <TableCell className="hidden lg:table-cell text-right">{formatCurrency(item.encargo)}</TableCell>
+                        <TableCell className="hidden lg:table-cell text-right">{Number(item.encargo).toFixed(1)}%</TableCell>
                         <TableCell className="hidden xl:table-cell text-right">{formatCurrency(item.adicionais)}</TableCell>
                         <TableCell className="hidden xl:table-cell text-right">{formatCurrency(item.salario_liquido)}</TableCell>
                         <TableCell><Badge variant={item.ativo ? 'default' : 'secondary'}>{item.ativo ? 'Ativo' : 'Inativo'}</Badge></TableCell>
@@ -275,8 +286,11 @@ const CadastroColaboradores = () => {
                 <Input type="number" placeholder="0.00" value={form.salario_bruto} onChange={(e) => updateField('salario_bruto', e.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label>Encargo</Label>
-                <Input type="number" placeholder="0.00" value={form.encargo} onChange={(e) => updateField('encargo', e.target.value)} />
+                <Label>Encargo (%)</Label>
+                <div className="relative">
+                  <Input type="number" placeholder="0" value={form.encargo} onChange={(e) => updateField('encargo', e.target.value)} className="pr-8" />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>
+                </div>
               </div>
               <div className="space-y-2">
                 <Label>Adicionais</Label>
@@ -284,7 +298,7 @@ const CadastroColaboradores = () => {
               </div>
               <div className="space-y-2">
                 <Label>Salário Líquido</Label>
-                <Input type="number" placeholder="0.00" value={form.salario_liquido} onChange={(e) => updateField('salario_liquido', e.target.value)} />
+                <Input type="number" placeholder="0.00" value={form.salario_liquido} readOnly className="bg-muted" />
               </div>
               <div className="space-y-2">
                 <Label>Data Admissão</Label>
