@@ -22,6 +22,7 @@ import CadastroLotacoes from "./pages/CadastroLotacoes";
 import AdminConfig from "./pages/AdminConfig";
 import CadastroInstituicoes from "./pages/CadastroInstituicoes";
 import CadastroUnidades from "./pages/CadastroUnidades";
+import FolhaProcessamento from "./pages/FolhaProcessamento";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
