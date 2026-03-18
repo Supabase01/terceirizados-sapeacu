@@ -20,12 +20,16 @@ interface ColaboradorForm {
   secretaria_id: string;
   funcao_id: string;
   lotacao_id: string;
-  salario_base: string;
+  salario_bruto: string;
+  encargo: string;
+  adicionais: string;
+  salario_liquido: string;
   data_admissao: string;
 }
 
 const emptyForm: ColaboradorForm = {
-  nome: '', cpf: '', matricula: '', secretaria_id: '', funcao_id: '', lotacao_id: '', salario_base: '', data_admissao: '',
+  nome: '', cpf: '', matricula: '', secretaria_id: '', funcao_id: '', lotacao_id: '',
+  salario_bruto: '', encargo: '', adicionais: '', salario_liquido: '', data_admissao: '',
 };
 
 const CadastroColaboradores = () => {
