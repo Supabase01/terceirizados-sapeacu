@@ -975,6 +975,7 @@ export type Database = {
         Returns: boolean
       }
       is_master: { Args: { _user_id: string }; Returns: boolean }
+      next_matricula: { Args: { _unidade_id: string }; Returns: string }
       set_user_pin: {
         Args: { _pin: string; _user_id: string }
         Returns: undefined
