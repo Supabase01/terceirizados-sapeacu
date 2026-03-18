@@ -64,6 +64,7 @@ const CadastroPrefeituras = () => {
       const payload = {
         nome: form.nome,
         cnpj: form.cnpj || null,
+        responsavel: form.responsavel || null,
         endereco: form.endereco || null,
         cidade: form.cidade || null,
         estado: form.estado || null,
