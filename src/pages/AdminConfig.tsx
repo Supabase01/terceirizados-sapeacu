@@ -561,24 +561,30 @@ const AdminConfig = () => {
                                 </div>
                               </TableCell>
                               <TableCell>
-                                <div className="flex flex-wrap gap-1">
-                                  {funcoesSistema?.map(f => {
-                                    const assigned = user.funcoes_sistema.includes(f.id);
-                                    return (
-                                      <Badge
-                                        key={f.id}
-                                        variant={assigned ? 'default' : 'outline'}
-                                        className="cursor-pointer text-[10px] transition-colors hover:opacity-80"
-                                        onClick={() => assignFuncao.mutate({ userId: user.id, funcaoId: f.id, assign: !assigned })}
-                                      >
-                                        {f.nome}
-                                        {assigned ? ' ✓' : ' +'}
-                                      </Badge>
-                                    );
-                                  })}
-                                  {(!funcoesSistema || funcoesSistema.length === 0) && (
-                                    <span className="text-xs text-muted-foreground italic">Nenhuma função criada</span>
-                                  )}
+                                <div className="flex items-center gap-2">
+                                  <div className="flex flex-wrap gap-1 flex-1 min-w-0">
+                                    {user.funcoes_sistema.length > 0 ? (
+                                      user.funcoes_sistema.map((fid: string) => {
+                                        const f = funcoesSistema?.find(fs => fs.id === fid);
+                                        return f ? (
+                                          <Badge key={fid} variant="secondary" className="text-[10px]">
+                                            {f.nome}
+                                          </Badge>
+                                        ) : null;
+                                      })
+                                    ) : (
+                                      <span className="text-xs text-muted-foreground italic">Nenhuma</span>
+                                    )}
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 shrink-0"
+                                    onClick={() => openFuncaoUserDialog(user)}
+                                    title="Editar Funções"
+                                  >
+                                    <Pencil className="h-3.5 w-3.5" />
+                                  </Button>
                                 </div>
                               </TableCell>
                               <TableCell>
