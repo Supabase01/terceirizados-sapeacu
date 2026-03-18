@@ -280,6 +280,35 @@ const AdminConfig = () => {
     },
   });
 
+  const toggleAllPermissions = useMutation({
+    mutationFn: async ({ funcaoId, allChecked }: { funcaoId: string; allChecked: boolean }) => {
+      if (allChecked) {
+        // Remove all permissions for this function
+        const { error } = await supabase.from('funcao_sistema_permissoes').delete()
+          .eq('funcao_sistema_id', funcaoId);
+        if (error) throw error;
+      } else {
+        // First remove existing to avoid duplicates
+        await supabase.from('funcao_sistema_permissoes').delete()
+          .eq('funcao_sistema_id', funcaoId);
+        // Insert all routes
+        const perms = ALL_ROUTES.map(r => ({
+          funcao_sistema_id: funcaoId,
+          route_path: r.path,
+          module_name: r.module,
+          allowed: true,
+        }));
+        const { error } = await supabase.from('funcao_sistema_permissoes').insert(perms);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['funcao-sistema-permissoes'] });
+      queryClient.invalidateQueries({ queryKey: ['allowed-routes'] });
+    },
+    onError: (err: any) => toast({ title: 'Erro ao atualizar permissões', description: err.message, variant: 'destructive' }),
+  });
+
   // --- Helpers ---
   const resetFuncaoForm = () => {
     setEditingFuncao(null);
