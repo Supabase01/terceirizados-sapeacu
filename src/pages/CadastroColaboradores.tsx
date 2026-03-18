@@ -39,7 +39,7 @@ interface ColaboradorForm {
 const emptyForm: ColaboradorForm = {
   nome: '', cpf: '', matricula: '', secretaria_id: '', funcao_id: '', lotacao_id: '',
   salario_base: '', data_admissao: '', beneficio_social: false, banco: '', conta: '', pix: '',
-  endereco: '', numero: '', complemento: '', bairro: '', cidade_id: '', cep: '',
+  endereco: '', numero: '', complemento: '', bairro: '', cidade_id: '', cep: '', lideranca_id: '',
 };
 
 const CadastroColaboradores = () => {
