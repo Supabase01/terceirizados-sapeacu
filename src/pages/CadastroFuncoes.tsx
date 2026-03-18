@@ -93,6 +93,7 @@ const CadastroFuncoes = () => {
                   filtered.map((item: any) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">{item.nome}</TableCell>
+                      <TableCell className="text-muted-foreground text-sm max-w-xs truncate">{item.atribuicoes || '—'}</TableCell>
                       <TableCell><Badge variant={item.ativo ? 'default' : 'secondary'}>{item.ativo ? 'Ativo' : 'Inativo'}</Badge></TableCell>
                       <TableCell>
                         <div className="flex gap-1">
