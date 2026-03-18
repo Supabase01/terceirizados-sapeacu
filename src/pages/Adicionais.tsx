@@ -69,7 +69,7 @@ const Adicionais = () => {
   const saveMutation = useMutation({
     mutationFn: async () => {
       const isEventual = form.tipo === 'eventual';
-      const payload = {
+      const payload: any = {
         colaborador_id: form.colaborador_id,
         descricao: form.descricao,
         valor: Number(form.valor) || 0,
@@ -78,6 +78,7 @@ const Adicionais = () => {
         ano: isEventual && form.ano ? Number(form.ano) : null,
         mes_fim: isEventual && form.mes_fim ? Number(form.mes_fim) : null,
         ano_fim: isEventual && form.ano_fim ? Number(form.ano_fim) : null,
+        unidade_id: unidadeId,
       };
       if (editId) {
         const { error } = await supabase.from('adicionais').update(payload).eq('id', editId);
