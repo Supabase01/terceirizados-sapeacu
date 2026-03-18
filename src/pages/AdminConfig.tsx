@@ -67,6 +67,10 @@ const AdminConfig = () => {
   const [unidadeDialogUserId, setUnidadeDialogUserId] = useState<string | null>(null);
   const [unidadeDialogSelected, setUnidadeDialogSelected] = useState<Set<string>>(new Set());
 
+  // Dialog for linking funções to a user
+  const [funcaoDialogUserId, setFuncaoDialogUserId] = useState<string | null>(null);
+  const [funcaoDialogSelected, setFuncaoDialogSelected] = useState<Set<string>>(new Set());
+
   // --- Queries ---
   const { data: users, isLoading: loadingUsers } = useQuery({
     queryKey: ['admin-users'],
@@ -406,6 +410,28 @@ const AdminConfig = () => {
     setUnidadeDialogSelected(new Set(user.unidades || []));
   };
 
+  const openFuncaoUserDialog = (user: any) => {
+    setFuncaoDialogUserId(user.id);
+    setFuncaoDialogSelected(new Set(user.funcoes_sistema || []));
+  };
+
+  const saveFuncaoUser = () => {
+    if (!funcaoDialogUserId) return;
+    const user = users?.find(u => u.id === funcaoDialogUserId);
+    if (!user) return;
+    const currentSet = new Set(user.funcoes_sistema as string[]);
+    const newSet = funcaoDialogSelected;
+    // Remove unassigned
+    currentSet.forEach(id => {
+      if (!newSet.has(id)) assignFuncao.mutate({ userId: funcaoDialogUserId!, funcaoId: id, assign: false });
+    });
+    // Add new
+    newSet.forEach(id => {
+      if (!currentSet.has(id)) assignFuncao.mutate({ userId: funcaoDialogUserId!, funcaoId: id, assign: true });
+    });
+    setFuncaoDialogUserId(null);
+  };
+
   // --- Guard ---
   if (loadingAdmin) {
     return <Layout><div className="flex items-center justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div></Layout>;
@@ -535,24 +561,30 @@ const AdminConfig = () => {
                                 </div>
                               </TableCell>
                               <TableCell>
-                                <div className="flex flex-wrap gap-1">
-                                  {funcoesSistema?.map(f => {
-                                    const assigned = user.funcoes_sistema.includes(f.id);
-                                    return (
-                                      <Badge
-                                        key={f.id}
-                                        variant={assigned ? 'default' : 'outline'}
-                                        className="cursor-pointer text-[10px] transition-colors hover:opacity-80"
-                                        onClick={() => assignFuncao.mutate({ userId: user.id, funcaoId: f.id, assign: !assigned })}
-                                      >
-                                        {f.nome}
-                                        {assigned ? ' ✓' : ' +'}
-                                      </Badge>
-                                    );
-                                  })}
-                                  {(!funcoesSistema || funcoesSistema.length === 0) && (
-                                    <span className="text-xs text-muted-foreground italic">Nenhuma função criada</span>
-                                  )}
+                                <div className="flex items-center gap-2">
+                                  <div className="flex flex-wrap gap-1 flex-1 min-w-0">
+                                    {user.funcoes_sistema.length > 0 ? (
+                                      user.funcoes_sistema.map((fid: string) => {
+                                        const f = funcoesSistema?.find(fs => fs.id === fid);
+                                        return f ? (
+                                          <Badge key={fid} variant="secondary" className="text-[10px]">
+                                            {f.nome}
+                                          </Badge>
+                                        ) : null;
+                                      })
+                                    ) : (
+                                      <span className="text-xs text-muted-foreground italic">Nenhuma</span>
+                                    )}
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 shrink-0"
+                                    onClick={() => openFuncaoUserDialog(user)}
+                                    title="Editar Funções"
+                                  >
+                                    <Pencil className="h-3.5 w-3.5" />
+                                  </Button>
                                 </div>
                               </TableCell>
                               <TableCell>
@@ -1125,6 +1157,57 @@ const AdminConfig = () => {
               disabled={saveUserUnidades.isPending}
             >
               {saveUserUnidades.isPending ? 'Salvando...' : 'Salvar Vínculos'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ===== DIALOG VINCULAR FUNÇÕES AO USUÁRIO ===== */}
+      <Dialog open={!!funcaoDialogUserId} onOpenChange={(open) => !open && setFuncaoDialogUserId(null)}>
+        <DialogContent className="max-w-md max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Briefcase className="h-5 w-5" />
+              Vincular Funções
+            </DialogTitle>
+            <DialogDescription>
+              Selecione as funções que este usuário terá.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
+            {funcoesSistema.map(f => {
+              const isChecked = funcaoDialogSelected.has(f.id);
+              return (
+                <label
+                  key={f.id}
+                  className="flex items-center gap-3 p-2 rounded-md hover:bg-accent/50 cursor-pointer"
+                >
+                  <Checkbox
+                    checked={isChecked}
+                    onCheckedChange={(checked) => {
+                      setFuncaoDialogSelected(prev => {
+                        const next = new Set(prev);
+                        if (checked) next.add(f.id);
+                        else next.delete(f.id);
+                        return next;
+                      });
+                    }}
+                  />
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium">{f.nome}</span>
+                    {f.descricao && <span className="text-xs text-muted-foreground">{f.descricao}</span>}
+                  </div>
+                </label>
+              );
+            })}
+            {funcoesSistema.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-4">Nenhuma função criada</p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setFuncaoDialogUserId(null)}>Cancelar</Button>
+            <Button onClick={saveFuncaoUser} disabled={assignFuncao.isPending}>
+              {assignFuncao.isPending ? 'Salvando...' : 'Salvar'}
             </Button>
           </DialogFooter>
         </DialogContent>
