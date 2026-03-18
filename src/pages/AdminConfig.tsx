@@ -410,6 +410,28 @@ const AdminConfig = () => {
     setUnidadeDialogSelected(new Set(user.unidades || []));
   };
 
+  const openFuncaoUserDialog = (user: any) => {
+    setFuncaoDialogUserId(user.id);
+    setFuncaoDialogSelected(new Set(user.funcoes_sistema || []));
+  };
+
+  const saveFuncaoUser = () => {
+    if (!funcaoDialogUserId) return;
+    const user = users?.find(u => u.id === funcaoDialogUserId);
+    if (!user) return;
+    const currentSet = new Set(user.funcoes_sistema as string[]);
+    const newSet = funcaoDialogSelected;
+    // Remove unassigned
+    currentSet.forEach(id => {
+      if (!newSet.has(id)) assignFuncao.mutate({ userId: funcaoDialogUserId!, funcaoId: id, assign: false });
+    });
+    // Add new
+    newSet.forEach(id => {
+      if (!currentSet.has(id)) assignFuncao.mutate({ userId: funcaoDialogUserId!, funcaoId: id, assign: true });
+    });
+    setFuncaoDialogUserId(null);
+  };
+
   // --- Guard ---
   if (loadingAdmin) {
     return <Layout><div className="flex items-center justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div></Layout>;
