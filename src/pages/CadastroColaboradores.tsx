@@ -20,12 +20,16 @@ interface ColaboradorForm {
   secretaria_id: string;
   funcao_id: string;
   lotacao_id: string;
-  salario_base: string;
+  salario_bruto: string;
+  encargo: string;
+  adicionais: string;
+  salario_liquido: string;
   data_admissao: string;
 }
 
 const emptyForm: ColaboradorForm = {
-  nome: '', cpf: '', matricula: '', secretaria_id: '', funcao_id: '', lotacao_id: '', salario_base: '', data_admissao: '',
+  nome: '', cpf: '', matricula: '', secretaria_id: '', funcao_id: '', lotacao_id: '',
+  salario_bruto: '', encargo: '', adicionais: '', salario_liquido: '', data_admissao: '',
 };
 
 const CadastroColaboradores = () => {
@@ -84,7 +88,10 @@ const CadastroColaboradores = () => {
         secretaria_id: form.secretaria_id || null,
         funcao_id: form.funcao_id || null,
         lotacao_id: form.lotacao_id || null,
-        salario_base: form.salario_base ? Number(form.salario_base) : 0,
+        salario_bruto: form.salario_bruto ? Number(form.salario_bruto) : 0,
+        encargo: form.encargo ? Number(form.encargo) : 0,
+        adicionais: form.adicionais ? Number(form.adicionais) : 0,
+        salario_liquido: form.salario_liquido ? Number(form.salario_liquido) : 0,
         data_admissao: form.data_admissao || null,
       };
       if (editId) {
@@ -122,7 +129,10 @@ const CadastroColaboradores = () => {
       secretaria_id: item.secretaria_id || '',
       funcao_id: item.funcao_id || '',
       lotacao_id: item.lotacao_id || '',
-      salario_base: String(item.salario_base || ''),
+      salario_bruto: String(item.salario_bruto || ''),
+      encargo: String(item.encargo || ''),
+      adicionais: String(item.adicionais || ''),
+      salario_liquido: String(item.salario_liquido || ''),
       data_admissao: item.data_admissao || '',
     });
     setDialogOpen(true);
@@ -169,16 +179,19 @@ const CadastroColaboradores = () => {
                     <TableHead className="hidden md:table-cell">Secretaria</TableHead>
                     <TableHead className="hidden md:table-cell">Função</TableHead>
                     <TableHead className="hidden lg:table-cell">Lotação</TableHead>
-                    <TableHead className="hidden lg:table-cell">Salário Base</TableHead>
+                    <TableHead className="hidden lg:table-cell text-right">Sal. Bruto</TableHead>
+                    <TableHead className="hidden lg:table-cell text-right">Encargo</TableHead>
+                    <TableHead className="hidden xl:table-cell text-right">Adicionais</TableHead>
+                    <TableHead className="hidden xl:table-cell text-right">Sal. Líquido</TableHead>
                     <TableHead className="w-24">Status</TableHead>
                     <TableHead className="w-28">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
-                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={11} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
                   ) : filtered.length === 0 ? (
-                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Nenhum colaborador encontrado</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={11} className="text-center py-8 text-muted-foreground">Nenhum colaborador encontrado</TableCell></TableRow>
                   ) : (
                     filtered.map((item: any) => (
                       <TableRow key={item.id}>
@@ -187,7 +200,10 @@ const CadastroColaboradores = () => {
                         <TableCell className="hidden md:table-cell">{(item.secretarias as any)?.nome || '—'}</TableCell>
                         <TableCell className="hidden md:table-cell">{(item.funcoes as any)?.nome || '—'}</TableCell>
                         <TableCell className="hidden lg:table-cell">{(item.lotacoes as any)?.nome || '—'}</TableCell>
-                        <TableCell className="hidden lg:table-cell">{formatCurrency(item.salario_base)}</TableCell>
+                        <TableCell className="hidden lg:table-cell text-right">{formatCurrency(item.salario_bruto)}</TableCell>
+                        <TableCell className="hidden lg:table-cell text-right">{formatCurrency(item.encargo)}</TableCell>
+                        <TableCell className="hidden xl:table-cell text-right">{formatCurrency(item.adicionais)}</TableCell>
+                        <TableCell className="hidden xl:table-cell text-right">{formatCurrency(item.salario_liquido)}</TableCell>
                         <TableCell><Badge variant={item.ativo ? 'default' : 'secondary'}>{item.ativo ? 'Ativo' : 'Inativo'}</Badge></TableCell>
                         <TableCell>
                           <div className="flex gap-1">
@@ -255,8 +271,20 @@ const CadastroColaboradores = () => {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Salário Base</Label>
-                <Input type="number" placeholder="0.00" value={form.salario_base} onChange={(e) => updateField('salario_base', e.target.value)} />
+                <Label>Salário Bruto</Label>
+                <Input type="number" placeholder="0.00" value={form.salario_bruto} onChange={(e) => updateField('salario_bruto', e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Encargo</Label>
+                <Input type="number" placeholder="0.00" value={form.encargo} onChange={(e) => updateField('encargo', e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Adicionais</Label>
+                <Input type="number" placeholder="0.00" value={form.adicionais} onChange={(e) => updateField('adicionais', e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Salário Líquido</Label>
+                <Input type="number" placeholder="0.00" value={form.salario_liquido} onChange={(e) => updateField('salario_liquido', e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label>Data Admissão</Label>
