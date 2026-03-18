@@ -70,7 +70,8 @@ const FolhaProcessamento = () => {
       const { data: adicionais, error: addErr } = await supabase
         .from('adicionais')
         .select('*')
-        .eq('ativo', true);
+        .eq('ativo', true)
+        .eq('unidade_id', unidadeId!);
       if (addErr) throw addErr;
 
       // 3. Load descontos ativos
