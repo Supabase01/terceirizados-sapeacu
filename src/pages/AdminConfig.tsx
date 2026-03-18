@@ -24,8 +24,11 @@ const ALL_ROUTES = [
   { path: '/admin/config', module: 'Administrador', label: 'Painel Admin' },
   { path: '/admin/instituicoes', module: 'Administrador', label: 'Instituições' },
   { path: '/admin/unidades', module: 'Administrador', label: 'Unidades de Folha' },
+  { path: '/admin/cidades', module: 'Administrador', label: 'Cidades' },
+  { path: '/admin/liderancas', module: 'Administrador', label: 'Lideranças' },
   { path: '/indicadores', module: 'Folha de Pagamentos', label: 'Indicadores' },
   { path: '/import', module: 'Folha de Pagamentos', label: 'Importação' },
+  { path: '/folha/processamento', module: 'Folha de Pagamentos', label: 'Em Processamento' },
   { path: '/folha/adicionais', module: 'Folha de Pagamentos', label: 'Adicionais' },
   { path: '/folha/descontos', module: 'Folha de Pagamentos', label: 'Descontos' },
   { path: '/relatorios', module: 'Folha de Pagamentos', label: 'Relatórios' },
@@ -34,6 +37,7 @@ const ALL_ROUTES = [
   { path: '/cadastro/funcoes', module: 'Cadastros', label: 'Funções' },
   { path: '/cadastro/lotacoes', module: 'Cadastros', label: 'Lotações' },
   { path: '/alertas', module: 'Auditoria', label: 'Alertas' },
+  { path: '/auditoria/log', module: 'Auditoria', label: 'Log de Alterações' },
 ];
 
 const ROUTE_LABELS: Record<string, string> = {};
