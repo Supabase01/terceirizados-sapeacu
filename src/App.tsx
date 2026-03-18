@@ -84,6 +84,7 @@ const App = () => (
           <Route path="/pin" element={<AuthGuard><PinAccess /></AuthGuard>} />
           <Route path="/admin/config" element={<ProtectedRoute><AdminConfig /></ProtectedRoute>} />
           <Route path="/admin/instituicoes" element={<ProtectedRoute><CadastroInstituicoes /></ProtectedRoute>} />
+          <Route path="/admin/unidades" element={<ProtectedRoute><CadastroUnidades /></ProtectedRoute>} />
           <Route path="/indicadores" element={<ProtectedRoute><Indicadores /></ProtectedRoute>} />
           <Route path="/import" element={<ProtectedRoute><Import /></ProtectedRoute>} />
           <Route path="/alertas" element={<ProtectedRoute><Alertas /></ProtectedRoute>} />
