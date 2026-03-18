@@ -119,6 +119,16 @@ const AdminConfig = () => {
     enabled: isAdmin,
   });
 
+  const { data: usuarioPermissoes = [] } = useQuery({
+    queryKey: ['usuario-permissoes'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('usuario_permissoes').select('*');
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: isAdmin,
+  });
+
   // --- Derived data ---
   const filteredUsers = useMemo(() => {
     if (!users) return [];
