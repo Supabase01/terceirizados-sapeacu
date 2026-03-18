@@ -192,6 +192,30 @@ const AdminConfig = () => {
     onError: (err: any) => toast({ title: 'Erro', description: err.message, variant: 'destructive' }),
   });
 
+  const createUser = useMutation({
+    mutationFn: async () => {
+      if (!newUserEmail || !newUserPassword) throw new Error('E-mail e senha são obrigatórios');
+      if (newUserPassword.length < 6) throw new Error('Senha deve ter no mínimo 6 caracteres');
+
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await supabase.functions.invoke('create-user', {
+        body: { email: newUserEmail, password: newUserPassword, nome: newUserNome || newUserEmail, role: newUserRole },
+      });
+      if (res.error) throw res.error;
+      if (res.data?.error) throw new Error(res.data.error);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      setUserDialog(false);
+      setNewUserEmail('');
+      setNewUserNome('');
+      setNewUserPassword('');
+      setNewUserRole('usuario');
+      toast({ title: 'Usuário criado com sucesso' });
+    },
+    onError: (err: any) => toast({ title: 'Erro ao criar usuário', description: err.message, variant: 'destructive' }),
+  });
+
   const resetFuncaoForm = () => {
     setEditingFuncao(null);
     setFuncaoNome('');
