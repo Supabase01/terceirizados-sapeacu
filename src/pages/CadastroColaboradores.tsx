@@ -128,6 +128,7 @@ const CadastroColaboradores = () => {
         bairro: form.bairro || null,
         cidade_id: form.cidade_id || null,
         cep: form.cep || null,
+        lideranca_id: form.lideranca_id || null,
       };
       if (editId) {
         const { error } = await supabase.from('colaboradores').update(payload).eq('id', editId);
