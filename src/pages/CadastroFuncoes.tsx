@@ -17,6 +17,7 @@ const CadastroFuncoes = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [nome, setNome] = useState('');
+  const [atribuicoes, setAtribuicoes] = useState('');
   const [search, setSearch] = useState('');
 
   const { data: funcoes = [], isLoading } = useQuery({
