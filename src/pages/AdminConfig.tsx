@@ -16,7 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Users, Shield, Loader2, Plus, Pencil, Trash2, Briefcase, Lock, Search, UserCheck, ShieldCheck, KeyRound } from 'lucide-react';
+import { Users, Shield, Loader2, Plus, Pencil, Trash2, Briefcase, Lock, Search, KeyRound, Building2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useIsAdmin } from '@/hooks/useUserRoles';
 
@@ -56,10 +56,14 @@ const AdminConfig = () => {
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserNome, setNewUserNome] = useState('');
   const [newUserPassword, setNewUserPassword] = useState('');
-  const [newUserRole, setNewUserRole] = useState('usuario');
   const [newUserFuncoes, setNewUserFuncoes] = useState<string[]>([]);
+  const [newUserUnidades, setNewUserUnidades] = useState<string[]>([]);
 
   const [userSearch, setUserSearch] = useState('');
+
+  // Dialog for linking unidades to a user
+  const [unidadeDialogUserId, setUnidadeDialogUserId] = useState<string | null>(null);
+  const [unidadeDialogSelected, setUnidadeDialogSelected] = useState<Set<string>>(new Set());
 
   // --- Queries ---
   const { data: users, isLoading: loadingUsers } = useQuery({
@@ -72,10 +76,12 @@ const AdminConfig = () => {
       if (error) throw error;
       const { data: roles } = await supabase.from('user_roles').select('user_id, role');
       const { data: userFuncoes } = await supabase.from('usuario_funcoes_sistema').select('user_id, funcao_sistema_id');
+      const { data: userUnidades } = await supabase.from('usuario_unidades').select('user_id, unidade_id');
       return (profiles || []).map(p => ({
         ...p,
         roles: (roles || []).filter(r => r.user_id === p.id).map(r => r.role),
         funcoes_sistema: (userFuncoes || []).filter(f => f.user_id === p.id).map(f => f.funcao_sistema_id),
+        unidades: (userUnidades || []).filter(u => u.user_id === p.id).map(u => u.unidade_id),
       }));
     },
     enabled: isAdmin,
@@ -101,6 +107,16 @@ const AdminConfig = () => {
     enabled: isAdmin,
   });
 
+  const { data: unidadesFolha = [] } = useQuery({
+    queryKey: ['unidades-folha'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('unidades_folha').select('id, nome, ativo').eq('ativo', true).order('nome');
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: isAdmin,
+  });
+
   // --- Derived data ---
   const filteredUsers = useMemo(() => {
     if (!users) return [];
@@ -120,27 +136,16 @@ const AdminConfig = () => {
     }, {} as Record<string, typeof ALL_ROUTES>),
   []);
 
+  const getUnidadeNome = (id: string) => unidadesFolha.find(u => u.id === id)?.nome || id;
+
   const stats = useMemo(() => ({
     totalUsers: users?.length || 0,
-    adminCount: users?.filter(u => u.roles.includes('admin')).length || 0,
     funcaoCount: funcoesSistema?.length || 0,
+    unidadeCount: unidadesFolha.length,
     routeCount: ALL_ROUTES.length,
-  }), [users, funcoesSistema]);
+  }), [users, funcoesSistema, unidadesFolha]);
 
   // --- Mutations ---
-  const assignRole = useMutation({
-    mutationFn: async ({ userId, role }: { userId: string; role: string }) => {
-      await supabase.from('user_roles').delete().eq('user_id', userId);
-      const { error } = await supabase.from('user_roles').insert({ user_id: userId, role: role as any });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-      toast({ title: 'Papel atualizado com sucesso' });
-    },
-    onError: (err: any) => toast({ title: 'Erro', description: err.message, variant: 'destructive' }),
-  });
-
   const assignFuncao = useMutation({
     mutationFn: async ({ userId, funcaoId, assign }: { userId: string; funcaoId: string; assign: boolean }) => {
       if (assign) {
@@ -155,6 +160,23 @@ const AdminConfig = () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
       queryClient.invalidateQueries({ queryKey: ['allowed-routes'] });
       toast({ title: 'Função atualizada' });
+    },
+    onError: (err: any) => toast({ title: 'Erro', description: err.message, variant: 'destructive' }),
+  });
+
+  const saveUserUnidades = useMutation({
+    mutationFn: async ({ userId, unidadeIds }: { userId: string; unidadeIds: string[] }) => {
+      await supabase.from('usuario_unidades').delete().eq('user_id', userId);
+      if (unidadeIds.length > 0) {
+        const rows = unidadeIds.map(unidade_id => ({ user_id: userId, unidade_id }));
+        const { error } = await supabase.from('usuario_unidades').insert(rows);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      toast({ title: 'Unidades vinculadas com sucesso' });
+      setUnidadeDialogUserId(null);
     },
     onError: (err: any) => toast({ title: 'Erro', description: err.message, variant: 'destructive' }),
   });
@@ -218,16 +240,21 @@ const AdminConfig = () => {
       if (!newUserEmail || !newUserPassword) throw new Error('E-mail e senha são obrigatórios');
       if (newUserPassword.length < 6) throw new Error('Senha deve ter no mínimo 6 caracteres');
       const res = await supabase.functions.invoke('create-user', {
-        body: { email: newUserEmail, password: newUserPassword, nome: newUserNome || newUserEmail, role: newUserRole },
+        body: { email: newUserEmail, password: newUserPassword, nome: newUserNome || newUserEmail, role: 'usuario' },
       });
       if (res.error) throw res.error;
       if (res.data?.error) throw new Error(res.data.error);
 
-      // Assign system functions to the new user if selected
-      if (newUserFuncoes.length > 0 && res.data?.user?.id) {
-        const userId = res.data.user.id;
+      const userId = res.data?.user?.id;
+      if (userId) {
+        // Assign functions
         for (const funcaoId of newUserFuncoes) {
           await supabase.from('usuario_funcoes_sistema').insert({ user_id: userId, funcao_sistema_id: funcaoId });
+        }
+        // Assign unidades
+        if (newUserUnidades.length > 0) {
+          const rows = newUserUnidades.map(unidade_id => ({ user_id: userId, unidade_id }));
+          await supabase.from('usuario_unidades').insert(rows);
         }
       }
     },
@@ -237,8 +264,8 @@ const AdminConfig = () => {
       setNewUserEmail('');
       setNewUserNome('');
       setNewUserPassword('');
-      setNewUserRole('usuario');
       setNewUserFuncoes([]);
+      setNewUserUnidades([]);
       toast({ title: 'Usuário criado com sucesso' });
     },
     onError: (err: any) => toast({ title: 'Erro ao criar usuário', description: err.message, variant: 'destructive' }),
@@ -287,15 +314,12 @@ const AdminConfig = () => {
   const toggleAllPermissions = useMutation({
     mutationFn: async ({ funcaoId, allChecked }: { funcaoId: string; allChecked: boolean }) => {
       if (allChecked) {
-        // Remove all permissions for this function
         const { error } = await supabase.from('funcao_sistema_permissoes').delete()
           .eq('funcao_sistema_id', funcaoId);
         if (error) throw error;
       } else {
-        // First remove existing to avoid duplicates
         await supabase.from('funcao_sistema_permissoes').delete()
           .eq('funcao_sistema_id', funcaoId);
-        // Insert all routes
         const perms = ALL_ROUTES.map(r => ({
           funcao_sistema_id: funcaoId,
           route_path: r.path,
@@ -336,6 +360,11 @@ const AdminConfig = () => {
     );
   };
 
+  const openUnidadeDialog = (user: any) => {
+    setUnidadeDialogUserId(user.id);
+    setUnidadeDialogSelected(new Set(user.unidades || []));
+  };
+
   // --- Guard ---
   if (loadingAdmin) {
     return <Layout><div className="flex items-center justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div></Layout>;
@@ -368,23 +397,23 @@ const AdminConfig = () => {
           </Card>
           <Card>
             <CardContent className="p-4 flex items-center gap-3">
-              <div className="rounded-lg bg-destructive/10 p-2.5">
-                <ShieldCheck className="h-5 w-5 text-destructive" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{stats.adminCount}</p>
-                <p className="text-xs text-muted-foreground">Administradores</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 flex items-center gap-3">
               <div className="rounded-lg bg-accent p-2.5">
                 <Briefcase className="h-5 w-5 text-accent-foreground" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-foreground">{stats.funcaoCount}</p>
                 <p className="text-xs text-muted-foreground">Funções</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="rounded-lg bg-primary/10 p-2.5">
+                <Building2 className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">{stats.unidadeCount}</p>
+                <p className="text-xs text-muted-foreground">Unidades</p>
               </div>
             </CardContent>
           </Card>
@@ -415,7 +444,7 @@ const AdminConfig = () => {
               <CardHeader className="flex flex-row items-center justify-between gap-4 flex-wrap">
                 <div className="flex-1 min-w-0">
                   <CardTitle className="text-lg">Usuários do Sistema</CardTitle>
-                  <CardDescription>Gerencie usuários, papéis e funções atribuídas</CardDescription>
+                  <CardDescription>Gerencie usuários, funções e unidades vinculadas</CardDescription>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="relative">
@@ -442,15 +471,14 @@ const AdminConfig = () => {
                       <TableHeader>
                         <TableRow>
                           <TableHead>Usuário</TableHead>
-                          <TableHead className="w-[140px]">Papel</TableHead>
-                          <TableHead>Funções do Sistema</TableHead>
-                          <TableHead className="w-[160px]">Alterar Papel</TableHead>
+                          <TableHead>Função</TableHead>
+                          <TableHead>Unidades de Folha</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {filteredUsers.map(user => {
-                          const currentRole = user.roles[0] || 'sem papel';
                           const isMaster = user.email === 'nailton.alsampaio@gmail.com';
+                          const isAdminUser = user.roles.includes('admin');
                           return (
                             <TableRow key={user.id}>
                               <TableCell>
@@ -458,16 +486,12 @@ const AdminConfig = () => {
                                   <span className="font-medium text-foreground">
                                     {user.nome || user.email}
                                     {isMaster && <Badge className="ml-2 text-[10px]" variant="default">Master</Badge>}
+                                    {isAdminUser && !isMaster && <Badge className="ml-2 text-[10px]" variant="destructive">Admin</Badge>}
                                   </span>
                                   {user.nome && (
                                     <span className="text-xs text-muted-foreground">{user.email}</span>
                                   )}
                                 </div>
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant={currentRole === 'admin' ? 'destructive' : 'secondary'}>
-                                  {currentRole === 'admin' ? 'Admin' : currentRole === 'usuario' ? 'Usuário' : 'N/A'}
-                                </Badge>
                               </TableCell>
                               <TableCell>
                                 <div className="flex flex-wrap gap-1">
@@ -491,26 +515,35 @@ const AdminConfig = () => {
                                 </div>
                               </TableCell>
                               <TableCell>
-                                <Select
-                                  value={currentRole}
-                                  onValueChange={(role) => assignRole.mutate({ userId: user.id, role })}
-                                  disabled={isMaster}
-                                >
-                                  <SelectTrigger className="h-8 text-xs">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="admin">Administrador</SelectItem>
-                                    <SelectItem value="usuario">Usuário</SelectItem>
-                                  </SelectContent>
-                                </Select>
+                                <div className="flex items-center gap-2">
+                                  <div className="flex flex-wrap gap-1 flex-1 min-w-0">
+                                    {user.unidades.length > 0 ? (
+                                      user.unidades.map((uid: string) => (
+                                        <Badge key={uid} variant="secondary" className="text-[10px]">
+                                          {getUnidadeNome(uid)}
+                                        </Badge>
+                                      ))
+                                    ) : (
+                                      <span className="text-xs text-muted-foreground italic">Nenhuma</span>
+                                    )}
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 shrink-0"
+                                    onClick={() => openUnidadeDialog(user)}
+                                    title="Vincular Unidades"
+                                  >
+                                    <Building2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                </div>
                               </TableCell>
                             </TableRow>
                           );
                         })}
                         {filteredUsers.length === 0 && (
                           <TableRow>
-                            <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                            <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
                               {userSearch ? 'Nenhum usuário encontrado' : 'Nenhum usuário cadastrado'}
                             </TableCell>
                           </TableRow>
@@ -687,7 +720,7 @@ const AdminConfig = () => {
                                         p => p.funcao_sistema_id === f.id && p.route_path === route.path && p.allowed
                                       );
                                       return (
-                                        <TableCell key={f.id} className={`text-center ${idx % 2 === 0 ? '' : ''}`}>
+                                        <TableCell key={f.id} className="text-center">
                                           <div className={`inline-flex items-center justify-center w-8 h-8 rounded-md ${isAllowed ? 'bg-primary/10' : ''}`}>
                                             <Checkbox
                                               checked={isAllowed}
@@ -770,7 +803,7 @@ const AdminConfig = () => {
 
       {/* ===== DIALOG CREATE USER ===== */}
       <Dialog open={userDialog} onOpenChange={setUserDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Novo Usuário</DialogTitle>
             <DialogDescription>Crie uma conta de acesso ao sistema.</DialogDescription>
@@ -788,21 +821,9 @@ const AdminConfig = () => {
               <Label>Senha *</Label>
               <Input type="password" value={newUserPassword} onChange={e => setNewUserPassword(e.target.value)} placeholder="Mínimo 6 caracteres" minLength={6} required />
             </div>
-            <div className="space-y-2">
-              <Label>Papel</Label>
-              <Select value={newUserRole} onValueChange={setNewUserRole}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="usuario">Usuário</SelectItem>
-                  <SelectItem value="admin">Administrador</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
             {funcoesSistema && funcoesSistema.length > 0 && (
               <div className="space-y-2">
-                <Label>Funções do Sistema</Label>
+                <Label>Função do Sistema</Label>
                 <div className="space-y-1.5 rounded-md border p-3">
                   {funcoesSistema.map(f => (
                     <label key={f.id} className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 rounded px-2 py-1 transition-colors">
@@ -820,11 +841,89 @@ const AdminConfig = () => {
                 </div>
               </div>
             )}
+            {unidadesFolha.length > 0 && (
+              <div className="space-y-2">
+                <Label>Unidades de Folha</Label>
+                <div className="space-y-1.5 rounded-md border p-3 max-h-[200px] overflow-y-auto">
+                  {unidadesFolha.map(u => (
+                    <label key={u.id} className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 rounded px-2 py-1 transition-colors">
+                      <Checkbox
+                        checked={newUserUnidades.includes(u.id)}
+                        onCheckedChange={(checked) => {
+                          setNewUserUnidades(prev =>
+                            checked ? [...prev, u.id] : prev.filter(id => id !== u.id)
+                          );
+                        }}
+                      />
+                      <span className="text-sm">{u.nome}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setUserDialog(false)}>Cancelar</Button>
             <Button onClick={() => createUser.mutate()} disabled={createUser.isPending}>
               {createUser.isPending ? 'Criando...' : 'Criar Usuário'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ===== DIALOG VINCULAR UNIDADES ===== */}
+      <Dialog open={!!unidadeDialogUserId} onOpenChange={(open) => !open && setUnidadeDialogUserId(null)}>
+        <DialogContent className="max-w-md max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5" />
+              Vincular Unidades de Folha
+            </DialogTitle>
+            <DialogDescription>
+              Selecione as unidades que este usuário terá acesso.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
+            {unidadesFolha.map(u => {
+              const isChecked = unidadeDialogSelected.has(u.id);
+              return (
+                <label
+                  key={u.id}
+                  className="flex items-center gap-3 p-2 rounded-md hover:bg-accent/50 cursor-pointer"
+                >
+                  <Checkbox
+                    checked={isChecked}
+                    onCheckedChange={(checked) => {
+                      setUnidadeDialogSelected(prev => {
+                        const next = new Set(prev);
+                        if (checked) next.add(u.id);
+                        else next.delete(u.id);
+                        return next;
+                      });
+                    }}
+                  />
+                  <span className="text-sm font-medium">{u.nome}</span>
+                </label>
+              );
+            })}
+            {unidadesFolha.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-4">Nenhuma unidade cadastrada</p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setUnidadeDialogUserId(null)}>Cancelar</Button>
+            <Button
+              onClick={() => {
+                if (unidadeDialogUserId) {
+                  saveUserUnidades.mutate({
+                    userId: unidadeDialogUserId,
+                    unidadeIds: Array.from(unidadeDialogSelected),
+                  });
+                }
+              }}
+              disabled={saveUserUnidades.isPending}
+            >
+              {saveUserUnidades.isPending ? 'Salvando...' : 'Salvar Vínculos'}
             </Button>
           </DialogFooter>
         </DialogContent>
