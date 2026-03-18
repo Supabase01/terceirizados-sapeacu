@@ -239,6 +239,29 @@ const AdminConfig = () => {
     );
   };
 
+  const togglePermission = useMutation({
+    mutationFn: async ({ funcaoId, routePath, module, currentlyAllowed }: { funcaoId: string; routePath: string; module: string; currentlyAllowed: boolean }) => {
+      if (currentlyAllowed) {
+        const { error } = await supabase
+          .from('funcao_sistema_permissoes')
+          .delete()
+          .eq('funcao_sistema_id', funcaoId)
+          .eq('route_path', routePath);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('funcao_sistema_permissoes')
+          .insert({ funcao_sistema_id: funcaoId, route_path: routePath, module_name: module, allowed: true });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['funcao-sistema-permissoes'] });
+      queryClient.invalidateQueries({ queryKey: ['allowed-routes'] });
+    },
+    onError: (err: any) => toast({ title: 'Erro ao atualizar permissão', description: err.message, variant: 'destructive' }),
+  });
+
   // --- Guard ---
   if (loadingAdmin) {
     return <Layout><div className="flex items-center justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div></Layout>;
