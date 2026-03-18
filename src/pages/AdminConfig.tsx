@@ -270,9 +270,15 @@ const AdminConfig = () => {
           {/* ===== USERS TAB ===== */}
           <TabsContent value="users">
             <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Usuários do Sistema</CardTitle>
-                <CardDescription>Atribua papéis e funções aos usuários</CardDescription>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg">Usuários do Sistema</CardTitle>
+                  <CardDescription>Crie e gerencie usuários e suas funções</CardDescription>
+                </div>
+                <Button size="sm" className="gap-1.5" onClick={() => setUserDialog(true)}>
+                  <Plus className="h-4 w-4" />
+                  Novo Usuário
+                </Button>
               </CardHeader>
               <CardContent>
                 {loadingUsers ? (
