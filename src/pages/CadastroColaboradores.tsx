@@ -33,6 +33,7 @@ interface ColaboradorForm {
   bairro: string;
   cidade_id: string;
   cep: string;
+  lideranca_id: string;
 }
 
 const emptyForm: ColaboradorForm = {
