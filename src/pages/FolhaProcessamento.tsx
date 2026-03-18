@@ -61,7 +61,8 @@ const FolhaProcessamento = () => {
       const { data: colaboradores, error: colErr } = await supabase
         .from('colaboradores')
         .select('*, secretarias(nome), funcoes(nome), lotacoes(nome)')
-        .eq('ativo', true);
+        .eq('ativo', true)
+        .eq('unidade_id', unidadeId!);
       if (colErr) throw colErr;
       if (!colaboradores?.length) throw new Error('Nenhum colaborador ativo encontrado.');
 
