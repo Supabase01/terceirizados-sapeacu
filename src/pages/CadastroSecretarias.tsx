@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Plus, Pencil, Check, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useUnidade } from '@/contexts/UnidadeContext';
 
 const CadastroSecretarias = () => {
@@ -35,11 +35,13 @@ const CadastroSecretarias = () => {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
+      const trimmedNome = nome.trim();
+
       if (editId) {
-        const { error } = await supabase.from('secretarias').update({ nome }).eq('id', editId);
+        const { error } = await supabase.from('secretarias').update({ nome: trimmedNome }).eq('id', editId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from('secretarias').insert({ nome, unidade_id: unidadeId });
+        const { error } = await supabase.from('secretarias').insert({ nome: trimmedNome, unidade_id: unidadeId });
         if (error) throw error;
       }
     },
@@ -48,7 +50,15 @@ const CadastroSecretarias = () => {
       toast({ title: editId ? 'Secretaria atualizada' : 'Secretaria cadastrada' });
       closeDialog();
     },
-    onError: () => toast({ title: 'Erro ao salvar', variant: 'destructive' }),
+    onError: (error: any) => {
+      const isDuplicate = error?.code === '23505';
+
+      toast({
+        title: isDuplicate ? 'Secretaria já cadastrada nesta unidade' : 'Erro ao salvar',
+        description: isDuplicate ? 'Use outro nome ou edite o cadastro existente.' : error?.message ?? 'Tente novamente.',
+        variant: 'destructive',
+      });
+    },
   });
 
   const toggleMutation = useMutation({
@@ -95,7 +105,7 @@ const CadastroSecretarias = () => {
                         <div className="flex gap-1">
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(item)}><Pencil className="h-3.5 w-3.5" /></Button>
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => toggleMutation.mutate({ id: item.id, ativo: item.ativo })}>
-                            {item.ativo ? <X className="h-3.5 w-3.5 text-destructive" /> : <Check className="h-3.5 w-3.5 text-green-600" />}
+                            {item.ativo ? <X className="h-3.5 w-3.5 text-destructive" /> : <Check className="h-3.5 w-3.5 text-primary" />}
                           </Button>
                         </div>
                       </TableCell>
@@ -109,7 +119,12 @@ const CadastroSecretarias = () => {
       </div>
       <Dialog open={dialogOpen} onOpenChange={(open) => !open && closeDialog()}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{editId ? 'Editar Secretaria' : 'Nova Secretaria'}</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>{editId ? 'Editar Secretaria' : 'Nova Secretaria'}</DialogTitle>
+            <DialogDescription>
+              {editId ? 'Atualize o nome da secretaria selecionada.' : 'Informe o nome da secretaria para a unidade ativa.'}
+            </DialogDescription>
+          </DialogHeader>
           <div className="space-y-4 py-2">
             <Input placeholder="Nome da secretaria" value={nome} onChange={(e) => setNome(e.target.value)} />
           </div>
