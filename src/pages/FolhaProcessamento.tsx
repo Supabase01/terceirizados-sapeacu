@@ -373,8 +373,8 @@ const FolhaProcessamento = () => {
                       <TableCell className="hidden lg:table-cell text-muted-foreground">{r.secretaria || '—'}</TableCell>
                       <TableCell className="text-right">{formatCurrency(Number(r.salario_base))}</TableCell>
                       <TableCell className="text-right text-green-600">{formatCurrency(Number(r.total_adicionais))}</TableCell>
-                      <TableCell className="text-right text-destructive">{formatCurrency(Number(r.total_descontos))}</TableCell>
                       <TableCell className="text-right font-medium">{formatCurrency(Number(r.bruto))}</TableCell>
+                      <TableCell className="text-right text-destructive">{formatCurrency(Number(r.total_descontos))}</TableCell>
                       <TableCell className="text-right font-bold text-primary">{formatCurrency(Number(r.liquido))}</TableCell>
                     </TableRow>
                   ))}
