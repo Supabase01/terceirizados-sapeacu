@@ -84,7 +84,7 @@ export function AppSidebar() {
           const isGroupActive = mod.items.some((i) => location.pathname === i.url || location.pathname.startsWith(i.url + '/'));
 
           return (
-            <Collapsible key={mod.label} defaultOpen={isGroupActive} className="group/collapsible px-2 mb-1">
+            <Collapsible key={mod.label} defaultOpen={false} className="group/collapsible px-2 mb-1">
               <CollapsibleTrigger className={cn(
                 'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wider transition-colors',
                 'text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/40',
