@@ -451,6 +451,73 @@ const AdminConfig = () => {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* ===== PERMISSÕES TAB ===== */}
+          <TabsContent value="permissoes">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Matriz de Permissões</CardTitle>
+                <CardDescription>Marque as rotas que cada função do sistema pode acessar</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loadingFuncoes ? (
+                  <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+                ) : !funcoesSistema || funcoesSistema.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">Crie funções do sistema primeiro na aba "Funções do Sistema".</p>
+                ) : (
+                  <ScrollArea className="w-full">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="sticky left-0 bg-background z-10 min-w-[200px]">Módulo / Rota</TableHead>
+                          {funcoesSistema.map(f => (
+                            <TableHead key={f.id} className="text-center min-w-[120px]">
+                              <span className="text-xs">{f.nome}</span>
+                            </TableHead>
+                          ))}
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {Object.entries(routesByModule).map(([module, paths]) => (
+                          <>
+                            <TableRow key={`mod-${module}`} className="bg-muted/30">
+                              <TableCell colSpan={1 + (funcoesSistema?.length || 0)} className="font-semibold text-xs uppercase tracking-wider text-muted-foreground py-2">
+                                {module}
+                              </TableCell>
+                            </TableRow>
+                            {paths.map(path => (
+                              <TableRow key={path}>
+                                <TableCell className="sticky left-0 bg-background z-10 font-mono text-sm">{path}</TableCell>
+                                {funcoesSistema.map(f => {
+                                  const isAllowed = (funcaoPermissoes || []).some(
+                                    p => p.funcao_sistema_id === f.id && p.route_path === path && p.allowed
+                                  );
+                                  return (
+                                    <TableCell key={f.id} className="text-center">
+                                      <Checkbox
+                                        checked={isAllowed}
+                                        onCheckedChange={() => togglePermission.mutate({
+                                          funcaoId: f.id,
+                                          routePath: path,
+                                          module,
+                                          currentlyAllowed: isAllowed,
+                                        })}
+                                      />
+                                    </TableCell>
+                                  );
+                                })}
+                              </TableRow>
+                            ))}
+                          </>
+                        ))}
+                      </TableBody>
+                    </Table>
+                    <ScrollBar orientation="horizontal" />
+                  </ScrollArea>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </div>
 
