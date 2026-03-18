@@ -81,7 +81,7 @@ export function AppSidebar() {
                 {!collapsed && (
                   <>
                     <span className="flex-1 text-left">{mod.label}</span>
-                    <ChevronDown className="h-3 w-3 shrink-0 transition-transform duration-200 group-data-[state=closed]:rotate-[-90deg]" />
+                    <ChevronDown className="h-3 w-3 shrink-0 transition-transform duration-200 group-data-[state=closed]/collapsible:-rotate-90" />
                   </>
                 )}
               </CollapsibleTrigger>
