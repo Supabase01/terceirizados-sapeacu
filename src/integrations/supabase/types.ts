@@ -115,6 +115,30 @@ export type Database = {
         }
         Relationships: []
       }
+      cidades: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          estado: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          estado?: string
+          id?: string
+          nome: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          estado?: string
+          id?: string
+          nome?: string
+        }
+        Relationships: []
+      }
       colaboradores: {
         Row: {
           ativo: boolean
