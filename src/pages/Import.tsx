@@ -14,10 +14,11 @@ import { useToast } from '@/hooks/use-toast';
 
 const BATCH_SIZE = 500;
 
+const TEMPLATE_HEADERS = ['PREFEITURA', 'PASTA', 'ANO', 'MÊS', 'NOME', 'FUNÇÃO', 'CPF', 'SALÁRIO BASE', 'ADICIONAIS', 'DESCONTOS', 'BRUTO', 'LÍQUIDO'];
+
 const handleDownloadTemplate = () => {
-  const headers = [['PREFEITURA', 'PASTA', 'ANO', 'MÊS', 'NOME', 'FUNÇÃO', 'CPF', 'BRUTO', 'LÍQUIDO']];
-  const ws = XLSX.utils.aoa_to_sheet(headers);
-  ws['!cols'] = [{ wch: 20 }, { wch: 20 }, { wch: 8 }, { wch: 6 }, { wch: 30 }, { wch: 20 }, { wch: 15 }, { wch: 12 }, { wch: 12 }];
+  const ws = XLSX.utils.aoa_to_sheet([TEMPLATE_HEADERS]);
+  ws['!cols'] = TEMPLATE_HEADERS.map(h => ({ wch: Math.max(h.length + 4, 12) }));
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Modelo');
   XLSX.writeFile(wb, 'modelo_importacao.xlsx');
@@ -43,10 +44,7 @@ const Import = () => {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
-    if (f) {
-      setFile(f);
-      setResult(null);
-    }
+    if (f) { setFile(f); setResult(null); }
   };
 
   const handleImport = async () => {
@@ -63,56 +61,31 @@ const Import = () => {
         return;
       }
 
-      // Fetch colaboradores for this unidade to match CPFs
+      // Fetch colaboradores to match CPFs
       const { data: colaboradores, error: colabError } = await supabase
         .from('colaboradores')
-        .select('id, cpf, nome, funcao_id, secretaria_id, lotacao_id, salario_base')
+        .select('id, cpf, nome, funcao_id, secretaria_id, lotacao_id')
         .eq('unidade_id', unidadeId)
         .eq('ativo', true);
-
       if (colabError) throw colabError;
 
-      // Also fetch funcao and secretaria names for display
-      const { data: funcoes } = await supabase
-        .from('funcoes')
-        .select('id, nome')
-        .eq('unidade_id', unidadeId);
-
-      const { data: secretarias } = await supabase
-        .from('secretarias')
-        .select('id, nome')
-        .eq('unidade_id', unidadeId);
-
-      const { data: lotacoes } = await supabase
-        .from('lotacoes')
-        .select('id, nome')
-        .eq('unidade_id', unidadeId);
+      const { data: funcoes } = await supabase.from('funcoes').select('id, nome').eq('unidade_id', unidadeId);
+      const { data: secretarias } = await supabase.from('secretarias').select('id, nome').eq('unidade_id', unidadeId);
+      const { data: lotacoes } = await supabase.from('lotacoes').select('id, nome').eq('unidade_id', unidadeId);
 
       const funcaoMap = new Map((funcoes || []).map(f => [f.id, f.nome]));
       const secretariaMap = new Map((secretarias || []).map(s => [s.id, s.nome]));
       const lotacaoMap = new Map((lotacoes || []).map(l => [l.id, l.nome]));
-
-      // Build CPF → colaborador map
-      const cpfMap = new Map(
-        (colaboradores || []).map(c => [c.cpf.replace(/\D/g, ''), c])
-      );
-
-      // Determine unique periods from import data
-      const periods = new Set(parsed.data.map(r => `${r.ano}-${r.mes}`));
+      const cpfMap = new Map((colaboradores || []).map(c => [c.cpf.replace(/\D/g, ''), c]));
 
       // Delete existing drafts for these periods
+      const periods = new Set(parsed.data.map(r => `${r.ano}-${r.mes}`));
       for (const period of periods) {
         const [pAno, pMes] = period.split('-').map(Number);
-        await supabase
-          .from('folha_processamento')
-          .delete()
-          .eq('unidade_id', unidadeId)
-          .eq('mes', pMes)
-          .eq('ano', pAno)
-          .eq('status', 'rascunho');
+        await supabase.from('folha_processamento').delete()
+          .eq('unidade_id', unidadeId).eq('mes', pMes).eq('ano', pAno).eq('status', 'rascunho');
       }
 
-      // Map parsed records to folha_processamento rows
       const notFound: string[] = [];
       const folhaRows: any[] = [];
 
@@ -125,24 +98,18 @@ const Import = () => {
           continue;
         }
 
-        const salarioBase = Number(colab.salario_base) || 0;
-        const bruto = Number(row.bruto) || 0;
-        const liquido = Number(row.liquido) || 0;
-        const totalAdicionais = bruto > salarioBase ? bruto - salarioBase : 0;
-        const totalDescontos = bruto - liquido;
-
         folhaRows.push({
           colaborador_id: colab.id,
           nome: colab.nome,
           cpf: cpfClean,
-          funcao: colab.funcao_id ? funcaoMap.get(colab.funcao_id) || row.funcao || '' : row.funcao || '',
-          secretaria: colab.secretaria_id ? secretariaMap.get(colab.secretaria_id) || row.pasta || '' : row.pasta || '',
+          funcao: colab.funcao_id ? funcaoMap.get(colab.funcao_id) || row.funcao : row.funcao,
+          secretaria: colab.secretaria_id ? secretariaMap.get(colab.secretaria_id) || row.pasta : row.pasta,
           lotacao: colab.lotacao_id ? lotacaoMap.get(colab.lotacao_id) || '' : '',
-          salario_base: salarioBase,
-          total_adicionais: totalAdicionais,
-          total_descontos: totalDescontos,
-          bruto,
-          liquido,
+          salario_base: row.salario_base,
+          total_adicionais: row.adicionais,
+          total_descontos: row.descontos,
+          bruto: row.bruto,
+          liquido: row.liquido,
           mes: row.mes,
           ano: row.ano,
           unidade_id: unidadeId,
@@ -150,10 +117,8 @@ const Import = () => {
         });
       }
 
-      // Insert in batches
       let inserted = 0;
       const total = folhaRows.length;
-
       for (let i = 0; i < total; i += BATCH_SIZE) {
         const batch = folhaRows.slice(i, i + BATCH_SIZE);
         const { error } = await supabase.from('folha_processamento').insert(batch);
@@ -194,8 +159,7 @@ const Import = () => {
           <CardHeader>
             <CardTitle className="text-base">Upload de Arquivo</CardTitle>
             <CardDescription>
-              Colunas obrigatórias: PREFEITURA, PASTA, ANO, MÊS, NOME, FUNÇÃO, CPF, BRUTO, LÍQUIDO.
-              Os CPFs serão vinculados aos colaboradores cadastrados na unidade atual.
+              Colunas obrigatórias: PREFEITURA, PASTA, ANO, MÊS, NOME, FUNÇÃO, CPF, SALÁRIO BASE, ADICIONAIS, DESCONTOS, BRUTO, LÍQUIDO.
             </CardDescription>
             <Button variant="outline" size="sm" onClick={handleDownloadTemplate} className="mt-2 w-fit">
               <Download className="mr-2 h-4 w-4" />
