@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 interface PrefeituraForm {
   nome: string;
   cnpj: string;
+  responsavel: string;
   endereco: string;
   cidade: string;
   estado: string;
@@ -23,7 +24,7 @@ interface PrefeituraForm {
 }
 
 const emptyForm: PrefeituraForm = {
-  nome: '', cnpj: '', endereco: '', cidade: '', estado: 'BA', telefone: '', email: '',
+  nome: '', cnpj: '', responsavel: '', endereco: '', cidade: '', estado: 'BA', telefone: '', email: '',
 };
 
 const formatCNPJ = (value: string) => {
@@ -63,6 +64,7 @@ const CadastroPrefeituras = () => {
       const payload = {
         nome: form.nome,
         cnpj: form.cnpj || null,
+        responsavel: form.responsavel || null,
         endereco: form.endereco || null,
         cidade: form.cidade || null,
         estado: form.estado || null,
@@ -100,6 +102,7 @@ const CadastroPrefeituras = () => {
     setForm({
       nome: item.nome || '',
       cnpj: item.cnpj || '',
+      responsavel: item.responsavel || '',
       endereco: item.endereco || '',
       cidade: item.cidade || '',
       estado: item.estado || '',
@@ -139,6 +142,7 @@ const CadastroPrefeituras = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome</TableHead>
+                  <TableHead>Responsável</TableHead>
                   <TableHead>CNPJ</TableHead>
                   <TableHead>Cidade/UF</TableHead>
                   <TableHead>Telefone</TableHead>
@@ -148,13 +152,14 @@ const CadastroPrefeituras = () => {
               </TableHeader>
               <TableBody>
                 {isLoading ? (
-                  <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
                 ) : filtered.length === 0 ? (
-                  <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Nenhuma prefeitura encontrada</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Nenhuma prefeitura encontrada</TableCell></TableRow>
                 ) : (
                   filtered.map((item: any) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">{item.nome}</TableCell>
+                      <TableCell className="text-sm">{item.responsavel || '—'}</TableCell>
                       <TableCell className="text-muted-foreground text-sm">{item.cnpj || '—'}</TableCell>
                       <TableCell className="text-sm">{[item.cidade, item.estado].filter(Boolean).join('/') || '—'}</TableCell>
                       <TableCell className="text-sm">{item.telefone || '—'}</TableCell>
@@ -183,6 +188,10 @@ const CadastroPrefeituras = () => {
             <div className="space-y-1.5">
               <Label>Nome *</Label>
               <Input placeholder="Nome da prefeitura" value={form.nome} onChange={(e) => updateField('nome', e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Responsável</Label>
+              <Input placeholder="Nome do responsável" value={form.responsavel} onChange={(e) => updateField('responsavel', e.target.value)} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
