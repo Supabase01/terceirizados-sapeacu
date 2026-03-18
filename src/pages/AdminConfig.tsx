@@ -280,6 +280,35 @@ const AdminConfig = () => {
     },
   });
 
+  const toggleAllPermissions = useMutation({
+    mutationFn: async ({ funcaoId, allChecked }: { funcaoId: string; allChecked: boolean }) => {
+      if (allChecked) {
+        // Remove all permissions for this function
+        const { error } = await supabase.from('funcao_sistema_permissoes').delete()
+          .eq('funcao_sistema_id', funcaoId);
+        if (error) throw error;
+      } else {
+        // First remove existing to avoid duplicates
+        await supabase.from('funcao_sistema_permissoes').delete()
+          .eq('funcao_sistema_id', funcaoId);
+        // Insert all routes
+        const perms = ALL_ROUTES.map(r => ({
+          funcao_sistema_id: funcaoId,
+          route_path: r.path,
+          module_name: r.module,
+          allowed: true,
+        }));
+        const { error } = await supabase.from('funcao_sistema_permissoes').insert(perms);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['funcao-sistema-permissoes'] });
+      queryClient.invalidateQueries({ queryKey: ['allowed-routes'] });
+    },
+    onError: (err: any) => toast({ title: 'Erro ao atualizar permissões', description: err.message, variant: 'destructive' }),
+  });
+
   // --- Helpers ---
   const resetFuncaoForm = () => {
     setEditingFuncao(null);
@@ -587,16 +616,26 @@ const AdminConfig = () => {
                         <TableHeader>
                           <TableRow>
                             <TableHead className="sticky left-0 bg-background z-10 min-w-[220px]">Módulo / Rota</TableHead>
-                            {funcoesSistema.map(f => (
-                              <TableHead key={f.id} className="text-center min-w-[110px]">
-                                <div className="flex flex-col items-center gap-0.5">
-                                  <span className="text-xs font-semibold">{f.nome}</span>
-                                  <span className="text-[10px] text-muted-foreground font-normal">
-                                    {(funcaoPermissoes || []).filter(p => p.funcao_sistema_id === f.id && p.allowed).length}/{ALL_ROUTES.length}
-                                  </span>
-                                </div>
-                              </TableHead>
-                            ))}
+                            {funcoesSistema.map(f => {
+                              const totalAllowed = (funcaoPermissoes || []).filter(p => p.funcao_sistema_id === f.id && p.allowed).length;
+                              const allChecked = totalAllowed === ALL_ROUTES.length;
+                              const someChecked = totalAllowed > 0;
+                              return (
+                                <TableHead key={f.id} className="text-center min-w-[110px]">
+                                  <div className="flex flex-col items-center gap-1">
+                                    <span className="text-xs font-semibold">{f.nome}</span>
+                                    <span className="text-[10px] text-muted-foreground font-normal">
+                                      {totalAllowed}/{ALL_ROUTES.length}
+                                    </span>
+                                    <Checkbox
+                                      checked={allChecked ? true : someChecked ? 'indeterminate' : false}
+                                      onCheckedChange={() => toggleAllPermissions.mutate({ funcaoId: f.id, allChecked })}
+                                      className="mx-auto"
+                                    />
+                                  </div>
+                                </TableHead>
+                              );
+                            })}
                           </TableRow>
                         </TableHeader>
                         <TableBody>
