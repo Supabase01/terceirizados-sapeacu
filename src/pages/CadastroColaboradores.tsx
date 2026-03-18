@@ -138,7 +138,18 @@ const CadastroColaboradores = () => {
     setDialogOpen(true);
   };
 
-  const updateField = (field: keyof ColaboradorForm, value: string) => setForm(prev => ({ ...prev, [field]: value }));
+  const updateField = (field: keyof ColaboradorForm, value: string) => {
+    setForm(prev => {
+      const next = { ...prev, [field]: value };
+      // Auto-calculate salário líquido
+      const bruto = Number(next.salario_bruto) || 0;
+      const encargoPct = Number(next.encargo) || 0;
+      const adicionais = Number(next.adicionais) || 0;
+      const liquido = bruto + adicionais - (bruto * encargoPct / 100);
+      next.salario_liquido = liquido > 0 ? liquido.toFixed(2) : '0';
+      return next;
+    });
+  };
 
   const filtered = colaboradores.filter((c: any) =>
     c.nome.toLowerCase().includes(search.toLowerCase()) ||
