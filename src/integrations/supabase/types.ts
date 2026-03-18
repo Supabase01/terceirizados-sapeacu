@@ -610,6 +610,30 @@ export type Database = {
           },
         ]
       }
+      usuario_permissoes: {
+        Row: {
+          allowed: boolean
+          id: string
+          module_name: string
+          route_path: string
+          user_id: string
+        }
+        Insert: {
+          allowed?: boolean
+          id?: string
+          module_name: string
+          route_path: string
+          user_id: string
+        }
+        Update: {
+          allowed?: boolean
+          id?: string
+          module_name?: string
+          route_path?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       usuario_unidades: {
         Row: {
           created_at: string
