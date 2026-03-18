@@ -683,17 +683,18 @@ const AdminConfig = () => {
                                         p => p.funcao_sistema_id === f.id && p.route_path === route.path && p.allowed
                                       );
                                       return (
-                                        <TableCell key={f.id} className="text-center">
-                                          <Checkbox
-                                            checked={isAllowed}
-                                            onCheckedChange={() => togglePermission.mutate({
-                                              funcaoId: f.id,
-                                              routePath: route.path,
-                                              module,
-                                              currentlyAllowed: isAllowed,
-                                            })}
-                                            className="mx-auto"
-                                          />
+                                        <TableCell key={f.id} className={`text-center ${idx % 2 === 0 ? '' : ''}`}>
+                                          <div className={`inline-flex items-center justify-center w-8 h-8 rounded-md ${isAllowed ? 'bg-primary/10' : ''}`}>
+                                            <Checkbox
+                                              checked={isAllowed}
+                                              onCheckedChange={() => togglePermission.mutate({
+                                                funcaoId: f.id,
+                                                routePath: route.path,
+                                                module,
+                                                currentlyAllowed: isAllowed,
+                                              })}
+                                            />
+                                          </div>
                                         </TableCell>
                                       );
                                     })}
