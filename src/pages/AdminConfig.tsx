@@ -14,7 +14,8 @@ import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Users, Shield, Route, Loader2, Plus, Pencil, Trash2, Briefcase } from 'lucide-react';
+import { Users, Shield, Route, Loader2, Plus, Pencil, Trash2, Briefcase, Lock } from 'lucide-react';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { useIsAdmin } from '@/hooks/useUserRoles';
 
@@ -238,6 +239,29 @@ const AdminConfig = () => {
     );
   };
 
+  const togglePermission = useMutation({
+    mutationFn: async ({ funcaoId, routePath, module, currentlyAllowed }: { funcaoId: string; routePath: string; module: string; currentlyAllowed: boolean }) => {
+      if (currentlyAllowed) {
+        const { error } = await supabase
+          .from('funcao_sistema_permissoes')
+          .delete()
+          .eq('funcao_sistema_id', funcaoId)
+          .eq('route_path', routePath);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('funcao_sistema_permissoes')
+          .insert({ funcao_sistema_id: funcaoId, route_path: routePath, module_name: module, allowed: true });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['funcao-sistema-permissoes'] });
+      queryClient.invalidateQueries({ queryKey: ['allowed-routes'] });
+    },
+    onError: (err: any) => toast({ title: 'Erro ao atualizar permissão', description: err.message, variant: 'destructive' }),
+  });
+
   // --- Guard ---
   if (loadingAdmin) {
     return <Layout><div className="flex items-center justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div></Layout>;
@@ -265,6 +289,7 @@ const AdminConfig = () => {
           <TabsList>
             <TabsTrigger value="users" className="gap-1.5"><Users className="h-4 w-4" />Usuários</TabsTrigger>
             <TabsTrigger value="funcoes" className="gap-1.5"><Briefcase className="h-4 w-4" />Funções do Sistema</TabsTrigger>
+            <TabsTrigger value="permissoes" className="gap-1.5"><Lock className="h-4 w-4" />Permissões</TabsTrigger>
           </TabsList>
 
           {/* ===== USERS TAB ===== */}
@@ -422,6 +447,73 @@ const AdminConfig = () => {
                       )}
                     </TableBody>
                   </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* ===== PERMISSÕES TAB ===== */}
+          <TabsContent value="permissoes">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Matriz de Permissões</CardTitle>
+                <CardDescription>Marque as rotas que cada função do sistema pode acessar</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loadingFuncoes ? (
+                  <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+                ) : !funcoesSistema || funcoesSistema.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">Crie funções do sistema primeiro na aba "Funções do Sistema".</p>
+                ) : (
+                  <ScrollArea className="w-full">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="sticky left-0 bg-background z-10 min-w-[200px]">Módulo / Rota</TableHead>
+                          {funcoesSistema.map(f => (
+                            <TableHead key={f.id} className="text-center min-w-[120px]">
+                              <span className="text-xs">{f.nome}</span>
+                            </TableHead>
+                          ))}
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {Object.entries(routesByModule).map(([module, paths]) => (
+                          <>
+                            <TableRow key={`mod-${module}`} className="bg-muted/30">
+                              <TableCell colSpan={1 + (funcoesSistema?.length || 0)} className="font-semibold text-xs uppercase tracking-wider text-muted-foreground py-2">
+                                {module}
+                              </TableCell>
+                            </TableRow>
+                            {paths.map(path => (
+                              <TableRow key={path}>
+                                <TableCell className="sticky left-0 bg-background z-10 font-mono text-sm">{path}</TableCell>
+                                {funcoesSistema.map(f => {
+                                  const isAllowed = (funcaoPermissoes || []).some(
+                                    p => p.funcao_sistema_id === f.id && p.route_path === path && p.allowed
+                                  );
+                                  return (
+                                    <TableCell key={f.id} className="text-center">
+                                      <Checkbox
+                                        checked={isAllowed}
+                                        onCheckedChange={() => togglePermission.mutate({
+                                          funcaoId: f.id,
+                                          routePath: path,
+                                          module,
+                                          currentlyAllowed: isAllowed,
+                                        })}
+                                      />
+                                    </TableCell>
+                                  );
+                                })}
+                              </TableRow>
+                            ))}
+                          </>
+                        ))}
+                      </TableBody>
+                    </Table>
+                    <ScrollBar orientation="horizontal" />
+                  </ScrollArea>
                 )}
               </CardContent>
             </Card>
