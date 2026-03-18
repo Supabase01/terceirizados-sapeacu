@@ -259,18 +259,21 @@ export type Database = {
           email: string
           id: string
           nome: string | null
+          pin: string | null
         }
         Insert: {
           created_at?: string
           email: string
           id: string
           nome?: string | null
+          pin?: string | null
         }
         Update: {
           created_at?: string
           email?: string
           id?: string
           nome?: string | null
+          pin?: string | null
         }
         Relationships: []
       }
@@ -390,7 +393,15 @@ export type Database = {
         }
         Returns: boolean
       }
+      set_user_pin: {
+        Args: { _pin: string; _user_id: string }
+        Returns: undefined
+      }
       validate_pin: { Args: { input_pin: string }; Returns: boolean }
+      validate_user_pin: {
+        Args: { _pin: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "usuario"
