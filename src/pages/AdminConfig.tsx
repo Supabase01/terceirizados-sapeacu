@@ -266,6 +266,7 @@ const AdminConfig = () => {
           <TabsList>
             <TabsTrigger value="users" className="gap-1.5"><Users className="h-4 w-4" />Usuários</TabsTrigger>
             <TabsTrigger value="funcoes" className="gap-1.5"><Briefcase className="h-4 w-4" />Funções do Sistema</TabsTrigger>
+            <TabsTrigger value="permissoes" className="gap-1.5"><Lock className="h-4 w-4" />Permissões</TabsTrigger>
           </TabsList>
 
           {/* ===== USERS TAB ===== */}
