@@ -201,9 +201,15 @@ const CadastroColaboradores = () => {
                       <TableRow key={item.id}>
                         <TableCell className="font-medium">{item.nome}</TableCell>
                         <TableCell className="font-mono text-sm">{formatCPF(item.cpf)}</TableCell>
-                        <TableCell className="hidden md:table-cell">{(item.secretarias as any)?.nome || '—'}</TableCell>
-                        <TableCell className="hidden md:table-cell">{(item.funcoes as any)?.nome || '—'}</TableCell>
-                        <TableCell className="hidden lg:table-cell">{(item.lotacoes as any)?.nome || '—'}</TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          {(item.secretarias as any)?.nome || <span className="text-destructive font-semibold cursor-pointer hover:underline" onClick={() => openEdit(item)}>vincular</span>}
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          {(item.funcoes as any)?.nome || <span className="text-destructive font-semibold cursor-pointer hover:underline" onClick={() => openEdit(item)}>vincular</span>}
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          {(item.lotacoes as any)?.nome || <span className="text-destructive font-semibold cursor-pointer hover:underline" onClick={() => openEdit(item)}>vincular</span>}
+                        </TableCell>
                         <TableCell className="hidden lg:table-cell text-right">{formatCurrency(item.salario_base)}</TableCell>
                         <TableCell className="hidden lg:table-cell">
                           <Badge variant={item.beneficio_social ? 'default' : 'outline'}>{item.beneficio_social ? 'Sim' : 'Não'}</Badge>
