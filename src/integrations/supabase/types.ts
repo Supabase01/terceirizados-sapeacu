@@ -364,6 +364,51 @@ export type Database = {
         }
         Relationships: []
       }
+      terceirizadas: {
+        Row: {
+          ativo: boolean
+          cidade: string | null
+          cnpj: string | null
+          created_at: string
+          email: string | null
+          endereco: string | null
+          estado: string | null
+          id: string
+          nome: string
+          responsavel: string | null
+          telefone: string | null
+          tipo: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          cidade?: string | null
+          cnpj?: string | null
+          created_at?: string
+          email?: string | null
+          endereco?: string | null
+          estado?: string | null
+          id?: string
+          nome: string
+          responsavel?: string | null
+          telefone?: string | null
+          tipo?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          cidade?: string | null
+          cnpj?: string | null
+          created_at?: string
+          email?: string | null
+          endereco?: string | null
+          estado?: string | null
+          id?: string
+          nome?: string
+          responsavel?: string | null
+          telefone?: string | null
+          tipo?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
