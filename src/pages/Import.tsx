@@ -103,7 +103,7 @@ const Import = () => {
           nome: colab.nome,
           cpf: cpfClean,
           funcao: colab.funcao_id ? funcaoMap.get(colab.funcao_id) || row.funcao : row.funcao,
-          secretaria: colab.secretaria_id ? secretariaMap.get(colab.secretaria_id) || row.pasta : row.pasta,
+          secretaria: colab.secretaria_id ? secretariaMap.get(colab.secretaria_id) || row.secretaria : row.secretaria,
           lotacao: colab.lotacao_id ? lotacaoMap.get(colab.lotacao_id) || '' : '',
           salario_base: row.salario_base,
           total_adicionais: row.adicionais,
