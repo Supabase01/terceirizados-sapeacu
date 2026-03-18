@@ -538,8 +538,7 @@ const AdminConfig = () => {
                       <TableHeader>
                         <TableRow>
                           <TableHead>Usuário</TableHead>
-                          <TableHead>Função</TableHead>
-                          <TableHead>Unidades de Folha</TableHead>
+                          <TableHead>Vinculação</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -561,54 +560,58 @@ const AdminConfig = () => {
                                 </div>
                               </TableCell>
                               <TableCell>
-                                <div className="flex items-center gap-2">
-                                  <div className="flex flex-wrap gap-1 flex-1 min-w-0">
-                                    {user.funcoes_sistema.length > 0 ? (
-                                      user.funcoes_sistema.map((fid: string) => {
-                                        const f = funcoesSistema?.find(fs => fs.id === fid);
-                                        return f ? (
-                                          <Badge key={fid} variant="secondary" className="text-[10px]">
-                                            {f.nome}
+                                <div className="flex flex-col gap-2">
+                                  {/* Função */}
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-[10px] font-semibold uppercase text-muted-foreground w-16 shrink-0">Função</span>
+                                    <div className="flex flex-wrap gap-1 flex-1 min-w-0">
+                                      {user.funcoes_sistema.length > 0 ? (
+                                        user.funcoes_sistema.map((fid: string) => {
+                                          const f = funcoesSistema?.find(fs => fs.id === fid);
+                                          return f ? (
+                                            <Badge key={fid} variant="secondary" className="text-[10px]">
+                                              {f.nome}
+                                            </Badge>
+                                          ) : null;
+                                        })
+                                      ) : (
+                                        <span className="text-xs text-destructive cursor-pointer hover:underline" onClick={() => openFuncaoUserDialog(user)}>vincular</span>
+                                      )}
+                                    </div>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-7 w-7 shrink-0"
+                                      onClick={() => openFuncaoUserDialog(user)}
+                                      title="Editar Funções"
+                                    >
+                                      <Pencil className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </div>
+                                  {/* Unidades */}
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-[10px] font-semibold uppercase text-muted-foreground w-16 shrink-0">Unidade</span>
+                                    <div className="flex flex-wrap gap-1 flex-1 min-w-0">
+                                      {user.unidades.length > 0 ? (
+                                        user.unidades.map((uid: string) => (
+                                          <Badge key={uid} variant="secondary" className="text-[10px]">
+                                            {getUnidadeNome(uid)}
                                           </Badge>
-                                        ) : null;
-                                      })
-                                    ) : (
-                                      <span className="text-xs text-muted-foreground italic">Nenhuma</span>
-                                    )}
+                                        ))
+                                      ) : (
+                                        <span className="text-xs text-destructive cursor-pointer hover:underline" onClick={() => openUnidadeDialog(user)}>vincular</span>
+                                      )}
+                                    </div>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-7 w-7 shrink-0"
+                                      onClick={() => openUnidadeDialog(user)}
+                                      title="Vincular Unidades"
+                                    >
+                                      <Building2 className="h-3.5 w-3.5" />
+                                    </Button>
                                   </div>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7 shrink-0"
-                                    onClick={() => openFuncaoUserDialog(user)}
-                                    title="Editar Funções"
-                                  >
-                                    <Pencil className="h-3.5 w-3.5" />
-                                  </Button>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex items-center gap-2">
-                                  <div className="flex flex-wrap gap-1 flex-1 min-w-0">
-                                    {user.unidades.length > 0 ? (
-                                      user.unidades.map((uid: string) => (
-                                        <Badge key={uid} variant="secondary" className="text-[10px]">
-                                          {getUnidadeNome(uid)}
-                                        </Badge>
-                                      ))
-                                    ) : (
-                                      <span className="text-xs text-muted-foreground italic">Nenhuma</span>
-                                    )}
-                                  </div>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7 shrink-0"
-                                    onClick={() => openUnidadeDialog(user)}
-                                    title="Vincular Unidades"
-                                  >
-                                    <Building2 className="h-3.5 w-3.5" />
-                                  </Button>
                                 </div>
                               </TableCell>
                             </TableRow>
@@ -616,7 +619,7 @@ const AdminConfig = () => {
                         })}
                         {filteredUsers.length === 0 && (
                           <TableRow>
-                            <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
+                            <TableCell colSpan={2} className="text-center text-muted-foreground py-8">
                               {userSearch ? 'Nenhum usuário encontrado' : 'Nenhum usuário cadastrado'}
                             </TableCell>
                           </TableRow>
