@@ -202,6 +202,74 @@ export type Database = {
           },
         ]
       }
+      folha_processamento: {
+        Row: {
+          ano: number
+          bruto: number
+          colaborador_id: string
+          cpf: string
+          created_at: string
+          funcao: string | null
+          id: string
+          liquido: number
+          lotacao: string | null
+          mes: number
+          nome: string
+          salario_base: number
+          secretaria: string | null
+          status: string
+          total_adicionais: number
+          total_descontos: number
+          updated_at: string
+        }
+        Insert: {
+          ano: number
+          bruto?: number
+          colaborador_id: string
+          cpf: string
+          created_at?: string
+          funcao?: string | null
+          id?: string
+          liquido?: number
+          lotacao?: string | null
+          mes: number
+          nome: string
+          salario_base?: number
+          secretaria?: string | null
+          status?: string
+          total_adicionais?: number
+          total_descontos?: number
+          updated_at?: string
+        }
+        Update: {
+          ano?: number
+          bruto?: number
+          colaborador_id?: string
+          cpf?: string
+          created_at?: string
+          funcao?: string | null
+          id?: string
+          liquido?: number
+          lotacao?: string | null
+          mes?: number
+          nome?: string
+          salario_base?: number
+          secretaria?: string | null
+          status?: string
+          total_adicionais?: number
+          total_descontos?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "folha_processamento_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       funcao_sistema_permissoes: {
         Row: {
           allowed: boolean
