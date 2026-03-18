@@ -78,7 +78,8 @@ const FolhaProcessamento = () => {
       const { data: descontos, error: descErr } = await supabase
         .from('descontos')
         .select('*')
-        .eq('ativo', true);
+        .eq('ativo', true)
+        .eq('unidade_id', unidadeId!);
       if (descErr) throw descErr;
 
       // Helper: check if adicional is valid for the period
