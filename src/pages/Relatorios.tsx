@@ -455,6 +455,7 @@ const Relatorios = () => {
         <div className="overflow-x-auto scrollbar-hide -mx-3 px-3 md:mx-0 md:px-0 mb-4">
           <TabsList className="w-max sm:w-auto inline-flex">
             <TabsTrigger value="detalhamento" className="text-xs md:text-sm px-2.5 md:px-3">Detalhamento</TabsTrigger>
+            <TabsTrigger value="contracheque" className="text-xs md:text-sm px-2.5 md:px-3">Contracheque</TabsTrigger>
             <TabsTrigger value="secretaria" className="text-xs md:text-sm px-2.5 md:px-3">Secretaria</TabsTrigger>
             <TabsTrigger value="funcao" className="text-xs md:text-sm px-2.5 md:px-3">Função</TabsTrigger>
           </TabsList>
@@ -463,6 +464,11 @@ const Relatorios = () => {
         {/* DETALHAMENTO */}
         <TabsContent value="detalhamento">
           <TabDetalhamento records={records} />
+        </TabsContent>
+
+        {/* CONTRACHEQUE */}
+        <TabsContent value="contracheque">
+          <TabContracheque records={records} />
         </TabsContent>
 
         {/* POR SECRETARIA */}
