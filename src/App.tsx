@@ -23,6 +23,7 @@ import AdminConfig from "./pages/AdminConfig";
 import CadastroInstituicoes from "./pages/CadastroInstituicoes";
 import CadastroUnidades from "./pages/CadastroUnidades";
 import FolhaProcessamento from "./pages/FolhaProcessamento";
+import AuditLog from "./pages/AuditLog";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
