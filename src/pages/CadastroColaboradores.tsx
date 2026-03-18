@@ -98,6 +98,15 @@ const CadastroColaboradores = () => {
     },
   });
 
+  const { data: liderancas = [] } = useQuery({
+    queryKey: ['liderancas-ativas'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('liderancas').select('*').eq('ativo', true).order('nome');
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const saveMutation = useMutation({
     mutationFn: async () => {
       const payload: any = {
