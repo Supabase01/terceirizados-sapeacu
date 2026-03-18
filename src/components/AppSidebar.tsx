@@ -1,4 +1,4 @@
-import { BarChart3, Upload, ShieldAlert, FileText, Users, Building2, Briefcase, MapPin, Settings, Shield, ChevronDown, Landmark, FolderKanban, PlusCircle, MinusCircle, ClipboardList } from 'lucide-react';
+import { BarChart3, Upload, ShieldAlert, FileText, Users, Building2, Briefcase, MapPin, Settings, Shield, ChevronDown, Landmark, FolderKanban, PlusCircle, MinusCircle, ClipboardList, History } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useLocation } from 'react-router-dom';
 import {
@@ -56,6 +56,7 @@ const modules = [
     icon: ShieldAlert,
     items: [
       { title: 'Alertas', url: '/alertas', icon: ShieldAlert },
+      { title: 'Log de Alterações', url: '/auditoria/log', icon: History },
     ],
   },
 ];

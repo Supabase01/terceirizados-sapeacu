@@ -23,6 +23,7 @@ import AdminConfig from "./pages/AdminConfig";
 import CadastroInstituicoes from "./pages/CadastroInstituicoes";
 import CadastroUnidades from "./pages/CadastroUnidades";
 import FolhaProcessamento from "./pages/FolhaProcessamento";
+import AuditLog from "./pages/AuditLog";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -91,6 +92,7 @@ const App = () => (
           <Route path="/indicadores" element={<ProtectedRoute><Indicadores /></ProtectedRoute>} />
           <Route path="/import" element={<ProtectedRoute><Import /></ProtectedRoute>} />
           <Route path="/alertas" element={<ProtectedRoute><Alertas /></ProtectedRoute>} />
+          <Route path="/auditoria/log" element={<ProtectedRoute><AuditLog /></ProtectedRoute>} />
           <Route path="/relatorios" element={<ProtectedRoute><Relatorios /></ProtectedRoute>} />
           <Route path="/folha/processamento" element={<ProtectedRoute><FolhaProcessamento /></ProtectedRoute>} />
           <Route path="/folha/adicionais" element={<ProtectedRoute><AdicionaisPage /></ProtectedRoute>} />
