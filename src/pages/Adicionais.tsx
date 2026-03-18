@@ -1,0 +1,246 @@
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
+import Layout from '@/components/Layout';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus, Pencil, Search, Trash2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+
+interface AdicionalForm {
+  colaborador_id: string;
+  descricao: string;
+  valor: string;
+  tipo: string;
+  mes: string;
+  ano: string;
+}
+
+const emptyForm: AdicionalForm = {
+  colaborador_id: '', descricao: '', valor: '', tipo: 'fixo', mes: '', ano: '',
+};
+
+const Adicionais = () => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [form, setForm] = useState<AdicionalForm>(emptyForm);
+  const [search, setSearch] = useState('');
+  const [filterTipo, setFilterTipo] = useState<string>('todos');
+
+  const { data: adicionais = [], isLoading } = useQuery({
+    queryKey: ['adicionais'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('adicionais')
+        .select('*, colaboradores(nome, cpf)')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: colaboradores = [] } = useQuery({
+    queryKey: ['colaboradores-ativos'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('colaboradores').select('id, nome, cpf').eq('ativo', true).order('nome');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        colaborador_id: form.colaborador_id,
+        descricao: form.descricao,
+        valor: Number(form.valor) || 0,
+        tipo: form.tipo,
+        mes: form.tipo === 'eventual' && form.mes ? Number(form.mes) : null,
+        ano: form.tipo === 'eventual' && form.ano ? Number(form.ano) : null,
+      };
+      if (editId) {
+        const { error } = await supabase.from('adicionais').update(payload).eq('id', editId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('adicionais').insert(payload);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adicionais'] });
+      toast({ title: editId ? 'Adicional atualizado' : 'Adicional cadastrado' });
+      closeDialog();
+    },
+    onError: () => toast({ title: 'Erro ao salvar', variant: 'destructive' }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('adicionais').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adicionais'] });
+      toast({ title: 'Adicional removido' });
+    },
+  });
+
+  const closeDialog = () => { setDialogOpen(false); setEditId(null); setForm(emptyForm); };
+
+  const openEdit = (item: any) => {
+    setEditId(item.id);
+    setForm({
+      colaborador_id: item.colaborador_id,
+      descricao: item.descricao,
+      valor: String(item.valor),
+      tipo: item.tipo,
+      mes: item.mes ? String(item.mes) : '',
+      ano: item.ano ? String(item.ano) : '',
+    });
+    setDialogOpen(true);
+  };
+
+  const filtered = adicionais.filter((a: any) => {
+    const matchSearch = a.descricao.toLowerCase().includes(search.toLowerCase()) ||
+      (a.colaboradores as any)?.nome?.toLowerCase().includes(search.toLowerCase());
+    const matchTipo = filterTipo === 'todos' || a.tipo === filterTipo;
+    return matchSearch && matchTipo;
+  });
+
+  const formatCurrency = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
+
+  return (
+    <Layout>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-bold text-foreground">Adicionais</h1>
+          <Button onClick={() => setDialogOpen(true)} size="sm">
+            <Plus className="h-4 w-4 mr-1" /> Novo Adicional
+          </Button>
+        </div>
+
+        <div className="flex gap-3 flex-wrap">
+          <div className="relative max-w-sm flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input placeholder="Buscar..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+          </div>
+          <Select value={filterTipo} onValueChange={setFilterTipo}>
+            <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos</SelectItem>
+              <SelectItem value="fixo">Fixos</SelectItem>
+              <SelectItem value="eventual">Eventuais</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <Card>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Colaborador</TableHead>
+                    <TableHead>Descrição</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead className="hidden md:table-cell">Competência</TableHead>
+                    <TableHead className="text-right">Valor</TableHead>
+                    <TableHead className="w-28">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
+                  ) : filtered.length === 0 ? (
+                    <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Nenhum adicional encontrado</TableCell></TableRow>
+                  ) : (
+                    filtered.map((item: any) => (
+                      <TableRow key={item.id}>
+                        <TableCell className="font-medium">{(item.colaboradores as any)?.nome || '—'}</TableCell>
+                        <TableCell>{item.descricao}</TableCell>
+                        <TableCell><Badge variant={item.tipo === 'fixo' ? 'default' : 'secondary'}>{item.tipo === 'fixo' ? 'Fixo' : 'Eventual'}</Badge></TableCell>
+                        <TableCell className="hidden md:table-cell">{item.mes && item.ano ? `${String(item.mes).padStart(2, '0')}/${item.ano}` : 'Recorrente'}</TableCell>
+                        <TableCell className="text-right font-mono">{formatCurrency(item.valor)}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(item)}><Pencil className="h-3.5 w-3.5" /></Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => deleteMutation.mutate(item.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Dialog open={dialogOpen} onOpenChange={(open) => !open && closeDialog()}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>{editId ? 'Editar Adicional' : 'Novo Adicional'}</DialogTitle></DialogHeader>
+          <div className="grid gap-4 py-2">
+            <div className="space-y-2">
+              <Label>Colaborador *</Label>
+              <Select value={form.colaborador_id} onValueChange={(v) => setForm(p => ({ ...p, colaborador_id: v }))}>
+                <SelectTrigger><SelectValue placeholder="Selecione o colaborador" /></SelectTrigger>
+                <SelectContent>
+                  {colaboradores.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Descrição *</Label>
+              <Input placeholder="Ex: Insalubridade, Hora Extra" value={form.descricao} onChange={(e) => setForm(p => ({ ...p, descricao: e.target.value }))} />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Valor (R$) *</Label>
+                <Input type="number" placeholder="0.00" value={form.valor} onChange={(e) => setForm(p => ({ ...p, valor: e.target.value }))} />
+              </div>
+              <div className="space-y-2">
+                <Label>Tipo</Label>
+                <Select value={form.tipo} onValueChange={(v) => setForm(p => ({ ...p, tipo: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="fixo">Fixo (Recorrente)</SelectItem>
+                    <SelectItem value="eventual">Eventual</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            {form.tipo === 'eventual' && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Mês</Label>
+                  <Input type="number" min="1" max="12" placeholder="1-12" value={form.mes} onChange={(e) => setForm(p => ({ ...p, mes: e.target.value }))} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Ano</Label>
+                  <Input type="number" min="2020" placeholder="2026" value={form.ano} onChange={(e) => setForm(p => ({ ...p, ano: e.target.value }))} />
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={closeDialog}>Cancelar</Button>
+            <Button onClick={() => saveMutation.mutate()} disabled={!form.colaborador_id || !form.descricao.trim() || !form.valor || saveMutation.isPending}>
+              {saveMutation.isPending ? 'Salvando...' : 'Salvar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Layout>
+  );
+};
+
+export default Adicionais;

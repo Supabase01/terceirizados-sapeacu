@@ -26,7 +26,9 @@ const ALL_ROUTES = [
   { path: '/admin/unidades', module: 'Administrador', label: 'Unidades de Folha' },
   { path: '/indicadores', module: 'Folha de Pagamentos', label: 'Indicadores' },
   { path: '/import', module: 'Folha de Pagamentos', label: 'Importação' },
-  
+  { path: '/folha/adicionais', module: 'Folha de Pagamentos', label: 'Adicionais' },
+  { path: '/folha/descontos', module: 'Folha de Pagamentos', label: 'Descontos' },
+  { path: '/relatorios', module: 'Folha de Pagamentos', label: 'Relatórios' },
   { path: '/cadastro/colaboradores', module: 'Cadastros', label: 'Colaboradores' },
   { path: '/cadastro/secretarias', module: 'Cadastros', label: 'Secretarias' },
   { path: '/cadastro/funcoes', module: 'Cadastros', label: 'Funções' },
