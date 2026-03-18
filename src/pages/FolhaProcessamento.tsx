@@ -197,7 +197,8 @@ const FolhaProcessamento = () => {
         .update({ status: 'processado', updated_at: new Date().toISOString() })
         .eq('mes', mes)
         .eq('ano', ano)
-        .eq('status', 'rascunho');
+        .eq('status', 'rascunho')
+        .eq('unidade_id', unidadeId!);
       if (error) throw error;
     },
     onSuccess: () => {
