@@ -102,6 +102,38 @@ export type Database = {
           },
         ]
       }
+      funcao_sistema_permissoes: {
+        Row: {
+          allowed: boolean
+          funcao_sistema_id: string
+          id: string
+          module_name: string
+          route_path: string
+        }
+        Insert: {
+          allowed?: boolean
+          funcao_sistema_id: string
+          id?: string
+          module_name: string
+          route_path: string
+        }
+        Update: {
+          allowed?: boolean
+          funcao_sistema_id?: string
+          id?: string
+          module_name?: string
+          route_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "funcao_sistema_permissoes_funcao_sistema_id_fkey"
+            columns: ["funcao_sistema_id"]
+            isOneToOne: false
+            referencedRelation: "funcoes_sistema"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       funcoes: {
         Row: {
           ativo: boolean
@@ -118,6 +150,30 @@ export type Database = {
         Update: {
           ativo?: boolean
           created_at?: string
+          id?: string
+          nome?: string
+        }
+        Relationships: []
+      }
+      funcoes_sistema: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          descricao: string | null
+          id: string
+          nome: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
           id?: string
           nome?: string
         }
@@ -281,6 +337,32 @@ export type Database = {
         }
         Relationships: []
       }
+      usuario_funcoes_sistema: {
+        Row: {
+          funcao_sistema_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          funcao_sistema_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          funcao_sistema_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "usuario_funcoes_sistema_funcao_sistema_id_fkey"
+            columns: ["funcao_sistema_id"]
+            isOneToOne: false
+            referencedRelation: "funcoes_sistema"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -289,6 +371,13 @@ export type Database = {
       can_access_route: {
         Args: { _route: string; _user_id: string }
         Returns: boolean
+      }
+      get_user_allowed_routes: {
+        Args: { _user_id: string }
+        Returns: {
+          module_name: string
+          route_path: string
+        }[]
       }
       get_user_roles: {
         Args: { _user_id: string }
