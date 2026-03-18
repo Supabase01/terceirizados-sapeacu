@@ -42,6 +42,13 @@ const AdminConfig = () => {
   const [funcaoDesc, setFuncaoDesc] = useState('');
   const [funcaoRoutes, setFuncaoRoutes] = useState<string[]>([]);
 
+  // --- State for user creation ---
+  const [userDialog, setUserDialog] = useState(false);
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserNome, setNewUserNome] = useState('');
+  const [newUserPassword, setNewUserPassword] = useState('');
+  const [newUserRole, setNewUserRole] = useState('usuario');
+
   // --- Fetch users with roles and system functions ---
   const { data: users, isLoading: loadingUsers } = useQuery({
     queryKey: ['admin-users'],
