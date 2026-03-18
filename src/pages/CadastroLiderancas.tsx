@@ -40,19 +40,17 @@ export default function CadastroLiderancas() {
     },
     enabled: !!unidadeId,
   });
-  // Count indicações per liderança
   const { data: indicacoes = [] } = useQuery({
-    queryKey: ['colaboradores-indicacoes'],
+    queryKey: ['colaboradores-indicacoes', unidadeId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('colaboradores')
-        .select('lideranca_id, nome, cpf')
-        .not('lideranca_id', 'is', null);
+      let query = supabase.from('colaboradores').select('lideranca_id, nome, cpf').not('lideranca_id', 'is', null);
+      if (unidadeId) query = query.eq('unidade_id', unidadeId);
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },
+    enabled: !!unidadeId,
   });
-
   const contagemMap = indicacoes.reduce((acc: Record<string, number>, c: any) => {
     if (c.lideranca_id) {
       acc[c.lideranca_id] = (acc[c.lideranca_id] || 0) + 1;
