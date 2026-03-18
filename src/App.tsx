@@ -23,6 +23,7 @@ import AdminConfig from "./pages/AdminConfig";
 import CadastroInstituicoes from "./pages/CadastroInstituicoes";
 import CadastroUnidades from "./pages/CadastroUnidades";
 import CadastroCidades from "./pages/CadastroCidades";
+import CadastroLiderancas from "./pages/CadastroLiderancas";
 import FolhaProcessamento from "./pages/FolhaProcessamento";
 import AuditLog from "./pages/AuditLog";
 import NotFound from "./pages/NotFound";
