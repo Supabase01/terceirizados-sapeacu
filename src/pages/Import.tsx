@@ -8,10 +8,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Upload, FileSpreadsheet, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Upload, FileSpreadsheet, CheckCircle2, AlertCircle, Download } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { useToast } from '@/hooks/use-toast';
 
 const BATCH_SIZE = 500;
+
+const handleDownloadTemplate = () => {
+  const headers = [['PREFEITURA', 'PASTA', 'ANO', 'MÊS', 'NOME', 'FUNÇÃO', 'CPF', 'BRUTO', 'LÍQUIDO']];
+  const ws = XLSX.utils.aoa_to_sheet(headers);
+  ws['!cols'] = [{ wch: 20 }, { wch: 20 }, { wch: 8 }, { wch: 6 }, { wch: 30 }, { wch: 20 }, { wch: 15 }, { wch: 12 }, { wch: 12 }];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Modelo');
+  XLSX.writeFile(wb, 'modelo_importacao.xlsx');
+};
 
 const Import = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -187,6 +197,10 @@ const Import = () => {
               Colunas obrigatórias: PREFEITURA, PASTA, ANO, MÊS, NOME, FUNÇÃO, CPF, BRUTO, LÍQUIDO.
               Os CPFs serão vinculados aos colaboradores cadastrados na unidade atual.
             </CardDescription>
+            <Button variant="outline" size="sm" onClick={handleDownloadTemplate} className="mt-2 w-fit">
+              <Download className="mr-2 h-4 w-4" />
+              Baixar modelo de planilha
+            </Button>
           </CardHeader>
           <CardContent className="space-y-4">
             <div
