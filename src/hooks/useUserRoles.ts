@@ -31,7 +31,7 @@ export function useRoutePermissions() {
       const { data, error } = await supabase
         .from('route_permissions')
         .select('route_path, module_name, allowed')
-        .in('role', roles as string[])
+        .in('role', roles as ("admin" | "usuario")[])
         .eq('allowed', true);
       if (error) throw error;
       return data || [];
