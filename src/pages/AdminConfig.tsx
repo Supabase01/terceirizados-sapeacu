@@ -1162,6 +1162,57 @@ const AdminConfig = () => {
         </DialogContent>
       </Dialog>
 
+      {/* ===== DIALOG VINCULAR FUNÇÕES AO USUÁRIO ===== */}
+      <Dialog open={!!funcaoDialogUserId} onOpenChange={(open) => !open && setFuncaoDialogUserId(null)}>
+        <DialogContent className="max-w-md max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Briefcase className="h-5 w-5" />
+              Vincular Funções
+            </DialogTitle>
+            <DialogDescription>
+              Selecione as funções que este usuário terá.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
+            {funcoesSistema.map(f => {
+              const isChecked = funcaoDialogSelected.has(f.id);
+              return (
+                <label
+                  key={f.id}
+                  className="flex items-center gap-3 p-2 rounded-md hover:bg-accent/50 cursor-pointer"
+                >
+                  <Checkbox
+                    checked={isChecked}
+                    onCheckedChange={(checked) => {
+                      setFuncaoDialogSelected(prev => {
+                        const next = new Set(prev);
+                        if (checked) next.add(f.id);
+                        else next.delete(f.id);
+                        return next;
+                      });
+                    }}
+                  />
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium">{f.nome}</span>
+                    {f.descricao && <span className="text-xs text-muted-foreground">{f.descricao}</span>}
+                  </div>
+                </label>
+              );
+            })}
+            {funcoesSistema.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-4">Nenhuma função criada</p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setFuncaoDialogUserId(null)}>Cancelar</Button>
+            <Button onClick={saveFuncaoUser} disabled={assignFuncao.isPending}>
+              {assignFuncao.isPending ? 'Salvando...' : 'Salvar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* ===== DELETE CONFIRMATION ===== */}
       <AlertDialog open={!!deleteConfirm} onOpenChange={(open) => !open && setDeleteConfirm(null)}>
         <AlertDialogContent>
