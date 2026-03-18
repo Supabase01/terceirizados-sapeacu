@@ -12,6 +12,8 @@ import PinAccess from "./pages/PinAccess";
 import Indicadores from "./pages/Indicadores";
 import Import from "./pages/Import";
 import Alertas from "./pages/Alertas";
+import AdicionaisPage from "./pages/Adicionais";
+import DescontosPage from "./pages/Descontos";
 import Relatorios from "./pages/Relatorios";
 import CadastroColaboradores from "./pages/CadastroColaboradores";
 import CadastroSecretarias from "./pages/CadastroSecretarias";
