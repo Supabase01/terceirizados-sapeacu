@@ -124,6 +124,19 @@ const CadastroColaboradores = () => {
     enabled: !!unidadeId,
   });
 
+  const generateMatricula = async () => {
+    if (!unidadeId) return '';
+    const { data, error } = await supabase.rpc('next_matricula', { _unidade_id: unidadeId });
+    if (error) { console.error('Erro ao gerar matrícula:', error); return ''; }
+    return data as string;
+  };
+
+  const openNew = async () => {
+    const matricula = await generateMatricula();
+    setForm({ ...emptyForm, matricula });
+    setDialogOpen(true);
+  };
+
   const saveMutation = useMutation({
     mutationFn: async () => {
       const payload: any = {
@@ -161,7 +174,15 @@ const CadastroColaboradores = () => {
       toast({ title: editId ? 'Colaborador atualizado' : 'Colaborador cadastrado' });
       closeDialog();
     },
-    onError: (err: any) => toast({ title: 'Erro ao salvar', description: err?.message?.includes('unique') ? 'CPF já cadastrado' : 'Verifique os dados', variant: 'destructive' }),
+    onError: (err: any) => {
+      const msg = err?.message || '';
+      const isDuplicate = msg.includes('colaboradores_unidade_matricula_unique');
+      toast({
+        title: isDuplicate ? 'Matrícula já existe nesta unidade' : 'Erro ao salvar',
+        description: isDuplicate ? 'Use outra matrícula ou deixe em branco para gerar automaticamente.' : msg.includes('unique') ? 'CPF já cadastrado' : 'Verifique os dados',
+        variant: 'destructive',
+      });
+    },
   });
 
   const toggleMutation = useMutation({
