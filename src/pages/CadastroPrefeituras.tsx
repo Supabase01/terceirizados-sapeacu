@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 interface PrefeituraForm {
   nome: string;
   cnpj: string;
+  responsavel: string;
   endereco: string;
   cidade: string;
   estado: string;
@@ -23,7 +24,7 @@ interface PrefeituraForm {
 }
 
 const emptyForm: PrefeituraForm = {
-  nome: '', cnpj: '', endereco: '', cidade: '', estado: 'BA', telefone: '', email: '',
+  nome: '', cnpj: '', responsavel: '', endereco: '', cidade: '', estado: 'BA', telefone: '', email: '',
 };
 
 const formatCNPJ = (value: string) => {
