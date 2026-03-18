@@ -117,6 +117,12 @@ const CadastroFuncoes = () => {
           <DialogHeader><DialogTitle>{editId ? 'Editar Função' : 'Nova Função'}</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
             <Input placeholder="Nome da função" value={nome} onChange={(e) => setNome(e.target.value)} />
+            <textarea
+              placeholder="Atribuições da função"
+              value={atribuicoes}
+              onChange={(e) => setAtribuicoes(e.target.value)}
+              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={closeDialog}>Cancelar</Button>
