@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
 import { Plus, Pencil, Check, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -20,16 +21,21 @@ interface InstituicaoForm {
   nome: string;
   tipo: TipoInstituicao;
   cnpj: string;
-  responsavel: string;
   endereco: string;
   cidade: string;
   estado: string;
   telefone: string;
   email: string;
+  responsavel: string;
+  responsavel_cpf: string;
+  responsavel_cargo: string;
+  responsavel_telefone: string;
+  responsavel_email: string;
 }
 
 const emptyForm: InstituicaoForm = {
-  nome: '', tipo: 'prefeitura', cnpj: '', responsavel: '', endereco: '', cidade: '', estado: 'BA', telefone: '', email: '',
+  nome: '', tipo: 'prefeitura', cnpj: '', endereco: '', cidade: '', estado: 'BA', telefone: '', email: '',
+  responsavel: '', responsavel_cpf: '', responsavel_cargo: '', responsavel_telefone: '', responsavel_email: '',
 };
 
 const formatCNPJ = (value: string) => {
@@ -39,6 +45,14 @@ const formatCNPJ = (value: string) => {
     .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
     .replace(/\.(\d{3})(\d)/, '.$1/$2')
     .replace(/(\d{4})(\d)/, '$1-$2');
+};
+
+const formatCPF = (value: string) => {
+  const digits = value.replace(/\D/g, '').slice(0, 11);
+  return digits
+    .replace(/^(\d{3})(\d)/, '$1.$2')
+    .replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
+    .replace(/\.(\d{3})(\d)/, '.$1-$2');
 };
 
 const formatPhone = (value: string) => {
@@ -91,7 +105,6 @@ const CadastroInstituicoes = () => {
   });
 
   const isLoading = loadingPref || loadingTerc;
-
   const allItems = [...prefeituras, ...terceirizadas].sort((a, b) => a.nome.localeCompare(b.nome));
 
   const filtered = allItems.filter((item) => {
@@ -117,6 +130,10 @@ const CadastroInstituicoes = () => {
         nome: form.nome,
         cnpj: form.cnpj || null,
         responsavel: form.responsavel || null,
+        responsavel_cpf: form.responsavel_cpf || null,
+        responsavel_cargo: form.responsavel_cargo || null,
+        responsavel_telefone: form.responsavel_telefone || null,
+        responsavel_email: form.responsavel_email || null,
         endereco: form.endereco || null,
         cidade: form.cidade || null,
         estado: form.estado || null,
@@ -132,7 +149,6 @@ const CadastroInstituicoes = () => {
         const { error } = await supabase.from(table).update(payload).eq('id', editId);
         if (error) throw error;
       } else if (editId && isChangingType) {
-        // Delete from old table, insert into new
         await supabase.from(editSource!).delete().eq('id', editId);
         const newTable = getTable(form.tipo);
         const { error } = await supabase.from(newTable).insert(payload);
@@ -170,8 +186,8 @@ const CadastroInstituicoes = () => {
     setForm(emptyForm);
   };
 
-  const openNew = (tipo?: TipoInstituicao) => {
-    setForm({ ...emptyForm, tipo: tipo || 'prefeitura' });
+  const openNew = () => {
+    setForm(emptyForm);
     setDialogOpen(true);
   };
 
@@ -182,19 +198,24 @@ const CadastroInstituicoes = () => {
       nome: item.nome || '',
       tipo: item._tipo,
       cnpj: item.cnpj || '',
-      responsavel: item.responsavel || '',
       endereco: item.endereco || '',
       cidade: item.cidade || '',
       estado: item.estado || '',
       telefone: item.telefone || '',
       email: item.email || '',
+      responsavel: item.responsavel || '',
+      responsavel_cpf: item.responsavel_cpf || '',
+      responsavel_cargo: item.responsavel_cargo || '',
+      responsavel_telefone: item.responsavel_telefone || '',
+      responsavel_email: item.responsavel_email || '',
     });
     setDialogOpen(true);
   };
 
   const updateField = (field: keyof InstituicaoForm, value: string) => {
     if (field === 'cnpj') value = formatCNPJ(value);
-    if (field === 'telefone') value = formatPhone(value);
+    if (field === 'responsavel_cpf') value = formatCPF(value);
+    if (field === 'telefone' || field === 'responsavel_telefone') value = formatPhone(value);
     setForm(prev => ({ ...prev, [field]: value }));
   };
 
@@ -203,19 +224,17 @@ const CadastroInstituicoes = () => {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-foreground">Instituições</h1>
-          <Button onClick={() => openNew()} size="sm">
+          <Button onClick={openNew} size="sm">
             <Plus className="h-4 w-4 mr-1" /> Nova Instituição
           </Button>
         </div>
 
-        <div className="flex items-center gap-3">
-          <Input
-            placeholder="Buscar por nome, CNPJ ou responsável..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="max-w-sm"
-          />
-        </div>
+        <Input
+          placeholder="Buscar por nome, CNPJ ou responsável..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-sm"
+        />
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
@@ -294,59 +313,94 @@ const CadastroInstituicoes = () => {
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={(open) => !open && closeDialog()}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editId ? 'Editar Instituição' : 'Nova Instituição'}</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-4 py-2">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>Nome *</Label>
-                <Input placeholder="Razão social" value={form.nome} onChange={(e) => updateField('nome', e.target.value)} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Tipo *</Label>
-                <Select value={form.tipo} onValueChange={(v) => updateField('tipo', v)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="prefeitura">Prefeitura</SelectItem>
-                    <SelectItem value="terceirizada">Terceirizada</SelectItem>
-                    <SelectItem value="cooperativa">Cooperativa</SelectItem>
-                  </SelectContent>
-                </Select>
+          <div className="grid gap-5 py-2">
+            {/* Dados da Instituição */}
+            <div>
+              <h3 className="text-sm font-semibold text-foreground mb-3">Dados da Instituição</h3>
+              <div className="grid gap-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label>Nome / Razão Social *</Label>
+                    <Input placeholder="Nome da instituição" value={form.nome} onChange={(e) => updateField('nome', e.target.value)} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Tipo *</Label>
+                    <Select value={form.tipo} onValueChange={(v) => updateField('tipo', v)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="prefeitura">Prefeitura</SelectItem>
+                        <SelectItem value="terceirizada">Terceirizada</SelectItem>
+                        <SelectItem value="cooperativa">Cooperativa</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label>CNPJ</Label>
+                    <Input placeholder="00.000.000/0000-00" value={form.cnpj} onChange={(e) => updateField('cnpj', e.target.value)} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Telefone da Instituição</Label>
+                    <Input placeholder="(00) 00000-0000" value={form.telefone} onChange={(e) => updateField('telefone', e.target.value)} />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Endereço</Label>
+                  <Input placeholder="Rua, número, bairro" value={form.endereco} onChange={(e) => updateField('endereco', e.target.value)} />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label>Cidade</Label>
+                    <Input placeholder="Cidade" value={form.cidade} onChange={(e) => updateField('cidade', e.target.value)} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Estado</Label>
+                    <Input placeholder="UF" value={form.estado} onChange={(e) => updateField('estado', e.target.value)} maxLength={2} />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>E-mail da Instituição</Label>
+                  <Input type="email" placeholder="contato@instituicao.com.br" value={form.email} onChange={(e) => updateField('email', e.target.value)} />
+                </div>
               </div>
             </div>
-            <div className="space-y-1.5">
-              <Label>Responsável</Label>
-              <Input placeholder="Nome do responsável" value={form.responsavel} onChange={(e) => updateField('responsavel', e.target.value)} />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>CNPJ</Label>
-                <Input placeholder="00.000.000/0000-00" value={form.cnpj} onChange={(e) => updateField('cnpj', e.target.value)} />
+
+            <Separator />
+
+            {/* Dados do Responsável */}
+            <div>
+              <h3 className="text-sm font-semibold text-foreground mb-3">Dados do Responsável</h3>
+              <div className="grid gap-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label>Nome do Responsável</Label>
+                    <Input placeholder="Nome completo" value={form.responsavel} onChange={(e) => updateField('responsavel', e.target.value)} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>CPF do Responsável</Label>
+                    <Input placeholder="000.000.000-00" value={form.responsavel_cpf} onChange={(e) => updateField('responsavel_cpf', e.target.value)} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-1.5">
+                    <Label>Cargo</Label>
+                    <Input placeholder="Ex: Prefeito, Diretor" value={form.responsavel_cargo} onChange={(e) => updateField('responsavel_cargo', e.target.value)} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Telefone do Responsável</Label>
+                    <Input placeholder="(00) 00000-0000" value={form.responsavel_telefone} onChange={(e) => updateField('responsavel_telefone', e.target.value)} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>E-mail do Responsável</Label>
+                    <Input type="email" placeholder="responsavel@email.com" value={form.responsavel_email} onChange={(e) => updateField('responsavel_email', e.target.value)} />
+                  </div>
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <Label>Telefone</Label>
-                <Input placeholder="(00) 00000-0000" value={form.telefone} onChange={(e) => updateField('telefone', e.target.value)} />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Endereço</Label>
-              <Input placeholder="Rua, número, bairro" value={form.endereco} onChange={(e) => updateField('endereco', e.target.value)} />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>Cidade</Label>
-                <Input placeholder="Cidade" value={form.cidade} onChange={(e) => updateField('cidade', e.target.value)} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Estado</Label>
-                <Input placeholder="UF" value={form.estado} onChange={(e) => updateField('estado', e.target.value)} maxLength={2} />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label>E-mail</Label>
-              <Input type="email" placeholder="contato@instituicao.com.br" value={form.email} onChange={(e) => updateField('email', e.target.value)} />
             </div>
           </div>
           <DialogFooter>
