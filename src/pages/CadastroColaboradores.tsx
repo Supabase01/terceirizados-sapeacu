@@ -271,8 +271,20 @@ const CadastroColaboradores = () => {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Salário Base</Label>
-                <Input type="number" placeholder="0.00" value={form.salario_base} onChange={(e) => updateField('salario_base', e.target.value)} />
+                <Label>Salário Bruto</Label>
+                <Input type="number" placeholder="0.00" value={form.salario_bruto} onChange={(e) => updateField('salario_bruto', e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Encargo</Label>
+                <Input type="number" placeholder="0.00" value={form.encargo} onChange={(e) => updateField('encargo', e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Adicionais</Label>
+                <Input type="number" placeholder="0.00" value={form.adicionais} onChange={(e) => updateField('adicionais', e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Salário Líquido</Label>
+                <Input type="number" placeholder="0.00" value={form.salario_liquido} onChange={(e) => updateField('salario_liquido', e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label>Data Admissão</Label>
