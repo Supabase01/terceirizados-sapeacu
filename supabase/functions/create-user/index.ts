@@ -18,15 +18,17 @@ serve(async (req) => {
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
     const authHeader = req.headers.get("Authorization");
+    const body = await req.json();
+    const { email, password, nome, role, action } = body;
 
-    // Check if any users exist (bootstrap mode)
+    // Check if any profiles exist (bootstrap mode)
     const { count } = await adminClient
       .from("profiles")
       .select("id", { count: "exact", head: true });
 
     const isBootstrap = (count === null || count === 0);
 
-    if (!isBootstrap) {
+    if (!isBootstrap && action !== "bootstrap") {
       // Verify caller is admin
       if (!authHeader) throw new Error("Não autorizado");
       
@@ -47,10 +49,17 @@ serve(async (req) => {
       }
     }
 
-    const { email, password, nome, role } = await req.json();
-
     if (!email || !password) {
       throw new Error("E-mail e senha são obrigatórios");
+    }
+
+    // Check if user already exists and delete if bootstrap
+    if (isBootstrap || action === "bootstrap") {
+      const { data: { users } } = await adminClient.auth.admin.listUsers();
+      const existing = users?.find(u => u.email === email);
+      if (existing) {
+        await adminClient.auth.admin.deleteUser(existing.id);
+      }
     }
 
     // Create user with admin API (auto-confirms)
@@ -65,7 +74,6 @@ serve(async (req) => {
 
     // Update role if specified and not default
     if (role && role !== "usuario" && newUser.user) {
-      // Wait a moment for the trigger to create the default role
       await new Promise(resolve => setTimeout(resolve, 500));
       await adminClient
         .from("user_roles")
