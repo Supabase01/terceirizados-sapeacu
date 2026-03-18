@@ -50,7 +50,7 @@ const modules = [
 ];
 
 export function AppSidebar() {
-  const { state } = useSidebar();
+  const { state, setOpen } = useSidebar();
   const collapsed = state === 'collapsed';
   const location = useLocation();
   const { data: allowedRoutes } = useAllowedRoutes();
@@ -65,7 +65,11 @@ export function AppSidebar() {
     .filter(mod => mod.items.length > 0);
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar
+      collapsible="icon"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+    >
       <SidebarContent>
         <div className="flex items-center gap-2 px-4 py-4">
           <Shield className="h-6 w-6 shrink-0 text-sidebar-primary" />
