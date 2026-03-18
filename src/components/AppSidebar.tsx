@@ -21,6 +21,7 @@ const modules = [
       { title: 'Configurações', url: '/admin/config', icon: Settings },
       { title: 'Instituições', url: '/admin/instituicoes', icon: Landmark },
       { title: 'Unidades de Folha', url: '/admin/unidades', icon: FolderKanban },
+      { title: 'Cidades', url: '/admin/cidades', icon: Map },
     ],
   },
   {
