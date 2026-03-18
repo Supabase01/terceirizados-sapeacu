@@ -155,6 +155,7 @@ export type Database = {
           endereco: string | null
           funcao_id: string | null
           id: string
+          lideranca_id: string | null
           lotacao_id: string | null
           matricula: string | null
           nome: string
@@ -178,6 +179,7 @@ export type Database = {
           endereco?: string | null
           funcao_id?: string | null
           id?: string
+          lideranca_id?: string | null
           lotacao_id?: string | null
           matricula?: string | null
           nome: string
@@ -201,6 +203,7 @@ export type Database = {
           endereco?: string | null
           funcao_id?: string | null
           id?: string
+          lideranca_id?: string | null
           lotacao_id?: string | null
           matricula?: string | null
           nome?: string
@@ -222,6 +225,13 @@ export type Database = {
             columns: ["funcao_id"]
             isOneToOne: false
             referencedRelation: "funcoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "colaboradores_lideranca_id_fkey"
+            columns: ["lideranca_id"]
+            isOneToOne: false
+            referencedRelation: "liderancas"
             referencedColumns: ["id"]
           },
           {
@@ -430,6 +440,30 @@ export type Database = {
           ativo?: boolean
           created_at?: string
           descricao?: string | null
+          id?: string
+          nome?: string
+        }
+        Relationships: []
+      }
+      liderancas: {
+        Row: {
+          ativo: boolean
+          cargo: string | null
+          created_at: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          ativo?: boolean
+          cargo?: string | null
+          created_at?: string
+          id?: string
+          nome: string
+        }
+        Update: {
+          ativo?: boolean
+          cargo?: string | null
+          created_at?: string
           id?: string
           nome?: string
         }
