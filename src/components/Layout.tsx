@@ -24,8 +24,10 @@ const Layout = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
   const isCadastroActive = location.pathname.startsWith('/cadastro');
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     sessionStorage.removeItem('pin_validated');
+    const { supabase } = await import('@/integrations/supabase/client');
+    await supabase.auth.signOut();
     navigate('/');
   };
 
