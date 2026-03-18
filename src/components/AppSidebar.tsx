@@ -1,4 +1,4 @@
-import { BarChart3, Upload, ShieldAlert, FileText, Users, Building2, Briefcase, MapPin, Settings, Shield, ChevronDown, Landmark } from 'lucide-react';
+import { BarChart3, Upload, ShieldAlert, FileText, Users, Building2, Briefcase, MapPin, Settings, Shield, ChevronDown, Landmark, Handshake } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useLocation } from 'react-router-dom';
 import {
@@ -20,6 +20,7 @@ const modules = [
     items: [
       { title: 'Configurações', url: '/admin/config', icon: Settings },
       { title: 'Prefeituras', url: '/admin/prefeituras', icon: Landmark },
+      { title: 'Terceirizadas', url: '/admin/terceirizadas', icon: Handshake },
     ],
   },
   {

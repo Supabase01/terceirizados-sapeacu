@@ -19,6 +19,7 @@ import CadastroFuncoes from "./pages/CadastroFuncoes";
 import CadastroLotacoes from "./pages/CadastroLotacoes";
 import AdminConfig from "./pages/AdminConfig";
 import CadastroPrefeituras from "./pages/CadastroPrefeituras";
+import CadastroTerceirizadas from "./pages/CadastroTerceirizadas";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -83,6 +84,7 @@ const App = () => (
           <Route path="/pin" element={<AuthGuard><PinAccess /></AuthGuard>} />
           <Route path="/admin/config" element={<ProtectedRoute><AdminConfig /></ProtectedRoute>} />
           <Route path="/admin/prefeituras" element={<ProtectedRoute><CadastroPrefeituras /></ProtectedRoute>} />
+          <Route path="/admin/terceirizadas" element={<ProtectedRoute><CadastroTerceirizadas /></ProtectedRoute>} />
           <Route path="/indicadores" element={<ProtectedRoute><Indicadores /></ProtectedRoute>} />
           <Route path="/import" element={<ProtectedRoute><Import /></ProtectedRoute>} />
           <Route path="/alertas" element={<ProtectedRoute><Alertas /></ProtectedRoute>} />
