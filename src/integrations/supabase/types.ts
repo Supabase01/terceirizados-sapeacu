@@ -32,34 +32,40 @@ export type Database = {
       adicionais: {
         Row: {
           ano: number | null
+          ano_fim: number | null
           ativo: boolean
           colaborador_id: string
           created_at: string
           descricao: string
           id: string
           mes: number | null
+          mes_fim: number | null
           tipo: string
           valor: number
         }
         Insert: {
           ano?: number | null
+          ano_fim?: number | null
           ativo?: boolean
           colaborador_id: string
           created_at?: string
           descricao: string
           id?: string
           mes?: number | null
+          mes_fim?: number | null
           tipo?: string
           valor?: number
         }
         Update: {
           ano?: number | null
+          ano_fim?: number | null
           ativo?: boolean
           colaborador_id?: string
           created_at?: string
           descricao?: string
           id?: string
           mes?: number | null
+          mes_fim?: number | null
           tipo?: string
           valor?: number
         }

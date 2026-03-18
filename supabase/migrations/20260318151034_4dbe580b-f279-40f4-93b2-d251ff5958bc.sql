@@ -1,0 +1,1 @@
+ALTER TABLE public.adicionais ADD COLUMN mes_fim integer, ADD COLUMN ano_fim integer;
