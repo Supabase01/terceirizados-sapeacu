@@ -433,6 +433,39 @@ export type Database = {
         }
         Relationships: []
       }
+      unidades_folha: {
+        Row: {
+          ativo: boolean
+          cidade: string | null
+          created_at: string
+          estado: string | null
+          id: string
+          instituicao_id: string | null
+          instituicao_tipo: string
+          nome: string
+        }
+        Insert: {
+          ativo?: boolean
+          cidade?: string | null
+          created_at?: string
+          estado?: string | null
+          id?: string
+          instituicao_id?: string | null
+          instituicao_tipo?: string
+          nome: string
+        }
+        Update: {
+          ativo?: boolean
+          cidade?: string | null
+          created_at?: string
+          estado?: string | null
+          id?: string
+          instituicao_id?: string | null
+          instituicao_tipo?: string
+          nome?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -473,6 +506,35 @@ export type Database = {
             columns: ["funcao_sistema_id"]
             isOneToOne: false
             referencedRelation: "funcoes_sistema"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      usuario_unidades: {
+        Row: {
+          created_at: string
+          id: string
+          unidade_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          unidade_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          unidade_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "usuario_unidades_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades_folha"
             referencedColumns: ["id"]
           },
         ]

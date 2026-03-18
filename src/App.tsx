@@ -19,6 +19,7 @@ import CadastroFuncoes from "./pages/CadastroFuncoes";
 import CadastroLotacoes from "./pages/CadastroLotacoes";
 import AdminConfig from "./pages/AdminConfig";
 import CadastroInstituicoes from "./pages/CadastroInstituicoes";
+import CadastroUnidades from "./pages/CadastroUnidades";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -83,6 +84,7 @@ const App = () => (
           <Route path="/pin" element={<AuthGuard><PinAccess /></AuthGuard>} />
           <Route path="/admin/config" element={<ProtectedRoute><AdminConfig /></ProtectedRoute>} />
           <Route path="/admin/instituicoes" element={<ProtectedRoute><CadastroInstituicoes /></ProtectedRoute>} />
+          <Route path="/admin/unidades" element={<ProtectedRoute><CadastroUnidades /></ProtectedRoute>} />
           <Route path="/indicadores" element={<ProtectedRoute><Indicadores /></ProtectedRoute>} />
           <Route path="/import" element={<ProtectedRoute><Import /></ProtectedRoute>} />
           <Route path="/alertas" element={<ProtectedRoute><Alertas /></ProtectedRoute>} />
