@@ -23,6 +23,7 @@ const emptyForm: LiderancaForm = { nome: '', cargo: '' };
 export default function CadastroLiderancas() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { unidadeId } = useUnidade();
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);

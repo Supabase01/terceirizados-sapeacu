@@ -77,7 +77,7 @@ const PinAccess = () => {
 
       if (data) {
         sessionStorage.setItem('pin_validated', 'true');
-        navigate('/indicadores');
+        navigate('/selecionar-unidade');
       } else {
         toast({ title: 'PIN incorreto', description: 'Verifique e tente novamente.', variant: 'destructive' });
         setPin('');
