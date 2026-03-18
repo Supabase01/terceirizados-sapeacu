@@ -159,7 +159,7 @@ const Import = () => {
           <CardHeader>
             <CardTitle className="text-base">Upload de Arquivo</CardTitle>
             <CardDescription>
-              Colunas obrigatórias: PREFEITURA, PASTA, ANO, MÊS, NOME, FUNÇÃO, CPF, SALÁRIO BASE, ADICIONAIS, DESCONTOS, BRUTO, LÍQUIDO.
+              Colunas obrigatórias: PREFEITURA, SECRETARIA, LOTAÇÃO, ANO, MÊS, NOME, FUNÇÃO, CPF, SALÁRIO BASE, ADICIONAIS, DESCONTOS, BRUTO, LÍQUIDO.
             </CardDescription>
             <Button variant="outline" size="sm" onClick={handleDownloadTemplate} className="mt-2 w-fit">
               <Download className="mr-2 h-4 w-4" />
