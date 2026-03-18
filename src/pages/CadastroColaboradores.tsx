@@ -212,7 +212,7 @@ const CadastroColaboradores = () => {
                         <TableCell className="hidden md:table-cell">{(item.funcoes as any)?.nome || '—'}</TableCell>
                         <TableCell className="hidden lg:table-cell">{(item.lotacoes as any)?.nome || '—'}</TableCell>
                         <TableCell className="hidden lg:table-cell text-right">{formatCurrency(item.salario_bruto)}</TableCell>
-                        <TableCell className="hidden lg:table-cell text-right">{formatCurrency(item.encargo)}</TableCell>
+                        <TableCell className="hidden lg:table-cell text-right">{Number(item.encargo).toFixed(1)}%</TableCell>
                         <TableCell className="hidden xl:table-cell text-right">{formatCurrency(item.adicionais)}</TableCell>
                         <TableCell className="hidden xl:table-cell text-right">{formatCurrency(item.salario_liquido)}</TableCell>
                         <TableCell><Badge variant={item.ativo ? 'default' : 'secondary'}>{item.ativo ? 'Ativo' : 'Inativo'}</Badge></TableCell>
