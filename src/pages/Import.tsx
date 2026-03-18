@@ -197,6 +197,10 @@ const Import = () => {
               Colunas obrigatórias: PREFEITURA, PASTA, ANO, MÊS, NOME, FUNÇÃO, CPF, BRUTO, LÍQUIDO.
               Os CPFs serão vinculados aos colaboradores cadastrados na unidade atual.
             </CardDescription>
+            <Button variant="outline" size="sm" onClick={handleDownloadTemplate} className="mt-2 w-fit">
+              <Download className="mr-2 h-4 w-4" />
+              Baixar modelo de planilha
+            </Button>
           </CardHeader>
           <CardContent className="space-y-4">
             <div
