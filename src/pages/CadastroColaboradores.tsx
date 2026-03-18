@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { Plus, Pencil, Check, X, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -20,16 +21,17 @@ interface ColaboradorForm {
   secretaria_id: string;
   funcao_id: string;
   lotacao_id: string;
-  salario_bruto: string;
-  encargo: string;
-  adicionais: string;
-  salario_liquido: string;
+  salario_base: string;
   data_admissao: string;
+  beneficio_social: boolean;
+  banco: string;
+  conta: string;
+  pix: string;
 }
 
 const emptyForm: ColaboradorForm = {
   nome: '', cpf: '', matricula: '', secretaria_id: '', funcao_id: '', lotacao_id: '',
-  salario_bruto: '', encargo: '', adicionais: '', salario_liquido: '', data_admissao: '',
+  salario_base: '', data_admissao: '', beneficio_social: false, banco: '', conta: '', pix: '',
 };
 
 const CadastroColaboradores = () => {
@@ -88,11 +90,12 @@ const CadastroColaboradores = () => {
         secretaria_id: form.secretaria_id || null,
         funcao_id: form.funcao_id || null,
         lotacao_id: form.lotacao_id || null,
-        salario_bruto: form.salario_bruto ? Number(form.salario_bruto) : 0,
-        encargo: form.encargo ? Number(form.encargo) : 0,
-        adicionais: form.adicionais ? Number(form.adicionais) : 0,
-        salario_liquido: form.salario_liquido ? Number(form.salario_liquido) : 0,
+        salario_base: form.salario_base ? Number(form.salario_base) : 0,
         data_admissao: form.data_admissao || null,
+        beneficio_social: form.beneficio_social,
+        banco: form.banco || null,
+        conta: form.conta || null,
+        pix: form.pix || null,
       };
       if (editId) {
         const { error } = await supabase.from('colaboradores').update(payload).eq('id', editId);
@@ -129,26 +132,18 @@ const CadastroColaboradores = () => {
       secretaria_id: item.secretaria_id || '',
       funcao_id: item.funcao_id || '',
       lotacao_id: item.lotacao_id || '',
-      salario_bruto: String(item.salario_bruto || ''),
-      encargo: String(item.encargo || ''),
-      adicionais: String(item.adicionais || ''),
-      salario_liquido: String(item.salario_liquido || ''),
+      salario_base: String(item.salario_base || ''),
       data_admissao: item.data_admissao || '',
+      beneficio_social: item.beneficio_social || false,
+      banco: item.banco || '',
+      conta: item.conta || '',
+      pix: item.pix || '',
     });
     setDialogOpen(true);
   };
 
-  const updateField = (field: keyof ColaboradorForm, value: string) => {
-    setForm(prev => {
-      const next = { ...prev, [field]: value };
-      // Auto-calculate salário líquido
-      const bruto = Number(next.salario_bruto) || 0;
-      const encargoPct = Number(next.encargo) || 0;
-      const adicionais = Number(next.adicionais) || 0;
-      const liquido = bruto + adicionais - (bruto * encargoPct / 100);
-      next.salario_liquido = liquido > 0 ? liquido.toFixed(2) : '0';
-      return next;
-    });
+  const updateField = (field: keyof ColaboradorForm, value: string | boolean) => {
+    setForm(prev => ({ ...prev, [field]: value }));
   };
 
   const filtered = colaboradores.filter((c: any) =>
@@ -190,19 +185,17 @@ const CadastroColaboradores = () => {
                     <TableHead className="hidden md:table-cell">Secretaria</TableHead>
                     <TableHead className="hidden md:table-cell">Função</TableHead>
                     <TableHead className="hidden lg:table-cell">Lotação</TableHead>
-                    <TableHead className="hidden lg:table-cell text-right">Sal. Bruto</TableHead>
-                    <TableHead className="hidden lg:table-cell text-right">Adicionais</TableHead>
-                    <TableHead className="hidden lg:table-cell text-right">Encargo</TableHead>
-                    <TableHead className="hidden lg:table-cell text-right">Sal. Líquido</TableHead>
+                    <TableHead className="hidden lg:table-cell text-right">Sal. Base</TableHead>
+                    <TableHead className="hidden lg:table-cell">Benef. Social</TableHead>
                     <TableHead className="w-24">Status</TableHead>
                     <TableHead className="w-28">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
-                    <TableRow><TableCell colSpan={11} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
                   ) : filtered.length === 0 ? (
-                    <TableRow><TableCell colSpan={11} className="text-center py-8 text-muted-foreground">Nenhum colaborador encontrado</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Nenhum colaborador encontrado</TableCell></TableRow>
                   ) : (
                     filtered.map((item: any) => (
                       <TableRow key={item.id}>
@@ -211,10 +204,10 @@ const CadastroColaboradores = () => {
                         <TableCell className="hidden md:table-cell">{(item.secretarias as any)?.nome || '—'}</TableCell>
                         <TableCell className="hidden md:table-cell">{(item.funcoes as any)?.nome || '—'}</TableCell>
                         <TableCell className="hidden lg:table-cell">{(item.lotacoes as any)?.nome || '—'}</TableCell>
-                        <TableCell className="hidden lg:table-cell text-right">{formatCurrency(item.salario_bruto)}</TableCell>
-                        <TableCell className="hidden lg:table-cell text-right">{formatCurrency(item.adicionais)}</TableCell>
-                        <TableCell className="hidden lg:table-cell text-right">{Number(item.encargo).toFixed(1)}%</TableCell>
-                        <TableCell className="hidden lg:table-cell text-right">{formatCurrency(item.salario_liquido)}</TableCell>
+                        <TableCell className="hidden lg:table-cell text-right">{formatCurrency(item.salario_base)}</TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          <Badge variant={item.beneficio_social ? 'default' : 'outline'}>{item.beneficio_social ? 'Sim' : 'Não'}</Badge>
+                        </TableCell>
                         <TableCell><Badge variant={item.ativo ? 'default' : 'secondary'}>{item.ativo ? 'Ativo' : 'Inativo'}</Badge></TableCell>
                         <TableCell>
                           <div className="flex gap-1">
@@ -235,7 +228,7 @@ const CadastroColaboradores = () => {
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={(open) => !open && closeDialog()}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editId ? 'Editar Colaborador' : 'Novo Colaborador'}</DialogTitle></DialogHeader>
           <div className="grid gap-4 py-2">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -282,27 +275,34 @@ const CadastroColaboradores = () => {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Salário Bruto</Label>
-                <Input type="number" placeholder="0.00" value={form.salario_bruto} onChange={(e) => updateField('salario_bruto', e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label>Encargo (%)</Label>
-                <div className="relative">
-                  <Input type="number" placeholder="0" value={form.encargo} onChange={(e) => updateField('encargo', e.target.value)} className="pr-8" />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label>Adicionais</Label>
-                <Input type="number" placeholder="0.00" value={form.adicionais} onChange={(e) => updateField('adicionais', e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label>Salário Líquido</Label>
-                <Input type="number" placeholder="0.00" value={form.salario_liquido} readOnly className="bg-muted" />
+                <Label>Salário Base</Label>
+                <Input type="number" placeholder="0.00" value={form.salario_base} onChange={(e) => updateField('salario_base', e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label>Data Admissão</Label>
                 <Input type="date" value={form.data_admissao} onChange={(e) => updateField('data_admissao', e.target.value)} />
+              </div>
+              <div className="space-y-2 flex items-center gap-3 pt-6">
+                <Switch checked={form.beneficio_social} onCheckedChange={(v) => updateField('beneficio_social', v)} />
+                <Label>Benefício Social</Label>
+              </div>
+            </div>
+
+            <div className="border-t pt-4 mt-2">
+              <h3 className="text-sm font-semibold text-muted-foreground mb-3">Dados Bancários</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>Banco</Label>
+                  <Input placeholder="Ex: Bradesco" value={form.banco} onChange={(e) => updateField('banco', e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Conta</Label>
+                  <Input placeholder="Ag/Conta" value={form.conta} onChange={(e) => updateField('conta', e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>PIX</Label>
+                  <Input placeholder="Chave PIX" value={form.pix} onChange={(e) => updateField('pix', e.target.value)} />
+                </div>
               </div>
             </div>
           </div>
