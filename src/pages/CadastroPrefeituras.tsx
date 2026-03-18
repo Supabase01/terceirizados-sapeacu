@@ -102,6 +102,7 @@ const CadastroPrefeituras = () => {
     setForm({
       nome: item.nome || '',
       cnpj: item.cnpj || '',
+      responsavel: item.responsavel || '',
       endereco: item.endereco || '',
       cidade: item.cidade || '',
       estado: item.estado || '',
