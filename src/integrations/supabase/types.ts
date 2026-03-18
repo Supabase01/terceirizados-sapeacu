@@ -341,18 +341,21 @@ export type Database = {
       funcoes: {
         Row: {
           ativo: boolean
+          atribuicoes: string | null
           created_at: string
           id: string
           nome: string
         }
         Insert: {
           ativo?: boolean
+          atribuicoes?: string | null
           created_at?: string
           id?: string
           nome: string
         }
         Update: {
           ativo?: boolean
+          atribuicoes?: string | null
           created_at?: string
           id?: string
           nome?: string

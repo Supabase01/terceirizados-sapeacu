@@ -1,0 +1,1 @@
+ALTER TABLE public.funcoes ADD COLUMN atribuicoes text;
