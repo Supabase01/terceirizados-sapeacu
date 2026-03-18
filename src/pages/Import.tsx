@@ -14,6 +14,15 @@ import { useToast } from '@/hooks/use-toast';
 
 const BATCH_SIZE = 500;
 
+const handleDownloadTemplate = () => {
+  const headers = [['PREFEITURA', 'PASTA', 'ANO', 'MÊS', 'NOME', 'FUNÇÃO', 'CPF', 'BRUTO', 'LÍQUIDO']];
+  const ws = XLSX.utils.aoa_to_sheet(headers);
+  ws['!cols'] = [{ wch: 20 }, { wch: 20 }, { wch: 8 }, { wch: 6 }, { wch: 30 }, { wch: 20 }, { wch: 15 }, { wch: 12 }, { wch: 12 }];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Modelo');
+  XLSX.writeFile(wb, 'modelo_importacao.xlsx');
+};
+
 const Import = () => {
   const [file, setFile] = useState<File | null>(null);
   const [importing, setImporting] = useState(false);
