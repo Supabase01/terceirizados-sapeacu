@@ -2,10 +2,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session } from "@supabase/supabase-js";
+import { useCanAccessRoute } from "@/hooks/useUserRoles";
 import Auth from "./pages/Auth";
 import PinAccess from "./pages/PinAccess";
 import Indicadores from "./pages/Indicadores";
@@ -16,6 +17,7 @@ import CadastroColaboradores from "./pages/CadastroColaboradores";
 import CadastroSecretarias from "./pages/CadastroSecretarias";
 import CadastroFuncoes from "./pages/CadastroFuncoes";
 import CadastroLotacoes from "./pages/CadastroLotacoes";
+import AdminConfig from "./pages/AdminConfig";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,9 +49,25 @@ const PinGuard = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+const RouteGuard = ({ children }: { children: React.ReactNode }) => {
+  const location = useLocation();
+  const { canAccess, isLoading } = useCanAccessRoute(location.pathname);
+
+  if (isLoading) return <div className="flex min-h-screen items-center justify-center"><span className="text-muted-foreground">Verificando permissões...</span></div>;
+  if (!canAccess) return (
+    <div className="flex min-h-screen items-center justify-center flex-col gap-3">
+      <span className="text-lg font-medium text-muted-foreground">Acesso não autorizado</span>
+      <span className="text-sm text-muted-foreground">Você não tem permissão para acessar esta página.</span>
+    </div>
+  );
+  return <>{children}</>;
+};
+
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => (
   <AuthGuard>
-    <PinGuard>{children}</PinGuard>
+    <PinGuard>
+      <RouteGuard>{children}</RouteGuard>
+    </PinGuard>
   </AuthGuard>
 );
 
@@ -62,6 +80,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Auth />} />
           <Route path="/pin" element={<AuthGuard><PinAccess /></AuthGuard>} />
+          <Route path="/admin/config" element={<ProtectedRoute><AdminConfig /></ProtectedRoute>} />
           <Route path="/indicadores" element={<ProtectedRoute><Indicadores /></ProtectedRoute>} />
           <Route path="/import" element={<ProtectedRoute><Import /></ProtectedRoute>} />
           <Route path="/alertas" element={<ProtectedRoute><Alertas /></ProtectedRoute>} />

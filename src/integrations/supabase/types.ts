@@ -197,6 +197,51 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          nome: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id: string
+          nome?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          nome?: string | null
+        }
+        Relationships: []
+      }
+      route_permissions: {
+        Row: {
+          allowed: boolean
+          id: string
+          module_name: string
+          role: Database["public"]["Enums"]["app_role"]
+          route_path: string
+        }
+        Insert: {
+          allowed?: boolean
+          id?: string
+          module_name: string
+          role: Database["public"]["Enums"]["app_role"]
+          route_path: string
+        }
+        Update: {
+          allowed?: boolean
+          id?: string
+          module_name?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          route_path?: string
+        }
+        Relationships: []
+      }
       secretarias: {
         Row: {
           ativo: boolean
@@ -218,15 +263,48 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      can_access_route: {
+        Args: { _route: string; _user_id: string }
+        Returns: boolean
+      }
+      get_user_roles: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"][]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       validate_pin: { Args: { input_pin: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "usuario"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -353,6 +431,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "usuario"],
+    },
   },
 } as const

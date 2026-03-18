@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { BarChart3, Upload, ShieldAlert, FileText, Users, Building2, Briefcase, MapPin, Settings, Shield, ChevronDown } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useLocation } from 'react-router-dom';
@@ -12,6 +11,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
+import { useRoutePermissions } from '@/hooks/useUserRoles';
 
 const modules = [
   {
@@ -53,6 +53,17 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
   const location = useLocation();
+  const { data: permissions } = useRoutePermissions();
+
+  const allowedRoutes = new Set(permissions?.map(p => p.route_path) || []);
+
+  // Filter modules to only show allowed items
+  const visibleModules = modules
+    .map(mod => ({
+      ...mod,
+      items: mod.items.filter(item => allowedRoutes.has(item.url)),
+    }))
+    .filter(mod => mod.items.length > 0);
 
   return (
     <Sidebar collapsible="icon">
@@ -67,7 +78,7 @@ export function AppSidebar() {
           )}
         </div>
 
-        {modules.map((mod) => {
+        {visibleModules.map((mod) => {
           const isGroupActive = mod.items.some((i) => location.pathname === i.url || location.pathname.startsWith(i.url + '/'));
 
           return (
