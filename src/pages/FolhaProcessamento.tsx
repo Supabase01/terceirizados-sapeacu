@@ -359,8 +359,8 @@ const FolhaProcessamento = () => {
                     <TableHead className="hidden lg:table-cell">Secretaria</TableHead>
                     <TableHead className="text-right">Base</TableHead>
                     <TableHead className="text-right">Adicionais</TableHead>
-                    <TableHead className="text-right">Descontos</TableHead>
                     <TableHead className="text-right">Bruto</TableHead>
+                    <TableHead className="text-right">Descontos</TableHead>
                     <TableHead className="text-right">Líquido</TableHead>
                   </TableRow>
                 </TableHeader>
