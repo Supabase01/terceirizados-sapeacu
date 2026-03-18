@@ -17,6 +17,7 @@ const CadastroFuncoes = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [nome, setNome] = useState('');
+  const [atribuicoes, setAtribuicoes] = useState('');
   const [search, setSearch] = useState('');
 
   const { data: funcoes = [], isLoading } = useQuery({
@@ -31,10 +32,10 @@ const CadastroFuncoes = () => {
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (editId) {
-        const { error } = await supabase.from('funcoes').update({ nome }).eq('id', editId);
+        const { error } = await supabase.from('funcoes').update({ nome, atribuicoes }).eq('id', editId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from('funcoes').insert({ nome });
+        const { error } = await supabase.from('funcoes').insert({ nome, atribuicoes });
         if (error) throw error;
       }
     },
@@ -54,9 +55,9 @@ const CadastroFuncoes = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['funcoes'] }),
   });
 
-  const closeDialog = () => { setDialogOpen(false); setEditId(null); setNome(''); };
+  const closeDialog = () => { setDialogOpen(false); setEditId(null); setNome(''); setAtribuicoes(''); };
 
-  const openEdit = (item: any) => { setEditId(item.id); setNome(item.nome); setDialogOpen(true); };
+  const openEdit = (item: any) => { setEditId(item.id); setNome(item.nome); setAtribuicoes(item.atribuicoes || ''); setDialogOpen(true); };
 
   const filtered = funcoes.filter((s: any) => s.nome.toLowerCase().includes(search.toLowerCase()));
 
@@ -78,19 +79,21 @@ const CadastroFuncoes = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome</TableHead>
+                  <TableHead>Atribuições</TableHead>
                   <TableHead className="w-24">Status</TableHead>
                   <TableHead className="w-28">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
-                  <TableRow><TableCell colSpan={3} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
-                ) : filtered.length === 0 ? (
-                  <TableRow><TableCell colSpan={3} className="text-center py-8 text-muted-foreground">Nenhuma função encontrada</TableCell></TableRow>
+                   <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
+                 ) : filtered.length === 0 ? (
+                   <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">Nenhuma função encontrada</TableCell></TableRow>
                 ) : (
                   filtered.map((item: any) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">{item.nome}</TableCell>
+                      <TableCell className="text-muted-foreground text-sm max-w-xs truncate">{item.atribuicoes || '—'}</TableCell>
                       <TableCell><Badge variant={item.ativo ? 'default' : 'secondary'}>{item.ativo ? 'Ativo' : 'Inativo'}</Badge></TableCell>
                       <TableCell>
                         <div className="flex gap-1">
@@ -114,6 +117,12 @@ const CadastroFuncoes = () => {
           <DialogHeader><DialogTitle>{editId ? 'Editar Função' : 'Nova Função'}</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
             <Input placeholder="Nome da função" value={nome} onChange={(e) => setNome(e.target.value)} />
+            <textarea
+              placeholder="Atribuições da função"
+              value={atribuicoes}
+              onChange={(e) => setAtribuicoes(e.target.value)}
+              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={closeDialog}>Cancelar</Button>
