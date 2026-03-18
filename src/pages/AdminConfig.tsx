@@ -16,7 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Users, Shield, Loader2, Plus, Pencil, Trash2, Briefcase, Lock, Search, KeyRound, Building2 } from 'lucide-react';
+import { Users, Shield, Loader2, Plus, Pencil, Trash2, Briefcase, Lock, Search, KeyRound, Building2, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useIsAdmin } from '@/hooks/useUserRoles';
 
