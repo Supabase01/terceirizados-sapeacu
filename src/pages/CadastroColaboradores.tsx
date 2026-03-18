@@ -340,6 +340,15 @@ const CadastroColaboradores = () => {
                 <Switch checked={form.beneficio_social} onCheckedChange={(v) => updateField('beneficio_social', v)} />
                 <Label>Benefício Social</Label>
               </div>
+              <div className="space-y-2">
+                <Label>Indicação (Liderança)</Label>
+                <Select value={form.lideranca_id} onValueChange={(v) => updateField('lideranca_id', v)}>
+                  <SelectTrigger><SelectValue placeholder="Selecione a liderança" /></SelectTrigger>
+                  <SelectContent>
+                    {liderancas.map((l: any) => <SelectItem key={l.id} value={l.id}>{l.nome}{l.cargo ? ` — ${l.cargo}` : ''}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             {/* Endereço */}
