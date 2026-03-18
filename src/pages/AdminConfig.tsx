@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import Layout from '@/components/Layout';
@@ -10,47 +10,54 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Users, Shield, Route, Loader2, Plus, Pencil, Trash2, Briefcase, Lock } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import { Users, Shield, Loader2, Plus, Pencil, Trash2, Briefcase, Lock, Search, UserCheck, ShieldCheck, KeyRound } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useIsAdmin } from '@/hooks/useUserRoles';
 
 const ALL_ROUTES = [
-  { path: '/admin/config', module: 'Administrador' },
-  { path: '/indicadores', module: 'Folha de Pagamentos' },
-  { path: '/import', module: 'Folha de Pagamentos' },
-  { path: '/relatorios', module: 'Folha de Pagamentos' },
-  { path: '/cadastro/colaboradores', module: 'Cadastros' },
-  { path: '/cadastro/secretarias', module: 'Cadastros' },
-  { path: '/cadastro/funcoes', module: 'Cadastros' },
-  { path: '/cadastro/lotacoes', module: 'Cadastros' },
-  { path: '/alertas', module: 'Auditoria' },
+  { path: '/admin/config', module: 'Administrador', label: 'Painel Admin' },
+  { path: '/indicadores', module: 'Folha de Pagamentos', label: 'Indicadores' },
+  { path: '/import', module: 'Folha de Pagamentos', label: 'Importação' },
+  { path: '/relatorios', module: 'Folha de Pagamentos', label: 'Relatórios' },
+  { path: '/cadastro/colaboradores', module: 'Cadastros', label: 'Colaboradores' },
+  { path: '/cadastro/secretarias', module: 'Cadastros', label: 'Secretarias' },
+  { path: '/cadastro/funcoes', module: 'Cadastros', label: 'Funções' },
+  { path: '/cadastro/lotacoes', module: 'Cadastros', label: 'Lotações' },
+  { path: '/alertas', module: 'Auditoria', label: 'Alertas' },
 ];
+
+const ROUTE_LABELS: Record<string, string> = {};
+ALL_ROUTES.forEach(r => { ROUTE_LABELS[r.path] = r.label; });
 
 const AdminConfig = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { isAdmin, isLoading: loadingAdmin } = useIsAdmin();
 
-  // --- State for dialogs ---
+  // --- State ---
   const [funcaoDialog, setFuncaoDialog] = useState(false);
   const [editingFuncao, setEditingFuncao] = useState<any>(null);
   const [funcaoNome, setFuncaoNome] = useState('');
   const [funcaoDesc, setFuncaoDesc] = useState('');
   const [funcaoRoutes, setFuncaoRoutes] = useState<string[]>([]);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
-  // --- State for user creation ---
   const [userDialog, setUserDialog] = useState(false);
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserNome, setNewUserNome] = useState('');
   const [newUserPassword, setNewUserPassword] = useState('');
   const [newUserRole, setNewUserRole] = useState('usuario');
+  const [newUserFuncoes, setNewUserFuncoes] = useState<string[]>([]);
 
-  // --- Fetch users with roles and system functions ---
+  const [userSearch, setUserSearch] = useState('');
+
+  // --- Queries ---
   const { data: users, isLoading: loadingUsers } = useQuery({
     queryKey: ['admin-users'],
     queryFn: async () => {
@@ -59,10 +66,8 @@ const AdminConfig = () => {
         .select('id, email, nome, created_at')
         .order('created_at', { ascending: true });
       if (error) throw error;
-
       const { data: roles } = await supabase.from('user_roles').select('user_id, role');
       const { data: userFuncoes } = await supabase.from('usuario_funcoes_sistema').select('user_id, funcao_sistema_id');
-
       return (profiles || []).map(p => ({
         ...p,
         roles: (roles || []).filter(r => r.user_id === p.id).map(r => r.role),
@@ -72,32 +77,51 @@ const AdminConfig = () => {
     enabled: isAdmin,
   });
 
-  // --- Fetch system functions ---
   const { data: funcoesSistema, isLoading: loadingFuncoes } = useQuery({
     queryKey: ['funcoes-sistema'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('funcoes_sistema')
-        .select('*')
-        .order('nome');
+      const { data, error } = await supabase.from('funcoes_sistema').select('*').order('nome');
       if (error) throw error;
       return data || [];
     },
     enabled: isAdmin,
   });
 
-  // --- Fetch function permissions ---
   const { data: funcaoPermissoes } = useQuery({
     queryKey: ['funcao-sistema-permissoes'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('funcao_sistema_permissoes')
-        .select('*');
+      const { data, error } = await supabase.from('funcao_sistema_permissoes').select('*');
       if (error) throw error;
       return data || [];
     },
     enabled: isAdmin,
   });
+
+  // --- Derived data ---
+  const filteredUsers = useMemo(() => {
+    if (!users) return [];
+    if (!userSearch.trim()) return users;
+    const q = userSearch.toLowerCase();
+    return users.filter(u =>
+      u.email.toLowerCase().includes(q) ||
+      (u.nome && u.nome.toLowerCase().includes(q))
+    );
+  }, [users, userSearch]);
+
+  const routesByModule = useMemo(() =>
+    ALL_ROUTES.reduce((acc, r) => {
+      if (!acc[r.module]) acc[r.module] = [];
+      acc[r.module].push(r);
+      return acc;
+    }, {} as Record<string, typeof ALL_ROUTES>),
+  []);
+
+  const stats = useMemo(() => ({
+    totalUsers: users?.length || 0,
+    adminCount: users?.filter(u => u.roles.includes('admin')).length || 0,
+    funcaoCount: funcoesSistema?.length || 0,
+    routeCount: ALL_ROUTES.length,
+  }), [users, funcoesSistema]);
 
   // --- Mutations ---
   const assignRole = useMutation({
@@ -108,7 +132,7 @@ const AdminConfig = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-      toast({ title: 'Papel atualizado' });
+      toast({ title: 'Papel atualizado com sucesso' });
     },
     onError: (err: any) => toast({ title: 'Erro', description: err.message, variant: 'destructive' }),
   });
@@ -134,30 +158,21 @@ const AdminConfig = () => {
   const saveFuncao = useMutation({
     mutationFn: async () => {
       if (!funcaoNome.trim()) throw new Error('Nome é obrigatório');
-
       let funcaoId: string;
-
       if (editingFuncao) {
-        const { error } = await supabase
-          .from('funcoes_sistema')
+        const { error } = await supabase.from('funcoes_sistema')
           .update({ nome: funcaoNome.trim(), descricao: funcaoDesc.trim() || null })
           .eq('id', editingFuncao.id);
         if (error) throw error;
         funcaoId = editingFuncao.id;
-
-        // Delete old permissions
         await supabase.from('funcao_sistema_permissoes').delete().eq('funcao_sistema_id', funcaoId);
       } else {
-        const { data, error } = await supabase
-          .from('funcoes_sistema')
+        const { data, error } = await supabase.from('funcoes_sistema')
           .insert({ nome: funcaoNome.trim(), descricao: funcaoDesc.trim() || null })
-          .select('id')
-          .single();
+          .select('id').single();
         if (error) throw error;
         funcaoId = data.id;
       }
-
-      // Insert permissions
       if (funcaoRoutes.length > 0) {
         const perms = funcaoRoutes.map(r => ({
           funcao_sistema_id: funcaoId,
@@ -188,6 +203,7 @@ const AdminConfig = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['funcoes-sistema'] });
       queryClient.invalidateQueries({ queryKey: ['funcao-sistema-permissoes'] });
+      setDeleteConfirm(null);
       toast({ title: 'Função excluída' });
     },
     onError: (err: any) => toast({ title: 'Erro', description: err.message, variant: 'destructive' }),
@@ -197,13 +213,19 @@ const AdminConfig = () => {
     mutationFn: async () => {
       if (!newUserEmail || !newUserPassword) throw new Error('E-mail e senha são obrigatórios');
       if (newUserPassword.length < 6) throw new Error('Senha deve ter no mínimo 6 caracteres');
-
-      const { data: { session } } = await supabase.auth.getSession();
       const res = await supabase.functions.invoke('create-user', {
         body: { email: newUserEmail, password: newUserPassword, nome: newUserNome || newUserEmail, role: newUserRole },
       });
       if (res.error) throw res.error;
       if (res.data?.error) throw new Error(res.data.error);
+
+      // Assign system functions to the new user if selected
+      if (newUserFuncoes.length > 0 && res.data?.user?.id) {
+        const userId = res.data.user.id;
+        for (const funcaoId of newUserFuncoes) {
+          await supabase.from('usuario_funcoes_sistema').insert({ user_id: userId, funcao_sistema_id: funcaoId });
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
@@ -212,11 +234,53 @@ const AdminConfig = () => {
       setNewUserNome('');
       setNewUserPassword('');
       setNewUserRole('usuario');
+      setNewUserFuncoes([]);
       toast({ title: 'Usuário criado com sucesso' });
     },
     onError: (err: any) => toast({ title: 'Erro ao criar usuário', description: err.message, variant: 'destructive' }),
   });
 
+  const togglePermission = useMutation({
+    mutationFn: async ({ funcaoId, routePath, module, currentlyAllowed }: { funcaoId: string; routePath: string; module: string; currentlyAllowed: boolean }) => {
+      if (currentlyAllowed) {
+        const { error } = await supabase.from('funcao_sistema_permissoes').delete()
+          .eq('funcao_sistema_id', funcaoId).eq('route_path', routePath);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('funcao_sistema_permissoes')
+          .insert({ funcao_sistema_id: funcaoId, route_path: routePath, module_name: module, allowed: true });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['funcao-sistema-permissoes'] });
+      queryClient.invalidateQueries({ queryKey: ['allowed-routes'] });
+    },
+    onError: (err: any) => toast({ title: 'Erro ao atualizar permissão', description: err.message, variant: 'destructive' }),
+  });
+
+  const toggleAllModulePermissions = useMutation({
+    mutationFn: async ({ funcaoId, modulePaths, allChecked }: { funcaoId: string; modulePaths: typeof ALL_ROUTES; allChecked: boolean }) => {
+      for (const route of modulePaths) {
+        const isAllowed = (funcaoPermissoes || []).some(
+          p => p.funcao_sistema_id === funcaoId && p.route_path === route.path && p.allowed
+        );
+        if (allChecked && isAllowed) {
+          await supabase.from('funcao_sistema_permissoes').delete()
+            .eq('funcao_sistema_id', funcaoId).eq('route_path', route.path);
+        } else if (!allChecked && !isAllowed) {
+          await supabase.from('funcao_sistema_permissoes')
+            .insert({ funcao_sistema_id: funcaoId, route_path: route.path, module_name: route.module, allowed: true });
+        }
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['funcao-sistema-permissoes'] });
+      queryClient.invalidateQueries({ queryKey: ['allowed-routes'] });
+    },
+  });
+
+  // --- Helpers ---
   const resetFuncaoForm = () => {
     setEditingFuncao(null);
     setFuncaoNome('');
@@ -239,29 +303,6 @@ const AdminConfig = () => {
     );
   };
 
-  const togglePermission = useMutation({
-    mutationFn: async ({ funcaoId, routePath, module, currentlyAllowed }: { funcaoId: string; routePath: string; module: string; currentlyAllowed: boolean }) => {
-      if (currentlyAllowed) {
-        const { error } = await supabase
-          .from('funcao_sistema_permissoes')
-          .delete()
-          .eq('funcao_sistema_id', funcaoId)
-          .eq('route_path', routePath);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('funcao_sistema_permissoes')
-          .insert({ funcao_sistema_id: funcaoId, route_path: routePath, module_name: module, allowed: true });
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['funcao-sistema-permissoes'] });
-      queryClient.invalidateQueries({ queryKey: ['allowed-routes'] });
-    },
-    onError: (err: any) => toast({ title: 'Erro ao atualizar permissão', description: err.message, variant: 'destructive' }),
-  });
-
   // --- Guard ---
   if (loadingAdmin) {
     return <Layout><div className="flex items-center justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div></Layout>;
@@ -270,115 +311,180 @@ const AdminConfig = () => {
     return <Layout><div className="flex flex-col items-center justify-center py-20 gap-3"><Shield className="h-12 w-12 text-muted-foreground" /><p className="text-lg font-medium text-muted-foreground">Acesso restrito a administradores</p></div></Layout>;
   }
 
-  // Group routes by module for the form
-  const routesByModule = ALL_ROUTES.reduce((acc, r) => {
-    if (!acc[r.module]) acc[r.module] = [];
-    acc[r.module].push(r.path);
-    return acc;
-  }, {} as Record<string, string[]>);
-
   return (
     <Layout>
       <div className="space-y-6">
+        {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Administração</h1>
-          <p className="text-muted-foreground">Gerencie usuários, funções e permissões</p>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Administração</h1>
+          <p className="text-sm text-muted-foreground">Gerencie usuários, funções e permissões do sistema</p>
         </div>
 
-        <Tabs defaultValue="users">
-          <TabsList>
+        {/* Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <Card>
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="rounded-lg bg-primary/10 p-2.5">
+                <Users className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">{stats.totalUsers}</p>
+                <p className="text-xs text-muted-foreground">Usuários</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="rounded-lg bg-destructive/10 p-2.5">
+                <ShieldCheck className="h-5 w-5 text-destructive" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">{stats.adminCount}</p>
+                <p className="text-xs text-muted-foreground">Administradores</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="rounded-lg bg-accent p-2.5">
+                <Briefcase className="h-5 w-5 text-accent-foreground" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">{stats.funcaoCount}</p>
+                <p className="text-xs text-muted-foreground">Funções</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="rounded-lg bg-muted p-2.5">
+                <KeyRound className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">{stats.routeCount}</p>
+                <p className="text-xs text-muted-foreground">Rotas</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Tabs */}
+        <Tabs defaultValue="users" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="users" className="gap-1.5"><Users className="h-4 w-4" />Usuários</TabsTrigger>
-            <TabsTrigger value="funcoes" className="gap-1.5"><Briefcase className="h-4 w-4" />Funções do Sistema</TabsTrigger>
+            <TabsTrigger value="funcoes" className="gap-1.5"><Briefcase className="h-4 w-4" />Funções</TabsTrigger>
             <TabsTrigger value="permissoes" className="gap-1.5"><Lock className="h-4 w-4" />Permissões</TabsTrigger>
           </TabsList>
 
           {/* ===== USERS TAB ===== */}
           <TabsContent value="users">
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
+              <CardHeader className="flex flex-row items-center justify-between gap-4 flex-wrap">
+                <div className="flex-1 min-w-0">
                   <CardTitle className="text-lg">Usuários do Sistema</CardTitle>
-                  <CardDescription>Crie e gerencie usuários e suas funções</CardDescription>
+                  <CardDescription>Gerencie usuários, papéis e funções atribuídas</CardDescription>
                 </div>
-                <Button size="sm" className="gap-1.5" onClick={() => setUserDialog(true)}>
-                  <Plus className="h-4 w-4" />
-                  Novo Usuário
-                </Button>
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Buscar..."
+                      value={userSearch}
+                      onChange={e => setUserSearch(e.target.value)}
+                      className="pl-9 w-[200px] h-9"
+                    />
+                  </div>
+                  <Button size="sm" className="gap-1.5" onClick={() => setUserDialog(true)}>
+                    <Plus className="h-4 w-4" />
+                    Novo Usuário
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 {loadingUsers ? (
                   <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>E-mail</TableHead>
-                        <TableHead>Papel</TableHead>
-                        <TableHead>Funções do Sistema</TableHead>
-                        <TableHead className="w-[180px]">Alterar Papel</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {users?.map(user => {
-                        const currentRole = user.roles[0] || 'sem papel';
-                        const isMaster = user.email === 'nailton.alsampaio@gmail.com';
-                        return (
-                          <TableRow key={user.id}>
-                            <TableCell className="font-medium">
-                              {user.email}
-                              {isMaster && <Badge className="ml-2 bg-primary text-primary-foreground text-[10px]">Master</Badge>}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant={currentRole === 'admin' ? 'destructive' : 'secondary'}>
-                                {currentRole === 'admin' ? 'Administrador' : currentRole === 'usuario' ? 'Usuário' : 'Sem papel'}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex flex-wrap gap-1">
-                                {funcoesSistema?.map(f => {
-                                  const assigned = user.funcoes_sistema.includes(f.id);
-                                  return (
-                                    <Badge
-                                      key={f.id}
-                                      variant={assigned ? 'default' : 'outline'}
-                                      className="cursor-pointer text-[10px]"
-                                      onClick={() => assignFuncao.mutate({ userId: user.id, funcaoId: f.id, assign: !assigned })}
-                                    >
-                                      {f.nome}
-                                      {assigned ? ' ✓' : ' +'}
-                                    </Badge>
-                                  );
-                                })}
-                                {(!funcoesSistema || funcoesSistema.length === 0) && (
-                                  <span className="text-xs text-muted-foreground">Nenhuma função criada</span>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Select
-                                value={currentRole}
-                                onValueChange={(role) => assignRole.mutate({ userId: user.id, role })}
-                                disabled={isMaster}
-                              >
-                                <SelectTrigger className="h-8">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="admin">Administrador</SelectItem>
-                                  <SelectItem value="usuario">Usuário</SelectItem>
-                                </SelectContent>
-                              </Select>
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Usuário</TableHead>
+                          <TableHead className="w-[140px]">Papel</TableHead>
+                          <TableHead>Funções do Sistema</TableHead>
+                          <TableHead className="w-[160px]">Alterar Papel</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredUsers.map(user => {
+                          const currentRole = user.roles[0] || 'sem papel';
+                          const isMaster = user.email === 'nailton.alsampaio@gmail.com';
+                          return (
+                            <TableRow key={user.id}>
+                              <TableCell>
+                                <div className="flex flex-col">
+                                  <span className="font-medium text-foreground">
+                                    {user.nome || user.email}
+                                    {isMaster && <Badge className="ml-2 text-[10px]" variant="default">Master</Badge>}
+                                  </span>
+                                  {user.nome && (
+                                    <span className="text-xs text-muted-foreground">{user.email}</span>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={currentRole === 'admin' ? 'destructive' : 'secondary'}>
+                                  {currentRole === 'admin' ? 'Admin' : currentRole === 'usuario' ? 'Usuário' : 'N/A'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex flex-wrap gap-1">
+                                  {funcoesSistema?.map(f => {
+                                    const assigned = user.funcoes_sistema.includes(f.id);
+                                    return (
+                                      <Badge
+                                        key={f.id}
+                                        variant={assigned ? 'default' : 'outline'}
+                                        className="cursor-pointer text-[10px] transition-colors hover:opacity-80"
+                                        onClick={() => assignFuncao.mutate({ userId: user.id, funcaoId: f.id, assign: !assigned })}
+                                      >
+                                        {f.nome}
+                                        {assigned ? ' ✓' : ' +'}
+                                      </Badge>
+                                    );
+                                  })}
+                                  {(!funcoesSistema || funcoesSistema.length === 0) && (
+                                    <span className="text-xs text-muted-foreground italic">Nenhuma função criada</span>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Select
+                                  value={currentRole}
+                                  onValueChange={(role) => assignRole.mutate({ userId: user.id, role })}
+                                  disabled={isMaster}
+                                >
+                                  <SelectTrigger className="h-8 text-xs">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="admin">Administrador</SelectItem>
+                                    <SelectItem value="usuario">Usuário</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                        {filteredUsers.length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                              {userSearch ? 'Nenhum usuário encontrado' : 'Nenhum usuário cadastrado'}
                             </TableCell>
                           </TableRow>
-                        );
-                      })}
-                      {(!users || users.length === 0) && (
-                        <TableRow>
-                          <TableCell colSpan={4} className="text-center text-muted-foreground py-8">Nenhum usuário cadastrado</TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -401,52 +507,62 @@ const AdminConfig = () => {
                 {loadingFuncoes ? (
                   <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Nome</TableHead>
-                        <TableHead>Descrição</TableHead>
-                        <TableHead>Rotas Permitidas</TableHead>
-                        <TableHead className="w-[100px]">Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {funcoesSistema?.map(f => {
-                        const perms = (funcaoPermissoes || []).filter(p => p.funcao_sistema_id === f.id);
-                        return (
-                          <TableRow key={f.id}>
-                            <TableCell className="font-medium">{f.nome}</TableCell>
-                            <TableCell className="text-muted-foreground text-sm">{f.descricao || '—'}</TableCell>
-                            <TableCell>
-                              <div className="flex flex-wrap gap-1">
-                                {perms.map(p => (
-                                  <Badge key={p.id} variant="outline" className="text-[10px]">{p.route_path}</Badge>
-                                ))}
-                                {perms.length === 0 && <span className="text-xs text-muted-foreground">Nenhuma</span>}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex gap-1">
-                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditFuncao(f)}>
-                                  <Pencil className="h-3.5 w-3.5" />
-                                </Button>
-                                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteFuncao.mutate(f.id)}>
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </Button>
-                              </div>
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Nome</TableHead>
+                          <TableHead>Descrição</TableHead>
+                          <TableHead>Rotas Permitidas</TableHead>
+                          <TableHead className="w-[100px] text-center">Ações</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {funcoesSistema?.map(f => {
+                          const perms = (funcaoPermissoes || []).filter(p => p.funcao_sistema_id === f.id);
+                          const usersWithFunc = users?.filter(u => u.funcoes_sistema.includes(f.id)).length || 0;
+                          return (
+                            <TableRow key={f.id}>
+                              <TableCell>
+                                <div className="flex flex-col">
+                                  <span className="font-medium text-foreground">{f.nome}</span>
+                                  <span className="text-[10px] text-muted-foreground">{usersWithFunc} usuário(s)</span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">{f.descricao || '—'}</TableCell>
+                              <TableCell>
+                                <div className="flex flex-wrap gap-1">
+                                  {perms.map(p => (
+                                    <Badge key={p.id} variant="outline" className="text-[10px]">
+                                      {ROUTE_LABELS[p.route_path] || p.route_path}
+                                    </Badge>
+                                  ))}
+                                  {perms.length === 0 && <span className="text-xs text-muted-foreground italic">Nenhuma rota</span>}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex justify-center gap-1">
+                                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditFuncao(f)}>
+                                    <Pencil className="h-3.5 w-3.5" />
+                                  </Button>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteConfirm(f.id)}>
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                        {(!funcoesSistema || funcoesSistema.length === 0) && (
+                          <TableRow>
+                            <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                              Nenhuma função criada. Clique em "Nova Função" para começar.
                             </TableCell>
                           </TableRow>
-                        );
-                      })}
-                      {(!funcoesSistema || funcoesSistema.length === 0) && (
-                        <TableRow>
-                          <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
-                            Nenhuma função criada. Clique em "Nova Função" para começar.
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -457,61 +573,97 @@ const AdminConfig = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Matriz de Permissões</CardTitle>
-                <CardDescription>Marque as rotas que cada função do sistema pode acessar</CardDescription>
+                <CardDescription>Marque as rotas que cada função pode acessar. Clique no nome do módulo para selecionar/desmarcar todas.</CardDescription>
               </CardHeader>
               <CardContent>
                 {loadingFuncoes ? (
                   <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
                 ) : !funcoesSistema || funcoesSistema.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">Crie funções do sistema primeiro na aba "Funções do Sistema".</p>
+                  <p className="text-center text-muted-foreground py-8">Crie funções do sistema primeiro na aba "Funções".</p>
                 ) : (
                   <ScrollArea className="w-full">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="sticky left-0 bg-background z-10 min-w-[200px]">Módulo / Rota</TableHead>
-                          {funcoesSistema.map(f => (
-                            <TableHead key={f.id} className="text-center min-w-[120px]">
-                              <span className="text-xs">{f.nome}</span>
-                            </TableHead>
-                          ))}
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {Object.entries(routesByModule).map(([module, paths]) => (
-                          <>
-                            <TableRow key={`mod-${module}`} className="bg-muted/30">
-                              <TableCell colSpan={1 + (funcoesSistema?.length || 0)} className="font-semibold text-xs uppercase tracking-wider text-muted-foreground py-2">
-                                {module}
-                              </TableCell>
-                            </TableRow>
-                            {paths.map(path => (
-                              <TableRow key={path}>
-                                <TableCell className="sticky left-0 bg-background z-10 font-mono text-sm">{path}</TableCell>
-                                {funcoesSistema.map(f => {
-                                  const isAllowed = (funcaoPermissoes || []).some(
-                                    p => p.funcao_sistema_id === f.id && p.route_path === path && p.allowed
-                                  );
-                                  return (
-                                    <TableCell key={f.id} className="text-center">
-                                      <Checkbox
-                                        checked={isAllowed}
-                                        onCheckedChange={() => togglePermission.mutate({
-                                          funcaoId: f.id,
-                                          routePath: path,
-                                          module,
-                                          currentlyAllowed: isAllowed,
-                                        })}
-                                      />
-                                    </TableCell>
-                                  );
-                                })}
-                              </TableRow>
+                    <div className="rounded-md border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="sticky left-0 bg-background z-10 min-w-[220px]">Módulo / Rota</TableHead>
+                            {funcoesSistema.map(f => (
+                              <TableHead key={f.id} className="text-center min-w-[110px]">
+                                <div className="flex flex-col items-center gap-0.5">
+                                  <span className="text-xs font-semibold">{f.nome}</span>
+                                  <span className="text-[10px] text-muted-foreground font-normal">
+                                    {(funcaoPermissoes || []).filter(p => p.funcao_sistema_id === f.id && p.allowed).length}/{ALL_ROUTES.length}
+                                  </span>
+                                </div>
+                              </TableHead>
                             ))}
-                          </>
-                        ))}
-                      </TableBody>
-                    </Table>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {Object.entries(routesByModule).map(([module, routes]) => {
+                            return (
+                              <React.Fragment key={`mod-${module}`}>
+                                <TableRow className="bg-muted/40 hover:bg-muted/60">
+                                  <TableCell className="sticky left-0 bg-muted/40 z-10 font-semibold text-xs uppercase tracking-wider text-muted-foreground py-2">
+                                    {module}
+                                  </TableCell>
+                                  {funcoesSistema.map(f => {
+                                    const allChecked = routes.every(r =>
+                                      (funcaoPermissoes || []).some(p => p.funcao_sistema_id === f.id && p.route_path === r.path && p.allowed)
+                                    );
+                                    const someChecked = routes.some(r =>
+                                      (funcaoPermissoes || []).some(p => p.funcao_sistema_id === f.id && p.route_path === r.path && p.allowed)
+                                    );
+                                    return (
+                                      <TableCell key={f.id} className="text-center py-2">
+                                        <Checkbox
+                                          checked={allChecked ? true : someChecked ? 'indeterminate' : false}
+                                          onCheckedChange={() => toggleAllModulePermissions.mutate({
+                                            funcaoId: f.id,
+                                            modulePaths: routes,
+                                            allChecked,
+                                          })}
+                                          className="mx-auto"
+                                        />
+                                      </TableCell>
+                                    );
+                                  })}
+                                </TableRow>
+                                {routes.map(route => (
+                                  <TableRow key={route.path}>
+                                    <TableCell className="sticky left-0 bg-background z-10 pl-6">
+                                      <div className="flex flex-col">
+                                        <span className="text-sm font-medium text-foreground">{route.label}</span>
+                                        <span className="text-[10px] text-muted-foreground font-mono">{route.path}</span>
+                                      </div>
+                                    </TableCell>
+                                    {funcoesSistema.map(f => {
+                                      const isAllowed = (funcaoPermissoes || []).some(
+                                        p => p.funcao_sistema_id === f.id && p.route_path === route.path && p.allowed
+                                      );
+                                      return (
+                                        <TableCell key={f.id} className="text-center">
+                                          <Checkbox
+                                            checked={isAllowed}
+                                            onCheckedChange={() => togglePermission.mutate({
+                                              funcaoId: f.id,
+                                              routePath: route.path,
+                                              module,
+                                              currentlyAllowed: isAllowed,
+                                            })}
+                                            className="mx-auto"
+                                          />
+                                        </TableCell>
+                                      );
+                                    })}
+                                  </TableRow>
+                                ))}
+                              </React.Fragment>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
                     <ScrollBar orientation="horizontal" />
                   </ScrollArea>
                 )}
@@ -523,9 +675,12 @@ const AdminConfig = () => {
 
       {/* ===== DIALOG CREATE/EDIT FUNCAO ===== */}
       <Dialog open={funcaoDialog} onOpenChange={setFuncaoDialog}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingFuncao ? 'Editar Função' : 'Nova Função do Sistema'}</DialogTitle>
+            <DialogDescription>
+              {editingFuncao ? 'Altere o nome, descrição e permissões da função.' : 'Defina o nome e as permissões da nova função.'}
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
@@ -536,18 +691,22 @@ const AdminConfig = () => {
               <Label>Descrição</Label>
               <Textarea value={funcaoDesc} onChange={e => setFuncaoDesc(e.target.value)} placeholder="Descrição opcional..." rows={2} />
             </div>
+            <Separator />
             <div className="space-y-3">
               <Label>Permissões por Rota</Label>
-              {Object.entries(routesByModule).map(([module, paths]) => (
+              {Object.entries(routesByModule).map(([module, routes]) => (
                 <div key={module} className="space-y-1.5">
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{module}</p>
-                  {paths.map(path => (
-                    <label key={path} className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 rounded px-2 py-1">
+                  {routes.map(route => (
+                    <label key={route.path} className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 rounded px-2 py-1.5 transition-colors">
                       <Checkbox
-                        checked={funcaoRoutes.includes(path)}
-                        onCheckedChange={() => toggleRoute(path)}
+                        checked={funcaoRoutes.includes(route.path)}
+                        onCheckedChange={() => toggleRoute(route.path)}
                       />
-                      <span className="text-sm font-mono">{path}</span>
+                      <div className="flex flex-col">
+                        <span className="text-sm">{route.label}</span>
+                        <span className="text-[10px] text-muted-foreground font-mono">{route.path}</span>
+                      </div>
                     </label>
                   ))}
                 </div>
@@ -556,7 +715,7 @@ const AdminConfig = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setFuncaoDialog(false)}>Cancelar</Button>
-            <Button onClick={() => saveFuncao.mutate()} disabled={saveFuncao.isPending}>
+            <Button onClick={() => saveFuncao.mutate()} disabled={!funcaoNome.trim() || saveFuncao.isPending}>
               {saveFuncao.isPending ? 'Salvando...' : 'Salvar'}
             </Button>
           </DialogFooter>
@@ -568,6 +727,7 @@ const AdminConfig = () => {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Novo Usuário</DialogTitle>
+            <DialogDescription>Crie uma conta de acesso ao sistema.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
@@ -594,6 +754,26 @@ const AdminConfig = () => {
                 </SelectContent>
               </Select>
             </div>
+            {funcoesSistema && funcoesSistema.length > 0 && (
+              <div className="space-y-2">
+                <Label>Funções do Sistema</Label>
+                <div className="space-y-1.5 rounded-md border p-3">
+                  {funcoesSistema.map(f => (
+                    <label key={f.id} className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 rounded px-2 py-1 transition-colors">
+                      <Checkbox
+                        checked={newUserFuncoes.includes(f.id)}
+                        onCheckedChange={(checked) => {
+                          setNewUserFuncoes(prev =>
+                            checked ? [...prev, f.id] : prev.filter(id => id !== f.id)
+                          );
+                        }}
+                      />
+                      <span className="text-sm">{f.nome}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setUserDialog(false)}>Cancelar</Button>
@@ -603,6 +783,27 @@ const AdminConfig = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* ===== DELETE CONFIRMATION ===== */}
+      <AlertDialog open={!!deleteConfirm} onOpenChange={(open) => !open && setDeleteConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Função</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir esta função? Os usuários vinculados perderão as permissões associadas. Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => deleteConfirm && deleteFuncao.mutate(deleteConfirm)}
+            >
+              {deleteFuncao.isPending ? 'Excluindo...' : 'Excluir'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Layout>
   );
 };
