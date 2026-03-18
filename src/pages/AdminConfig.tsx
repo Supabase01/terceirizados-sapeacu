@@ -42,6 +42,13 @@ const AdminConfig = () => {
   const [funcaoDesc, setFuncaoDesc] = useState('');
   const [funcaoRoutes, setFuncaoRoutes] = useState<string[]>([]);
 
+  // --- State for user creation ---
+  const [userDialog, setUserDialog] = useState(false);
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserNome, setNewUserNome] = useState('');
+  const [newUserPassword, setNewUserPassword] = useState('');
+  const [newUserRole, setNewUserRole] = useState('usuario');
+
   // --- Fetch users with roles and system functions ---
   const { data: users, isLoading: loadingUsers } = useQuery({
     queryKey: ['admin-users'],
@@ -185,6 +192,30 @@ const AdminConfig = () => {
     onError: (err: any) => toast({ title: 'Erro', description: err.message, variant: 'destructive' }),
   });
 
+  const createUser = useMutation({
+    mutationFn: async () => {
+      if (!newUserEmail || !newUserPassword) throw new Error('E-mail e senha são obrigatórios');
+      if (newUserPassword.length < 6) throw new Error('Senha deve ter no mínimo 6 caracteres');
+
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await supabase.functions.invoke('create-user', {
+        body: { email: newUserEmail, password: newUserPassword, nome: newUserNome || newUserEmail, role: newUserRole },
+      });
+      if (res.error) throw res.error;
+      if (res.data?.error) throw new Error(res.data.error);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      setUserDialog(false);
+      setNewUserEmail('');
+      setNewUserNome('');
+      setNewUserPassword('');
+      setNewUserRole('usuario');
+      toast({ title: 'Usuário criado com sucesso' });
+    },
+    onError: (err: any) => toast({ title: 'Erro ao criar usuário', description: err.message, variant: 'destructive' }),
+  });
+
   const resetFuncaoForm = () => {
     setEditingFuncao(null);
     setFuncaoNome('');
@@ -239,9 +270,15 @@ const AdminConfig = () => {
           {/* ===== USERS TAB ===== */}
           <TabsContent value="users">
             <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Usuários do Sistema</CardTitle>
-                <CardDescription>Atribua papéis e funções aos usuários</CardDescription>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg">Usuários do Sistema</CardTitle>
+                  <CardDescription>Crie e gerencie usuários e suas funções</CardDescription>
+                </div>
+                <Button size="sm" className="gap-1.5" onClick={() => setUserDialog(true)}>
+                  <Plus className="h-4 w-4" />
+                  Novo Usuário
+                </Button>
               </CardHeader>
               <CardContent>
                 {loadingUsers ? (
@@ -429,6 +466,47 @@ const AdminConfig = () => {
             <Button variant="outline" onClick={() => setFuncaoDialog(false)}>Cancelar</Button>
             <Button onClick={() => saveFuncao.mutate()} disabled={saveFuncao.isPending}>
               {saveFuncao.isPending ? 'Salvando...' : 'Salvar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ===== DIALOG CREATE USER ===== */}
+      <Dialog open={userDialog} onOpenChange={setUserDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Novo Usuário</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Nome</Label>
+              <Input value={newUserNome} onChange={e => setNewUserNome(e.target.value)} placeholder="Nome do usuário" />
+            </div>
+            <div className="space-y-2">
+              <Label>E-mail *</Label>
+              <Input type="email" value={newUserEmail} onChange={e => setNewUserEmail(e.target.value)} placeholder="email@exemplo.com" required />
+            </div>
+            <div className="space-y-2">
+              <Label>Senha *</Label>
+              <Input type="password" value={newUserPassword} onChange={e => setNewUserPassword(e.target.value)} placeholder="Mínimo 6 caracteres" minLength={6} required />
+            </div>
+            <div className="space-y-2">
+              <Label>Papel</Label>
+              <Select value={newUserRole} onValueChange={setNewUserRole}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="usuario">Usuário</SelectItem>
+                  <SelectItem value="admin">Administrador</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setUserDialog(false)}>Cancelar</Button>
+            <Button onClick={() => createUser.mutate()} disabled={createUser.isPending}>
+              {createUser.isPending ? 'Criando...' : 'Criar Usuário'}
             </Button>
           </DialogFooter>
         </DialogContent>
