@@ -1,10 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import type { PayrollRecord } from '@/types/payroll';
+import { useUnidade } from '@/contexts/UnidadeContext';
 
 export const usePayrollData = () => {
+  const { unidadeId } = useUnidade();
+
   return useQuery({
-    queryKey: ['payroll-records'],
+    queryKey: ['payroll-records', unidadeId],
     queryFn: async (): Promise<PayrollRecord[]> => {
       const PAGE_SIZE = 1000;
       let allData: any[] = [];
@@ -12,12 +15,18 @@ export const usePayrollData = () => {
       let hasMore = true;
 
       while (hasMore) {
-        const { data, error } = await supabase
+        let query = supabase
           .from('payroll_records')
           .select('*')
           .order('ano', { ascending: true })
           .order('mes', { ascending: true })
           .range(from, from + PAGE_SIZE - 1);
+
+        if (unidadeId) {
+          query = query.eq('unidade_id', unidadeId);
+        }
+
+        const { data, error } = await query;
         if (error) throw error;
         const chunk = data || [];
         allData = allData.concat(chunk);
@@ -34,5 +43,6 @@ export const usePayrollData = () => {
         liquido: Number(r.liquido),
       }));
     },
+    enabled: !!unidadeId,
   });
 };

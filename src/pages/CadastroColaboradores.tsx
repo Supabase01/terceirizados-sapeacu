@@ -13,6 +13,7 @@ import { Plus, Pencil, Check, X, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { useUnidade } from '@/contexts/UnidadeContext';
 
 interface ColaboradorForm {
   nome: string;
@@ -45,48 +46,61 @@ const emptyForm: ColaboradorForm = {
 const CadastroColaboradores = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { unidadeId } = useUnidade();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<ColaboradorForm>(emptyForm);
   const [search, setSearch] = useState('');
 
   const { data: colaboradores = [], isLoading } = useQuery({
-    queryKey: ['colaboradores'],
+    queryKey: ['colaboradores', unidadeId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('colaboradores')
         .select('*, secretarias(nome), funcoes(nome), lotacoes(nome), cidades(nome, estado)')
         .order('nome');
+      if (unidadeId) query = query.eq('unidade_id', unidadeId);
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },
+    enabled: !!unidadeId,
   });
 
   const { data: secretarias = [] } = useQuery({
-    queryKey: ['secretarias-ativas'],
+    queryKey: ['secretarias-ativas', unidadeId],
     queryFn: async () => {
-      const { data, error } = await supabase.from('secretarias').select('*').eq('ativo', true).order('nome');
+      let query = supabase.from('secretarias').select('*').eq('ativo', true).order('nome');
+      if (unidadeId) query = query.eq('unidade_id', unidadeId);
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },
+    enabled: !!unidadeId,
   });
 
   const { data: funcoes = [] } = useQuery({
-    queryKey: ['funcoes-ativas'],
+    queryKey: ['funcoes-ativas', unidadeId],
     queryFn: async () => {
-      const { data, error } = await supabase.from('funcoes').select('*').eq('ativo', true).order('nome');
+      let query = supabase.from('funcoes').select('*').eq('ativo', true).order('nome');
+      if (unidadeId) query = query.eq('unidade_id', unidadeId);
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },
+    enabled: !!unidadeId,
   });
 
   const { data: lotacoes = [] } = useQuery({
-    queryKey: ['lotacoes-ativas'],
+    queryKey: ['lotacoes-ativas', unidadeId],
     queryFn: async () => {
-      const { data, error } = await supabase.from('lotacoes').select('*').eq('ativo', true).order('nome');
+      let query = supabase.from('lotacoes').select('*').eq('ativo', true).order('nome');
+      if (unidadeId) query = query.eq('unidade_id', unidadeId);
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },
+    enabled: !!unidadeId,
   });
 
   const { data: cidades = [] } = useQuery({
@@ -99,12 +113,15 @@ const CadastroColaboradores = () => {
   });
 
   const { data: liderancas = [] } = useQuery({
-    queryKey: ['liderancas-ativas'],
+    queryKey: ['liderancas-ativas', unidadeId],
     queryFn: async () => {
-      const { data, error } = await supabase.from('liderancas').select('*').eq('ativo', true).order('nome');
+      let query = supabase.from('liderancas').select('*').eq('ativo', true).order('nome');
+      if (unidadeId) query = query.eq('unidade_id', unidadeId);
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },
+    enabled: !!unidadeId,
   });
 
   const saveMutation = useMutation({
@@ -129,6 +146,7 @@ const CadastroColaboradores = () => {
         cidade_id: form.cidade_id || null,
         cep: form.cep || null,
         lideranca_id: form.lideranca_id || null,
+        unidade_id: unidadeId,
       };
       if (editId) {
         const { error } = await supabase.from('colaboradores').update(payload).eq('id', editId);
@@ -283,7 +301,6 @@ const CadastroColaboradores = () => {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editId ? 'Editar Colaborador' : 'Novo Colaborador'}</DialogTitle></DialogHeader>
           <div className="grid gap-4 py-2">
-            {/* Dados Pessoais */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2 md:col-span-2">
                 <Label>Nome *</Label>
@@ -299,7 +316,6 @@ const CadastroColaboradores = () => {
               </div>
             </div>
 
-            {/* Vínculo */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Secretaria</Label>
@@ -351,7 +367,6 @@ const CadastroColaboradores = () => {
               </div>
             </div>
 
-            {/* Endereço */}
             <div className="border-t pt-4 mt-2">
               <h3 className="text-sm font-semibold text-muted-foreground mb-3">Endereço</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -387,17 +402,16 @@ const CadastroColaboradores = () => {
               </div>
             </div>
 
-            {/* Dados Bancários */}
             <div className="border-t pt-4 mt-2">
               <h3 className="text-sm font-semibold text-muted-foreground mb-3">Dados Bancários</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label>Banco</Label>
-                  <Input placeholder="Ex: Bradesco" value={form.banco} onChange={(e) => updateField('banco', e.target.value)} />
+                  <Input placeholder="Nome do banco" value={form.banco} onChange={(e) => updateField('banco', e.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <Label>Conta</Label>
-                  <Input placeholder="Ag/Conta" value={form.conta} onChange={(e) => updateField('conta', e.target.value)} />
+                  <Input placeholder="Número da conta" value={form.conta} onChange={(e) => updateField('conta', e.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <Label>PIX</Label>

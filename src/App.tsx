@@ -7,8 +7,10 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session } from "@supabase/supabase-js";
 import { useCanAccessRoute } from "@/hooks/useUserRoles";
+import { UnidadeProvider, useUnidade } from "@/contexts/UnidadeContext";
 import Auth from "./pages/Auth";
 import PinAccess from "./pages/PinAccess";
+import SelecionarUnidade from "./pages/SelecionarUnidade";
 import Indicadores from "./pages/Indicadores";
 import Import from "./pages/Import";
 import Alertas from "./pages/Alertas";
@@ -57,6 +59,12 @@ const PinGuard = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+const UnidadeGuard = ({ children }: { children: React.ReactNode }) => {
+  const { unidadeId } = useUnidade();
+  if (!unidadeId) return <Navigate to="/selecionar-unidade" replace />;
+  return <>{children}</>;
+};
+
 const RouteGuard = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const { canAccess, isLoading } = useCanAccessRoute(location.pathname);
@@ -71,7 +79,8 @@ const RouteGuard = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => (
+// Admin routes don't need UnidadeGuard
+const AdminRoute = ({ children }: { children: React.ReactNode }) => (
   <AuthGuard>
     <PinGuard>
       <RouteGuard>{children}</RouteGuard>
@@ -79,35 +88,50 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => (
   </AuthGuard>
 );
 
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => (
+  <AuthGuard>
+    <PinGuard>
+      <UnidadeGuard>
+        <RouteGuard>{children}</RouteGuard>
+      </UnidadeGuard>
+    </PinGuard>
+  </AuthGuard>
+);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Auth />} />
-          <Route path="/pin" element={<AuthGuard><PinAccess /></AuthGuard>} />
-          <Route path="/admin/config" element={<ProtectedRoute><AdminConfig /></ProtectedRoute>} />
-          <Route path="/admin/instituicoes" element={<ProtectedRoute><CadastroInstituicoes /></ProtectedRoute>} />
-          <Route path="/admin/unidades" element={<ProtectedRoute><CadastroUnidades /></ProtectedRoute>} />
-          <Route path="/admin/cidades" element={<ProtectedRoute><CadastroCidades /></ProtectedRoute>} />
-          <Route path="/admin/liderancas" element={<ProtectedRoute><CadastroLiderancas /></ProtectedRoute>} />
-          <Route path="/indicadores" element={<ProtectedRoute><Indicadores /></ProtectedRoute>} />
-          <Route path="/import" element={<ProtectedRoute><Import /></ProtectedRoute>} />
-          <Route path="/alertas" element={<ProtectedRoute><Alertas /></ProtectedRoute>} />
-          <Route path="/auditoria/log" element={<ProtectedRoute><AuditLog /></ProtectedRoute>} />
-          <Route path="/relatorios" element={<ProtectedRoute><Relatorios /></ProtectedRoute>} />
-          <Route path="/folha/processamento" element={<ProtectedRoute><FolhaProcessamento /></ProtectedRoute>} />
-          <Route path="/folha/adicionais" element={<ProtectedRoute><AdicionaisPage /></ProtectedRoute>} />
-          <Route path="/folha/descontos" element={<ProtectedRoute><DescontosPage /></ProtectedRoute>} />
-          <Route path="/cadastro/colaboradores" element={<ProtectedRoute><CadastroColaboradores /></ProtectedRoute>} />
-          <Route path="/cadastro/secretarias" element={<ProtectedRoute><CadastroSecretarias /></ProtectedRoute>} />
-          <Route path="/cadastro/funcoes" element={<ProtectedRoute><CadastroFuncoes /></ProtectedRoute>} />
-          <Route path="/cadastro/lotacoes" element={<ProtectedRoute><CadastroLotacoes /></ProtectedRoute>} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <UnidadeProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Auth />} />
+            <Route path="/pin" element={<AuthGuard><PinAccess /></AuthGuard>} />
+            <Route path="/selecionar-unidade" element={<AuthGuard><PinGuard><SelecionarUnidade /></PinGuard></AuthGuard>} />
+            {/* Admin routes - no unidade required */}
+            <Route path="/admin/config" element={<AdminRoute><AdminConfig /></AdminRoute>} />
+            <Route path="/admin/instituicoes" element={<AdminRoute><CadastroInstituicoes /></AdminRoute>} />
+            <Route path="/admin/unidades" element={<AdminRoute><CadastroUnidades /></AdminRoute>} />
+            <Route path="/admin/cidades" element={<AdminRoute><CadastroCidades /></AdminRoute>} />
+            <Route path="/admin/liderancas" element={<ProtectedRoute><CadastroLiderancas /></ProtectedRoute>} />
+            {/* Protected routes - unidade required */}
+            <Route path="/indicadores" element={<ProtectedRoute><Indicadores /></ProtectedRoute>} />
+            <Route path="/import" element={<ProtectedRoute><Import /></ProtectedRoute>} />
+            <Route path="/alertas" element={<ProtectedRoute><Alertas /></ProtectedRoute>} />
+            <Route path="/auditoria/log" element={<AdminRoute><AuditLog /></AdminRoute>} />
+            <Route path="/relatorios" element={<ProtectedRoute><Relatorios /></ProtectedRoute>} />
+            <Route path="/folha/processamento" element={<ProtectedRoute><FolhaProcessamento /></ProtectedRoute>} />
+            <Route path="/folha/adicionais" element={<ProtectedRoute><AdicionaisPage /></ProtectedRoute>} />
+            <Route path="/folha/descontos" element={<ProtectedRoute><DescontosPage /></ProtectedRoute>} />
+            <Route path="/cadastro/colaboradores" element={<ProtectedRoute><CadastroColaboradores /></ProtectedRoute>} />
+            <Route path="/cadastro/secretarias" element={<ProtectedRoute><CadastroSecretarias /></ProtectedRoute>} />
+            <Route path="/cadastro/funcoes" element={<ProtectedRoute><CadastroFuncoes /></ProtectedRoute>} />
+            <Route path="/cadastro/lotacoes" element={<ProtectedRoute><CadastroLotacoes /></ProtectedRoute>} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </UnidadeProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

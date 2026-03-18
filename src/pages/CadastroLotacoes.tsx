@@ -12,10 +12,12 @@ import { Plus, Pencil, Check, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { useUnidade } from '@/contexts/UnidadeContext';
 
 const CadastroLotacoes = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { unidadeId } = useUnidade();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [nome, setNome] = useState('');
@@ -23,28 +25,34 @@ const CadastroLotacoes = () => {
   const [search, setSearch] = useState('');
 
   const { data: lotacoes = [], isLoading } = useQuery({
-    queryKey: ['lotacoes'],
+    queryKey: ['lotacoes', unidadeId],
     queryFn: async () => {
-      const { data, error } = await supabase.from('lotacoes').select('*, secretarias(nome)').order('nome');
+      let query = supabase.from('lotacoes').select('*, secretarias(nome)').order('nome');
+      if (unidadeId) query = query.eq('unidade_id', unidadeId);
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },
+    enabled: !!unidadeId,
   });
 
   const { data: secretarias = [] } = useQuery({
-    queryKey: ['secretarias-ativas'],
+    queryKey: ['secretarias-ativas', unidadeId],
     queryFn: async () => {
-      const { data, error } = await supabase.from('secretarias').select('*').eq('ativo', true).order('nome');
+      let query = supabase.from('secretarias').select('*').eq('ativo', true).order('nome');
+      if (unidadeId) query = query.eq('unidade_id', unidadeId);
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },
+    enabled: !!unidadeId,
   });
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const payload = { nome, secretaria_id: secretariaId || null };
+      const payload = { nome, secretaria_id: secretariaId || null, unidade_id: unidadeId };
       if (editId) {
-        const { error } = await supabase.from('lotacoes').update(payload).eq('id', editId);
+        const { error } = await supabase.from('lotacoes').update({ nome, secretaria_id: secretariaId || null }).eq('id', editId);
         if (error) throw error;
       } else {
         const { error } = await supabase.from('lotacoes').insert(payload);
@@ -68,14 +76,7 @@ const CadastroLotacoes = () => {
   });
 
   const closeDialog = () => { setDialogOpen(false); setEditId(null); setNome(''); setSecretariaId(''); };
-
-  const openEdit = (item: any) => {
-    setEditId(item.id);
-    setNome(item.nome);
-    setSecretariaId(item.secretaria_id || '');
-    setDialogOpen(true);
-  };
-
+  const openEdit = (item: any) => { setEditId(item.id); setNome(item.nome); setSecretariaId(item.secretaria_id || ''); setDialogOpen(true); };
   const filtered = lotacoes.filter((s: any) => s.nome.toLowerCase().includes(search.toLowerCase()));
 
   return (
@@ -83,13 +84,9 @@ const CadastroLotacoes = () => {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-foreground">Lotações</h1>
-          <Button onClick={() => setDialogOpen(true)} size="sm">
-            <Plus className="h-4 w-4 mr-1" /> Nova Lotação
-          </Button>
+          <Button onClick={() => setDialogOpen(true)} size="sm"><Plus className="h-4 w-4 mr-1" /> Nova Lotação</Button>
         </div>
-
         <Input placeholder="Buscar lotação..." value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-sm" />
-
         <Card>
           <CardContent className="p-0">
             <Table>
@@ -128,7 +125,6 @@ const CadastroLotacoes = () => {
           </CardContent>
         </Card>
       </div>
-
       <Dialog open={dialogOpen} onOpenChange={(open) => !open && closeDialog()}>
         <DialogContent>
           <DialogHeader><DialogTitle>{editId ? 'Editar Lotação' : 'Nova Lotação'}</DialogTitle></DialogHeader>
@@ -142,9 +138,7 @@ const CadastroLotacoes = () => {
               <Select value={secretariaId} onValueChange={setSecretariaId}>
                 <SelectTrigger><SelectValue placeholder="Selecione a secretaria" /></SelectTrigger>
                 <SelectContent>
-                  {secretarias.map((s: any) => (
-                    <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
-                  ))}
+                  {secretarias.map((s: any) => (<SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>))}
                 </SelectContent>
               </Select>
             </div>

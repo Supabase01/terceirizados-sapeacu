@@ -7,25 +7,30 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Pencil, Trash2, Check, X } from 'lucide-react';
+import { Plus, Pencil, Check, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { useUnidade } from '@/contexts/UnidadeContext';
 
 const CadastroSecretarias = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { unidadeId } = useUnidade();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [nome, setNome] = useState('');
   const [search, setSearch] = useState('');
 
   const { data: secretarias = [], isLoading } = useQuery({
-    queryKey: ['secretarias'],
+    queryKey: ['secretarias', unidadeId],
     queryFn: async () => {
-      const { data, error } = await supabase.from('secretarias').select('*').order('nome');
+      let query = supabase.from('secretarias').select('*').order('nome');
+      if (unidadeId) query = query.eq('unidade_id', unidadeId);
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },
+    enabled: !!unidadeId,
   });
 
   const saveMutation = useMutation({
@@ -34,7 +39,7 @@ const CadastroSecretarias = () => {
         const { error } = await supabase.from('secretarias').update({ nome }).eq('id', editId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from('secretarias').insert({ nome });
+        const { error } = await supabase.from('secretarias').insert({ nome, unidade_id: unidadeId });
         if (error) throw error;
       }
     },
@@ -54,39 +59,18 @@ const CadastroSecretarias = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['secretarias'] }),
   });
 
-  const closeDialog = () => {
-    setDialogOpen(false);
-    setEditId(null);
-    setNome('');
-  };
-
-  const openEdit = (item: any) => {
-    setEditId(item.id);
-    setNome(item.nome);
-    setDialogOpen(true);
-  };
-
-  const filtered = secretarias.filter((s: any) =>
-    s.nome.toLowerCase().includes(search.toLowerCase())
-  );
+  const closeDialog = () => { setDialogOpen(false); setEditId(null); setNome(''); };
+  const openEdit = (item: any) => { setEditId(item.id); setNome(item.nome); setDialogOpen(true); };
+  const filtered = secretarias.filter((s: any) => s.nome.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <Layout>
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-foreground">Secretarias</h1>
-          <Button onClick={() => setDialogOpen(true)} size="sm">
-            <Plus className="h-4 w-4 mr-1" /> Nova Secretaria
-          </Button>
+          <Button onClick={() => setDialogOpen(true)} size="sm"><Plus className="h-4 w-4 mr-1" /> Nova Secretaria</Button>
         </div>
-
-        <Input
-          placeholder="Buscar secretaria..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-sm"
-        />
-
+        <Input placeholder="Buscar secretaria..." value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-sm" />
         <Card>
           <CardContent className="p-0">
             <Table>
@@ -106,22 +90,11 @@ const CadastroSecretarias = () => {
                   filtered.map((item: any) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">{item.nome}</TableCell>
-                      <TableCell>
-                        <Badge variant={item.ativo ? 'default' : 'secondary'}>
-                          {item.ativo ? 'Ativo' : 'Inativo'}
-                        </Badge>
-                      </TableCell>
+                      <TableCell><Badge variant={item.ativo ? 'default' : 'secondary'}>{item.ativo ? 'Ativo' : 'Inativo'}</Badge></TableCell>
                       <TableCell>
                         <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(item)}>
-                            <Pencil className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => toggleMutation.mutate({ id: item.id, ativo: item.ativo })}
-                          >
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(item)}><Pencil className="h-3.5 w-3.5" /></Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => toggleMutation.mutate({ id: item.id, ativo: item.ativo })}>
                             {item.ativo ? <X className="h-3.5 w-3.5 text-destructive" /> : <Check className="h-3.5 w-3.5 text-green-600" />}
                           </Button>
                         </div>
@@ -134,18 +107,11 @@ const CadastroSecretarias = () => {
           </CardContent>
         </Card>
       </div>
-
       <Dialog open={dialogOpen} onOpenChange={(open) => !open && closeDialog()}>
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editId ? 'Editar Secretaria' : 'Nova Secretaria'}</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>{editId ? 'Editar Secretaria' : 'Nova Secretaria'}</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
-            <Input
-              placeholder="Nome da secretaria"
-              value={nome}
-              onChange={(e) => setNome(e.target.value)}
-            />
+            <Input placeholder="Nome da secretaria" value={nome} onChange={(e) => setNome(e.target.value)} />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={closeDialog}>Cancelar</Button>

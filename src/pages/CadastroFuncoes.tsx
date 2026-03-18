@@ -10,10 +10,12 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Pencil, Check, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { useUnidade } from '@/contexts/UnidadeContext';
 
 const CadastroFuncoes = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { unidadeId } = useUnidade();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [nome, setNome] = useState('');
@@ -21,12 +23,15 @@ const CadastroFuncoes = () => {
   const [search, setSearch] = useState('');
 
   const { data: funcoes = [], isLoading } = useQuery({
-    queryKey: ['funcoes'],
+    queryKey: ['funcoes', unidadeId],
     queryFn: async () => {
-      const { data, error } = await supabase.from('funcoes').select('*').order('nome');
+      let query = supabase.from('funcoes').select('*').order('nome');
+      if (unidadeId) query = query.eq('unidade_id', unidadeId);
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },
+    enabled: !!unidadeId,
   });
 
   const saveMutation = useMutation({
@@ -35,7 +40,7 @@ const CadastroFuncoes = () => {
         const { error } = await supabase.from('funcoes').update({ nome, atribuicoes }).eq('id', editId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from('funcoes').insert({ nome, atribuicoes });
+        const { error } = await supabase.from('funcoes').insert({ nome, atribuicoes, unidade_id: unidadeId });
         if (error) throw error;
       }
     },
@@ -56,9 +61,7 @@ const CadastroFuncoes = () => {
   });
 
   const closeDialog = () => { setDialogOpen(false); setEditId(null); setNome(''); setAtribuicoes(''); };
-
   const openEdit = (item: any) => { setEditId(item.id); setNome(item.nome); setAtribuicoes(item.atribuicoes || ''); setDialogOpen(true); };
-
   const filtered = funcoes.filter((s: any) => s.nome.toLowerCase().includes(search.toLowerCase()));
 
   return (
@@ -66,13 +69,9 @@ const CadastroFuncoes = () => {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-foreground">Funções</h1>
-          <Button onClick={() => setDialogOpen(true)} size="sm">
-            <Plus className="h-4 w-4 mr-1" /> Nova Função
-          </Button>
+          <Button onClick={() => setDialogOpen(true)} size="sm"><Plus className="h-4 w-4 mr-1" /> Nova Função</Button>
         </div>
-
         <Input placeholder="Buscar função..." value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-sm" />
-
         <Card>
           <CardContent className="p-0">
             <Table>
@@ -86,9 +85,9 @@ const CadastroFuncoes = () => {
               </TableHeader>
               <TableBody>
                 {isLoading ? (
-                   <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
-                 ) : filtered.length === 0 ? (
-                   <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">Nenhuma função encontrada</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
+                ) : filtered.length === 0 ? (
+                  <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">Nenhuma função encontrada</TableCell></TableRow>
                 ) : (
                   filtered.map((item: any) => (
                     <TableRow key={item.id}>
@@ -111,18 +110,12 @@ const CadastroFuncoes = () => {
           </CardContent>
         </Card>
       </div>
-
       <Dialog open={dialogOpen} onOpenChange={(open) => !open && closeDialog()}>
         <DialogContent>
           <DialogHeader><DialogTitle>{editId ? 'Editar Função' : 'Nova Função'}</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
             <Input placeholder="Nome da função" value={nome} onChange={(e) => setNome(e.target.value)} />
-            <textarea
-              placeholder="Atribuições da função"
-              value={atribuicoes}
-              onChange={(e) => setAtribuicoes(e.target.value)}
-              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            />
+            <textarea placeholder="Atribuições da função" value={atribuicoes} onChange={(e) => setAtribuicoes(e.target.value)} className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={closeDialog}>Cancelar</Button>

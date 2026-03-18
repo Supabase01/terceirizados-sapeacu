@@ -64,7 +64,7 @@ export default function CadastroLiderancas() {
         const { error } = await supabase.from('liderancas').update({ nome: form.nome, cargo: form.cargo || null }).eq('id', editId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from('liderancas').insert({ nome: form.nome, cargo: form.cargo || null });
+        const { error } = await supabase.from('liderancas').insert({ nome: form.nome, cargo: form.cargo || null, unidade_id: unidadeId });
         if (error) throw error;
       }
     },
