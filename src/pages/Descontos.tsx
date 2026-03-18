@@ -68,7 +68,7 @@ const Descontos = () => {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const payload = {
+      const payload: any = {
         colaborador_id: form.escopo === 'global' ? null : form.colaborador_id || null,
         descricao: form.descricao,
         valor: Number(form.valor) || 0,
@@ -76,6 +76,7 @@ const Descontos = () => {
         escopo: form.escopo,
         mes: form.mes ? Number(form.mes) : null,
         ano: form.ano ? Number(form.ano) : null,
+        unidade_id: unidadeId,
       };
       if (editId) {
         const { error } = await supabase.from('descontos').update(payload).eq('id', editId);

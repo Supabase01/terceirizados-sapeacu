@@ -29,6 +29,7 @@ const getMonthLabel = (m: number) =>
 const FolhaProcessamento = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { unidadeId } = useUnidade();
   const [mes, setMes] = useState(defaultMes);
   const [ano, setAno] = useState(defaultAno);
   const [search, setSearch] = useState('');
@@ -37,17 +38,20 @@ const FolhaProcessamento = () => {
 
   // Fetch draft payroll for selected period
   const { data: folha = [], isLoading, refetch } = useQuery({
-    queryKey: ['folha-processamento', mes, ano],
+    queryKey: ['folha-processamento', mes, ano, unidadeId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('folha_processamento')
         .select('*')
         .eq('mes', mes)
         .eq('ano', ano)
         .order('nome', { ascending: true });
+      if (unidadeId) query = query.eq('unidade_id', unidadeId);
+      const { data, error } = await query;
       if (error) throw error;
       return data || [];
     },
+    enabled: !!unidadeId,
   });
 
   // Generate/regenerate draft
