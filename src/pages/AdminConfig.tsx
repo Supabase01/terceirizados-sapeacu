@@ -349,6 +349,35 @@ const AdminConfig = () => {
     onError: (err: any) => toast({ title: 'Erro ao atualizar permissões', description: err.message, variant: 'destructive' }),
   });
 
+  const toggleUserPermission = useMutation({
+    mutationFn: async ({ userId, routePath, module, action }: { userId: string; routePath: string; module: string; action: 'allow' | 'block' | 'inherit' }) => {
+      await supabase.from('usuario_permissoes').delete().eq('user_id', userId).eq('route_path', routePath);
+      if (action !== 'inherit') {
+        const { error } = await supabase.from('usuario_permissoes').insert({
+          user_id: userId,
+          route_path: routePath,
+          module_name: module,
+          allowed: action === 'allow',
+        });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['usuario-permissoes'] });
+      queryClient.invalidateQueries({ queryKey: ['allowed-routes'] });
+    },
+    onError: (err: any) => toast({ title: 'Erro ao atualizar permissão', description: err.message, variant: 'destructive' }),
+  });
+
+  // Helper: get inherited permission for a user on a route (from their functions)
+  const getUserInheritedPermission = useCallback((userId: string, routePath: string) => {
+    const user = users?.find(u => u.id === userId);
+    if (!user) return false;
+    return user.funcoes_sistema.some((funcaoId: string) =>
+      (funcaoPermissoes || []).some(p => p.funcao_sistema_id === funcaoId && p.route_path === routePath && p.allowed)
+    );
+  }, [users, funcaoPermissoes]);
+
   // --- Helpers ---
   const resetFuncaoForm = () => {
     setEditingFuncao(null);
