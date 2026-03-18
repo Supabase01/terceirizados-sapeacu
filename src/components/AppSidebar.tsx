@@ -67,7 +67,7 @@ export function AppSidebar() {
           const isGroupActive = mod.items.some((i) => location.pathname === i.url);
 
           return (
-            <SidebarGroup key={mod.label} defaultOpen={isGroupActive}>
+            <SidebarGroup key={mod.label}>
               <SidebarGroupLabel className="text-sidebar-foreground/60 uppercase text-[10px] tracking-wider">
                 {!collapsed && mod.label}
               </SidebarGroupLabel>
