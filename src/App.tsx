@@ -13,6 +13,7 @@ import PinAccess from "./pages/PinAccess";
 import SelecionarUnidade from "./pages/SelecionarUnidade";
 import Indicadores from "./pages/Indicadores";
 import Import from "./pages/Import";
+import ImportColaboradores from "./pages/ImportColaboradores";
 import Alertas from "./pages/Alertas";
 import AdicionaisPage from "./pages/Adicionais";
 import DescontosPage from "./pages/Descontos";
@@ -118,6 +119,7 @@ const App = () => (
             {/* Protected routes - unidade required */}
             <Route path="/indicadores" element={<ProtectedRoute><Indicadores /></ProtectedRoute>} />
             <Route path="/import" element={<ProtectedRoute><Import /></ProtectedRoute>} />
+            <Route path="/import/colaboradores" element={<ProtectedRoute><ImportColaboradores /></ProtectedRoute>} />
             <Route path="/alertas" element={<ProtectedRoute><Alertas /></ProtectedRoute>} />
             <Route path="/auditoria/log" element={<AdminRoute><AuditLog /></AdminRoute>} />
             <Route path="/relatorios" element={<ProtectedRoute><Relatorios /></ProtectedRoute>} />

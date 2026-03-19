@@ -48,7 +48,8 @@ const modules = [
     label: 'Importação',
     icon: Upload,
     items: [
-      { title: 'Importar', url: '/import', icon: Upload },
+      { title: 'Folha de Pagamento', url: '/import', icon: Upload },
+      { title: 'Colaboradores', url: '/import/colaboradores', icon: Users },
     ],
   },
   {
