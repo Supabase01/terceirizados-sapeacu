@@ -13,6 +13,7 @@ import PinAccess from "./pages/PinAccess";
 import SelecionarUnidade from "./pages/SelecionarUnidade";
 import Indicadores from "./pages/Indicadores";
 import Import from "./pages/Import";
+import ImportColaboradores from "./pages/ImportColaboradores";
 import Alertas from "./pages/Alertas";
 import AdicionaisPage from "./pages/Adicionais";
 import DescontosPage from "./pages/Descontos";
