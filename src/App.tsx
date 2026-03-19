@@ -29,6 +29,7 @@ import CadastroCidades from "./pages/CadastroCidades";
 import CadastroLiderancas from "./pages/CadastroLiderancas";
 import FolhaProcessamento from "./pages/FolhaProcessamento";
 import AuditLog from "./pages/AuditLog";
+import LogSistema from "./pages/LogSistema";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
