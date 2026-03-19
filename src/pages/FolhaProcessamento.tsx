@@ -256,6 +256,7 @@ const FolhaProcessamento = () => {
       queryClient.invalidateQueries({ queryKey: ['payroll-records'] });
       setConfirmDialogOpen(false);
       toast({ title: 'Folha processada', description: `Folha de ${getMonthLabel(mes)}/${ano} finalizada e registros enviados para relatórios.` });
+      registrarLog({ tipo: 'sucesso', categoria: 'folha', descricao: `Folha finalizada: ${getMonthLabel(mes)}/${ano}`, unidadeId });
     },
     onError: (err: any) => {
       toast({ title: 'Erro ao processar', description: err.message, variant: 'destructive' });

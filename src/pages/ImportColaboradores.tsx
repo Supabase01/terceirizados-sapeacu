@@ -178,6 +178,7 @@ const ImportColaboradores = () => {
       toast({ title: 'Importação concluída', description: `${inserted} colaboradores importados.` });
       registrarLog({ tipo: 'sucesso', categoria: 'importacao', descricao: `Importação de colaboradores: ${inserted} registros`, detalhes: { arquivo: file.name, inseridos: inserted, duplicados: duplicates.length }, unidadeId: unidadeId });
     } catch (err: any) {
+      registrarLog({ tipo: 'erro', categoria: 'importacao', descricao: `Erro na importação de colaboradores: ${err.message}`, detalhes: { arquivo: file?.name }, unidadeId: unidadeId });
       setResult({ success: false, message: err.message || 'Erro durante a importação.' });
     } finally {
       setImporting(false);
