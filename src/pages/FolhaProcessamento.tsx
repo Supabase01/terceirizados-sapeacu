@@ -408,8 +408,9 @@ const FolhaProcessamento = () => {
             </Select>
             <Button
               onClick={() => generateMutation.mutate()}
-              disabled={generateMutation.isPending || isProcessed}
+              disabled={generateMutation.isPending || (isProcessed && !isMaster)}
               variant={folha.length > 0 ? 'outline' : 'default'}
+              title={isProcessed && !isMaster ? 'Apenas o Master pode regerar uma folha processada' : undefined}
             >
               {generateMutation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-1" />
@@ -422,6 +423,16 @@ const FolhaProcessamento = () => {
               <Button onClick={() => setConfirmDialogOpen(true)} className="bg-green-600 hover:bg-green-700 text-white">
                 <CheckCircle2 className="h-4 w-4 mr-1" />
                 Processar
+              </Button>
+            )}
+            {isProcessed && isMaster && (
+              <Button
+                onClick={() => revertMutation.mutate()}
+                disabled={revertMutation.isPending}
+                variant="destructive"
+              >
+                {revertMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Undo2 className="h-4 w-4 mr-1" />}
+                Reverter
               </Button>
             )}
           </div>
