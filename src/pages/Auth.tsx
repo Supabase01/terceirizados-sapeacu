@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { registrarLog } from '@/lib/logSistema';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,6 +25,7 @@ const Auth = () => {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
+      registrarLog({ tipo: 'sucesso', categoria: 'autenticacao', descricao: `Login realizado: ${email}` });
       navigate('/pin');
     } catch (error: any) {
       const msg = error.message?.includes('Invalid login')

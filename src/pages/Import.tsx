@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { parseFile } from '@/lib/parseFile';
+import { registrarLog } from '@/lib/logSistema';
 import { useQueryClient } from '@tanstack/react-query';
 import { useUnidade } from '@/contexts/UnidadeContext';
 import Layout from '@/components/Layout';
@@ -136,8 +137,10 @@ const Import = () => {
       }
 
       setResult({ success: true, message });
+      registrarLog({ tipo: 'sucesso', categoria: 'importacao', descricao: `Importação de folha: ${inserted} registros`, detalhes: { arquivo: file.name, registros: inserted, nao_encontrados: notFound.length }, unidadeId: unidadeId });
       toast({ title: 'Importação concluída', description: `${inserted} registros como rascunho.` });
     } catch (err: any) {
+      registrarLog({ tipo: 'erro', categoria: 'importacao', descricao: `Erro na importação de folha: ${err.message}`, detalhes: { arquivo: file?.name }, unidadeId: unidadeId });
       setResult({ success: false, message: err.message || 'Erro durante a importação.' });
     } finally {
       setImporting(false);

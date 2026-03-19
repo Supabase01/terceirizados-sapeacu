@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BarChart3, Upload, ShieldAlert, FileText, Users, Building2, Briefcase, MapPin, Settings, Shield, ChevronDown, Landmark, FolderKanban, PlusCircle, MinusCircle, ClipboardList, History, Map, Crown, FileSpreadsheet } from 'lucide-react';
+import { BarChart3, Upload, ShieldAlert, FileText, Users, Building2, Briefcase, MapPin, Settings, Shield, ChevronDown, Landmark, FolderKanban, PlusCircle, MinusCircle, ClipboardList, History, Map, Crown, FileSpreadsheet, Monitor } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useLocation } from 'react-router-dom';
 import {
@@ -42,6 +42,7 @@ const modules = [
     items: [
       { title: 'Alertas', url: '/alertas', icon: ShieldAlert },
       { title: 'Log de Alterações', url: '/auditoria/log', icon: History },
+      { title: 'Log do Sistema', url: '/auditoria/sistema', icon: Monitor },
     ],
   },
   {

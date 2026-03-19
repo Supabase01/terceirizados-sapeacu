@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { registrarLog } from '@/lib/logSistema';
 import { useUnidade } from '@/contexts/UnidadeContext';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -183,6 +184,7 @@ const FolhaProcessamento = () => {
     onSuccess: (count) => {
       queryClient.invalidateQueries({ queryKey: ['folha-processamento'] });
       toast({ title: 'Folha gerada', description: `${count} registros gerados para ${getMonthLabel(mes)}/${ano}.` });
+      registrarLog({ tipo: 'sucesso', categoria: 'folha', descricao: `Folha rascunho gerada: ${count} registros para ${getMonthLabel(mes)}/${ano}`, unidadeId });
     },
     onError: (err: any) => {
       toast({ title: 'Erro ao gerar folha', description: err.message, variant: 'destructive' });
@@ -254,6 +256,7 @@ const FolhaProcessamento = () => {
       queryClient.invalidateQueries({ queryKey: ['payroll-records'] });
       setConfirmDialogOpen(false);
       toast({ title: 'Folha processada', description: `Folha de ${getMonthLabel(mes)}/${ano} finalizada e registros enviados para relatórios.` });
+      registrarLog({ tipo: 'sucesso', categoria: 'folha', descricao: `Folha finalizada: ${getMonthLabel(mes)}/${ano}`, unidadeId });
     },
     onError: (err: any) => {
       toast({ title: 'Erro ao processar', description: err.message, variant: 'destructive' });

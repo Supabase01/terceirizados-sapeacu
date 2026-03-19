@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { parseColaboradoresFile, COLABORADOR_TEMPLATE_HEADERS } from '@/lib/parseColaboradoresFile';
+import { registrarLog } from '@/lib/logSistema';
 import { useQueryClient } from '@tanstack/react-query';
 import { useUnidade } from '@/contexts/UnidadeContext';
 import Layout from '@/components/Layout';
@@ -175,7 +176,9 @@ const ImportColaboradores = () => {
 
       setResult({ success: true, message });
       toast({ title: 'Importação concluída', description: `${inserted} colaboradores importados.` });
+      registrarLog({ tipo: 'sucesso', categoria: 'importacao', descricao: `Importação de colaboradores: ${inserted} registros`, detalhes: { arquivo: file.name, inseridos: inserted, duplicados: duplicates.length }, unidadeId: unidadeId });
     } catch (err: any) {
+      registrarLog({ tipo: 'erro', categoria: 'importacao', descricao: `Erro na importação de colaboradores: ${err.message}`, detalhes: { arquivo: file?.name }, unidadeId: unidadeId });
       setResult({ success: false, message: err.message || 'Erro durante a importação.' });
     } finally {
       setImporting(false);
