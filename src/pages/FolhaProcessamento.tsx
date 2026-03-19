@@ -45,16 +45,26 @@ const FolhaProcessamento = () => {
   const { data: folha = [], isLoading, refetch } = useQuery({
     queryKey: ['folha-processamento', mes, ano, unidadeId],
     queryFn: async () => {
-      let query = supabase
-        .from('folha_processamento')
-        .select('*')
-        .eq('mes', mes)
-        .eq('ano', ano)
-        .order('nome', { ascending: true });
-      if (unidadeId) query = query.eq('unidade_id', unidadeId);
-      const { data, error } = await query;
-      if (error) throw error;
-      return data || [];
+      const PAGE = 1000;
+      let all: any[] = [];
+      let from = 0;
+      let hasMore = true;
+      while (hasMore) {
+        let query = supabase
+          .from('folha_processamento')
+          .select('*')
+          .eq('mes', mes)
+          .eq('ano', ano)
+          .order('nome', { ascending: true })
+          .range(from, from + PAGE - 1);
+        if (unidadeId) query = query.eq('unidade_id', unidadeId);
+        const { data, error } = await query;
+        if (error) throw error;
+        all = all.concat(data || []);
+        hasMore = (data?.length ?? 0) === PAGE;
+        from += PAGE;
+      }
+      return all;
     },
     enabled: !!unidadeId,
   });
