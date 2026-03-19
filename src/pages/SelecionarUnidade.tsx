@@ -18,7 +18,6 @@ export default function SelecionarUnidade() {
     queryKey: ['unidades-selecao', isMaster, isAdmin],
     queryFn: async () => {
       if (isMaster || isAdmin) {
-        // Master/admin see all active units
         const { data, error } = await supabase
           .from('unidades_folha')
           .select('*')
@@ -27,12 +26,11 @@ export default function SelecionarUnidade() {
         if (error) throw error;
         return data || [];
       }
-      // Regular users see only linked units
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
       const { data, error } = await supabase
         .from('usuario_unidades')
-        .select('unidade_id, unidades_folha(id, nome, cidade, estado, instituicao_tipo)')
+        .select('unidade_id, unidades_folha(id, nome, cidade, estado, instituicao_tipo, padrao)')
         .eq('user_id', user.id);
       if (error) throw error;
       return (data || [])
@@ -42,7 +40,7 @@ export default function SelecionarUnidade() {
   });
 
   const handleSelect = (unidade: any) => {
-    setUnidade(unidade.id, unidade.nome);
+    setUnidade(unidade.id, unidade.nome, unidade.padrao || 'padrao_01');
     navigate('/indicadores');
   };
 
@@ -50,6 +48,7 @@ export default function SelecionarUnidade() {
     sessionStorage.removeItem('pin_validated');
     sessionStorage.removeItem('unidade_id');
     sessionStorage.removeItem('unidade_nome');
+    sessionStorage.removeItem('unidade_padrao');
     await supabase.auth.signOut();
     navigate('/');
   };
