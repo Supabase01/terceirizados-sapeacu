@@ -11,7 +11,8 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { RefreshCw, Search, CheckCircle2, Loader2, FileText } from 'lucide-react';
+import { RefreshCw, Search, CheckCircle2, Loader2, FileText, Undo2 } from 'lucide-react';
+import { useIsMaster } from '@/hooks/useIsMaster';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -31,6 +32,7 @@ const getMonthLabel = (m: number) =>
 const FolhaProcessamento = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { isMaster } = useIsMaster();
   const { unidadeId, unidadePadrao } = useUnidade();
   const isPadrao02 = unidadePadrao === 'padrao_02';
   const [mes, setMes] = useState(defaultMes);
@@ -318,6 +320,38 @@ const FolhaProcessamento = () => {
     },
   });
 
+  // Revert processed payroll back to draft (master only)
+  const revertMutation = useMutation({
+    mutationFn: async () => {
+      // 1. Revert status to rascunho
+      const { error } = await supabase
+        .from('folha_processamento')
+        .update({ status: 'rascunho', updated_at: new Date().toISOString() })
+        .eq('mes', mes)
+        .eq('ano', ano)
+        .eq('status', 'processado')
+        .eq('unidade_id', unidadeId!);
+      if (error) throw error;
+
+      // 2. Remove synced payroll_records
+      await supabase
+        .from('payroll_records')
+        .delete()
+        .eq('mes', mes)
+        .eq('ano', ano)
+        .eq('unidade_id', unidadeId!);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['folha-processamento'] });
+      queryClient.invalidateQueries({ queryKey: ['payroll-records'] });
+      toast({ title: 'Folha revertida', description: `Folha de ${getMonthLabel(mes)}/${ano} voltou para rascunho.` });
+      registrarLog({ tipo: 'aviso', categoria: 'folha', descricao: `Folha revertida para rascunho: ${getMonthLabel(mes)}/${ano}`, unidadeId });
+    },
+    onError: (err: any) => {
+      toast({ title: 'Erro ao reverter', description: err.message, variant: 'destructive' });
+    },
+  });
+
   // Auto-generate on first load if no records exist
   useEffect(() => {
     if (!isLoading && folha.length === 0 && !generateMutation.isPending) {
@@ -374,8 +408,9 @@ const FolhaProcessamento = () => {
             </Select>
             <Button
               onClick={() => generateMutation.mutate()}
-              disabled={generateMutation.isPending || isProcessed}
+              disabled={generateMutation.isPending || (isProcessed && !isMaster)}
               variant={folha.length > 0 ? 'outline' : 'default'}
+              title={isProcessed && !isMaster ? 'Apenas o Master pode regerar uma folha processada' : undefined}
             >
               {generateMutation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-1" />
@@ -388,6 +423,16 @@ const FolhaProcessamento = () => {
               <Button onClick={() => setConfirmDialogOpen(true)} className="bg-green-600 hover:bg-green-700 text-white">
                 <CheckCircle2 className="h-4 w-4 mr-1" />
                 Processar
+              </Button>
+            )}
+            {isProcessed && isMaster && (
+              <Button
+                onClick={() => revertMutation.mutate()}
+                disabled={revertMutation.isPending}
+                variant="destructive"
+              >
+                {revertMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Undo2 className="h-4 w-4 mr-1" />}
+                Reverter
               </Button>
             )}
           </div>
