@@ -328,6 +328,7 @@ const FolhaProcessamento = () => {
   const totalLiquido = folha.reduce((s: number, r: any) => s + Number(r.liquido), 0);
   const totalAdicionais = folha.reduce((s: number, r: any) => s + Number(r.total_adicionais), 0);
   const totalDescontos = folha.reduce((s: number, r: any) => s + Number(r.total_descontos), 0);
+  const totalEncargos = folha.reduce((s: number, r: any) => s + Number(r.total_encargos || 0), 0);
 
   return (
     <Layout>
