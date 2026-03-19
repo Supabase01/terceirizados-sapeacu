@@ -28,6 +28,7 @@ import CadastroUnidades from "./pages/CadastroUnidades";
 import CadastroCidades from "./pages/CadastroCidades";
 import CadastroLiderancas from "./pages/CadastroLiderancas";
 import FolhaProcessamento from "./pages/FolhaProcessamento";
+import CadastroEncargos from "./pages/CadastroEncargos";
 import AuditLog from "./pages/AuditLog";
 import LogSistema from "./pages/LogSistema";
 import NotFound from "./pages/NotFound";
