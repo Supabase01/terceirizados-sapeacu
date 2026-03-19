@@ -215,6 +215,7 @@ const Adicionais = () => {
                     <TableHead>Tipo</TableHead>
                     <TableHead className="hidden md:table-cell">Competência</TableHead>
                     <TableHead className="text-right">Valor</TableHead>
+                    <TableHead className="hidden lg:table-cell">Cadastrado em</TableHead>
                     <TableHead className="w-28">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
