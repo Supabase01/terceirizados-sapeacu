@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { parseFile } from '@/lib/parseFile';
+import { registrarLog } from '@/lib/logSistema';
 import { useQueryClient } from '@tanstack/react-query';
 import { useUnidade } from '@/contexts/UnidadeContext';
 import Layout from '@/components/Layout';
