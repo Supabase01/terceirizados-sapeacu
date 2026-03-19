@@ -262,6 +262,7 @@ const CadastroUnidades = () => {
                   <TableHead>Nome da Unidade</TableHead>
                   <TableHead>Instituição</TableHead>
                   <TableHead>Tipo</TableHead>
+                  <TableHead>Padrão</TableHead>
                   <TableHead>Cidade/UF</TableHead>
                   <TableHead className="w-24">Status</TableHead>
                   <TableHead className="w-36">Ações</TableHead>
