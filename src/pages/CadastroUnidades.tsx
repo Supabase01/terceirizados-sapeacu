@@ -122,6 +122,7 @@ const CadastroUnidades = () => {
         instituicao_tipo: form.instituicao_tipo,
         cidade: form.cidade || null,
         estado: form.estado || null,
+        padrao: form.padrao,
       };
 
       if (editId) {
