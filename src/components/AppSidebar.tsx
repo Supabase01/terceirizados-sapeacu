@@ -73,6 +73,7 @@ export function AppSidebar() {
   const collapsed = state === 'collapsed';
   const location = useLocation();
   const { data: allowedRoutes } = useAllowedRoutes();
+  const { unidadePadrao } = useUnidade();
   const [openGroup, setOpenGroup] = useState<string | null>(null);
 
   const allowedSet = new Set(allowedRoutes?.map(r => r.route_path) || []);
@@ -80,7 +81,11 @@ export function AppSidebar() {
   const visibleModules = modules
     .map(mod => ({
       ...mod,
-      items: mod.items.filter(item => allowedSet.has(item.url)),
+      items: mod.items.filter(item => {
+        if (!allowedSet.has(item.url)) return false;
+        if ((item as any).padrao && (item as any).padrao !== unidadePadrao) return false;
+        return true;
+      }),
     }))
     .filter(mod => mod.items.length > 0);
 
