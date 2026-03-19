@@ -237,6 +237,9 @@ const Adicionais = () => {
                         <TableCell><Badge variant={item.tipo === 'fixo' ? 'default' : 'secondary'}>{item.tipo === 'fixo' ? 'Fixo' : 'Eventual'}</Badge></TableCell>
                         <TableCell className="hidden md:table-cell">{formatCompetencia(item)}</TableCell>
                         <TableCell className="text-right font-mono">{formatCurrency(item.valor)}</TableCell>
+                        <TableCell className="hidden lg:table-cell text-muted-foreground text-xs">
+                          {new Date(item.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </TableCell>
                         <TableCell>
                           <div className="flex gap-1">
                             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(item)}><Pencil className="h-3.5 w-3.5" /></Button>
