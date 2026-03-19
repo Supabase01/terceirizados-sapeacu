@@ -534,6 +534,50 @@ export type Database = {
           },
         ]
       }
+      logs_sistema: {
+        Row: {
+          categoria: string
+          created_at: string
+          descricao: string
+          detalhes: Json | null
+          id: string
+          tipo: string
+          unidade_id: string | null
+          user_email: string | null
+          user_id: string | null
+        }
+        Insert: {
+          categoria?: string
+          created_at?: string
+          descricao: string
+          detalhes?: Json | null
+          id?: string
+          tipo?: string
+          unidade_id?: string | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          categoria?: string
+          created_at?: string
+          descricao?: string
+          detalhes?: Json | null
+          id?: string
+          tipo?: string
+          unidade_id?: string | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "logs_sistema_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades_folha"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lotacoes: {
         Row: {
           ativo: boolean
