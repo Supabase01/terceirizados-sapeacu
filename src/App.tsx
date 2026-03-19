@@ -119,6 +119,7 @@ const App = () => (
             {/* Protected routes - unidade required */}
             <Route path="/indicadores" element={<ProtectedRoute><Indicadores /></ProtectedRoute>} />
             <Route path="/import" element={<ProtectedRoute><Import /></ProtectedRoute>} />
+            <Route path="/import/colaboradores" element={<ProtectedRoute><ImportColaboradores /></ProtectedRoute>} />
             <Route path="/alertas" element={<ProtectedRoute><Alertas /></ProtectedRoute>} />
             <Route path="/auditoria/log" element={<AdminRoute><AuditLog /></AdminRoute>} />
             <Route path="/relatorios" element={<ProtectedRoute><Relatorios /></ProtectedRoute>} />
