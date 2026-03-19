@@ -39,7 +39,7 @@ const Pagamento = () => {
       while (hasMore) {
         let query = supabase
           .from('folha_processamento')
-          .select('id, nome, cpf, liquido, status')
+          .select('id, nome, cpf, liquido, status, colaborador_id, colaboradores(banco, conta, pix)')
           .eq('mes', mes)
           .eq('ano', ano)
           .eq('status', 'processado')
@@ -133,6 +133,9 @@ const Pagamento = () => {
                         <TableHead className="w-12">#</TableHead>
                         <TableHead>Nome</TableHead>
                         <TableHead>CPF</TableHead>
+                        <TableHead>Banco</TableHead>
+                        <TableHead>Conta</TableHead>
+                        <TableHead>PIX</TableHead>
                         <TableHead className="text-right">Valor para Pagamento</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -142,6 +145,9 @@ const Pagamento = () => {
                           <TableCell className="text-muted-foreground">{page * PAGE_SIZE + idx + 1}</TableCell>
                           <TableCell className="font-medium">{r.nome}</TableCell>
                           <TableCell>{r.cpf}</TableCell>
+                          <TableCell>{r.colaboradores?.banco || '—'}</TableCell>
+                          <TableCell>{r.colaboradores?.conta || '—'}</TableCell>
+                          <TableCell>{r.colaboradores?.pix || '—'}</TableCell>
                           <TableCell className="text-right font-semibold">{formatCurrency(Number(r.liquido))}</TableCell>
                         </TableRow>
                       ))}
