@@ -60,13 +60,25 @@ const FolhaProcessamento = () => {
   // Generate/regenerate draft
   const generateMutation = useMutation({
     mutationFn: async () => {
-      // 1. Load active colaboradores with joins
-      const { data: colaboradores, error: colErr } = await supabase
-        .from('colaboradores')
-        .select('*, secretarias(nome), funcoes(nome), lotacoes(nome)')
-        .eq('ativo', true)
-        .eq('unidade_id', unidadeId!);
-      if (colErr) throw colErr;
+      // 1. Load ALL active colaboradores with joins (paginated to bypass 1000 limit)
+      let colaboradores: any[] = [];
+      {
+        const PAGE = 1000;
+        let from = 0;
+        let hasMore = true;
+        while (hasMore) {
+          const { data: chunk, error: colErr } = await supabase
+            .from('colaboradores')
+            .select('*, secretarias(nome), funcoes(nome), lotacoes(nome)')
+            .eq('ativo', true)
+            .eq('unidade_id', unidadeId!)
+            .range(from, from + PAGE - 1);
+          if (colErr) throw colErr;
+          colaboradores = colaboradores.concat(chunk || []);
+          hasMore = (chunk?.length ?? 0) === PAGE;
+          from += PAGE;
+        }
+      }
       if (!colaboradores?.length) throw new Error('Nenhum colaborador ativo encontrado.');
 
       // 2. Load adicionais ativos
