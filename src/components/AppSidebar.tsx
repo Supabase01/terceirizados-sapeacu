@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BarChart3, Upload, ShieldAlert, FileText, Users, Building2, Briefcase, MapPin, Settings, Shield, ChevronDown, Landmark, FolderKanban, PlusCircle, MinusCircle, ClipboardList, History, Map, Crown, FileSpreadsheet, Monitor, Percent } from 'lucide-react';
+import { BarChart3, Upload, ShieldAlert, FileText, Users, Building2, Briefcase, MapPin, Settings, Shield, ChevronDown, Landmark, FolderKanban, PlusCircle, MinusCircle, ClipboardList, History, Map, Crown, FileSpreadsheet, Monitor, Percent, DollarSign } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useLocation } from 'react-router-dom';
 import {
@@ -33,6 +33,7 @@ const modules = [
     items: [
       { title: 'Indicadores', url: '/indicadores', icon: BarChart3 },
       { title: 'Em Processamento', url: '/folha/processamento', icon: ClipboardList },
+      { title: 'Pagamento', url: '/folha/pagamento', icon: DollarSign },
       { title: 'Adicionais', url: '/folha/adicionais', icon: PlusCircle },
       { title: 'Descontos', url: '/folha/descontos', icon: MinusCircle },
       { title: 'Relatórios', url: '/relatorios', icon: FileText },
