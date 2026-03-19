@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { BarChart3, Upload, ShieldAlert, FileText, Users, Building2, Briefcase, MapPin, Settings, Shield, ChevronDown, Landmark, FolderKanban, PlusCircle, MinusCircle, ClipboardList, History, Map, Crown } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useLocation } from 'react-router-dom';
@@ -62,11 +63,13 @@ const modules = [
     ],
   },
 ];
+
 export function AppSidebar() {
   const { state, setOpen } = useSidebar();
   const collapsed = state === 'collapsed';
   const location = useLocation();
   const { data: allowedRoutes } = useAllowedRoutes();
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
 
   const allowedSet = new Set(allowedRoutes?.map(r => r.route_path) || []);
 
@@ -77,11 +80,16 @@ export function AppSidebar() {
     }))
     .filter(mod => mod.items.length > 0);
 
+  const handleMouseLeave = () => {
+    setOpen(false);
+    setOpenGroup(null);
+  };
+
   return (
     <Sidebar
       collapsible="icon"
       onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
+      onMouseLeave={handleMouseLeave}
     >
       <SidebarContent>
         <div className="flex items-center gap-2 px-4 py-4">
@@ -95,9 +103,15 @@ export function AppSidebar() {
 
         {visibleModules.map((mod) => {
           const isGroupActive = mod.items.some((i) => location.pathname === i.url || location.pathname.startsWith(i.url + '/'));
+          const isOpen = openGroup === mod.label;
 
           return (
-            <Collapsible key={mod.label} defaultOpen={false} className="group/collapsible px-2 mb-1">
+            <Collapsible
+              key={mod.label}
+              open={isOpen}
+              onOpenChange={(open) => setOpenGroup(open ? mod.label : null)}
+              className="group/collapsible px-2 mb-1"
+            >
               <CollapsibleTrigger className={cn(
                 'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wider transition-colors',
                 'text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/40',
