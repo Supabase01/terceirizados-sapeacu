@@ -21,6 +21,7 @@ interface UnidadeForm {
   instituicao_tipo: string;
   cidade: string;
   estado: string;
+  padrao: string;
 }
 
 const emptyForm: UnidadeForm = {
@@ -29,6 +30,7 @@ const emptyForm: UnidadeForm = {
   instituicao_tipo: 'prefeitura',
   cidade: '',
   estado: 'BA',
+  padrao: 'padrao_01',
 };
 
 const CadastroUnidades = () => {
