@@ -489,11 +489,21 @@ const FolhaProcessamento = () => {
                     <TableHead className="hidden md:table-cell">CPF</TableHead>
                     <TableHead className="hidden lg:table-cell">Função</TableHead>
                     <TableHead className="hidden lg:table-cell">Secretaria</TableHead>
-                    <TableHead className="text-right">Base</TableHead>
-                    <TableHead className="text-right">Adicionais</TableHead>
-                    <TableHead className="text-right">Bruto</TableHead>
-                    <TableHead className="text-right">Descontos</TableHead>
-                    <TableHead className="text-right">Líquido</TableHead>
+                    {isPadrao02 ? (
+                      <>
+                        <TableHead className="text-right">Líquido</TableHead>
+                        <TableHead className="text-right">Encargos</TableHead>
+                        <TableHead className="text-right">Bruto</TableHead>
+                      </>
+                    ) : (
+                      <>
+                        <TableHead className="text-right">Base</TableHead>
+                        <TableHead className="text-right">Adicionais</TableHead>
+                        <TableHead className="text-right">Bruto</TableHead>
+                        <TableHead className="text-right">Descontos</TableHead>
+                        <TableHead className="text-right">Líquido</TableHead>
+                      </>
+                    )}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -503,11 +513,21 @@ const FolhaProcessamento = () => {
                       <TableCell className="hidden md:table-cell text-muted-foreground">{r.cpf}</TableCell>
                       <TableCell className="hidden lg:table-cell text-muted-foreground">{r.funcao || '—'}</TableCell>
                       <TableCell className="hidden lg:table-cell text-muted-foreground">{r.secretaria || '—'}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(Number(r.salario_base))}</TableCell>
-                      <TableCell className="text-right text-green-600">{formatCurrency(Number(r.total_adicionais))}</TableCell>
-                      <TableCell className="text-right font-medium">{formatCurrency(Number(r.bruto))}</TableCell>
-                      <TableCell className="text-right text-destructive">{formatCurrency(Number(r.total_descontos))}</TableCell>
-                      <TableCell className="text-right font-bold text-primary">{formatCurrency(Number(r.liquido))}</TableCell>
+                      {isPadrao02 ? (
+                        <>
+                          <TableCell className="text-right font-bold text-primary">{formatCurrency(Number(r.liquido))}</TableCell>
+                          <TableCell className="text-right text-amber-600">{formatCurrency(Number(r.total_encargos || 0))}</TableCell>
+                          <TableCell className="text-right font-medium">{formatCurrency(Number(r.bruto))}</TableCell>
+                        </>
+                      ) : (
+                        <>
+                          <TableCell className="text-right">{formatCurrency(Number(r.salario_base))}</TableCell>
+                          <TableCell className="text-right text-green-600">{formatCurrency(Number(r.total_adicionais))}</TableCell>
+                          <TableCell className="text-right font-medium">{formatCurrency(Number(r.bruto))}</TableCell>
+                          <TableCell className="text-right text-destructive">{formatCurrency(Number(r.total_descontos))}</TableCell>
+                          <TableCell className="text-right font-bold text-primary">{formatCurrency(Number(r.liquido))}</TableCell>
+                        </>
+                      )}
                     </TableRow>
                   ))}
                 </TableBody>
