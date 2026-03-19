@@ -84,17 +84,27 @@ const FolhaProcessamento = () => {
         .eq('unidade_id', unidadeId!);
       if (descErr) throw descErr;
 
+      // 4. Load encargos ativos (for Padrão 02)
+      let encargosData: any[] = [];
+      if (isPadrao02) {
+        const { data: enc, error: encErr } = await supabase
+          .from('encargos')
+          .select('*')
+          .eq('ativo', true)
+          .eq('unidade_id', unidadeId!);
+        if (encErr) throw encErr;
+        encargosData = enc || [];
+      }
+
       // Helper: check if adicional is valid for the period
       const isAdicionalVigente = (a: any) => {
         const inicio = (a.ano ?? 0) * 100 + (a.mes ?? 0);
         const fim = (a.ano_fim ?? 9999) * 100 + (a.mes_fim ?? 12);
         const current = ano * 100 + mes;
         if (a.tipo === 'fixo') {
-          // fixo: always applies if active and within range (or no range)
           if (!a.ano && !a.mes) return true;
           return current >= inicio && current <= fim;
         }
-        // eventual: only in the specific period
         if (!a.ano && !a.mes) return false;
         return current >= inicio && current <= fim;
       };
@@ -102,7 +112,7 @@ const FolhaProcessamento = () => {
       // Helper: check if desconto applies
       const isDescontoVigente = (d: any) => {
         if (d.mes && d.ano) return d.mes === mes && d.ano === ano;
-        return true; // recurrent
+        return true;
       };
 
       // Global descontos
@@ -114,6 +124,38 @@ const FolhaProcessamento = () => {
       const records = colaboradores.map((col: any) => {
         const salarioBase = Number(col.salario_base) || 0;
 
+        if (isPadrao02) {
+          // Padrão 02: salario_base = líquido cadastrado
+          const liquido = salarioBase;
+          // Encargos: global + individual for this collaborator
+          const encargosColab = encargosData.filter(
+            (e: any) => e.escopo === 'global' || e.colaborador_id === col.id
+          );
+          const somaPercentuais = encargosColab.reduce((s: number, e: any) => s + Number(e.percentual), 0);
+          const totalEncargos = liquido * (somaPercentuais / 100);
+          const bruto = liquido + totalEncargos;
+
+          return {
+            colaborador_id: col.id,
+            nome: col.nome,
+            cpf: col.cpf,
+            funcao: (col.funcoes as any)?.nome || '',
+            secretaria: (col.secretarias as any)?.nome || '',
+            lotacao: (col.lotacoes as any)?.nome || '',
+            salario_base: salarioBase,
+            total_adicionais: 0,
+            total_descontos: 0,
+            total_encargos: totalEncargos,
+            bruto,
+            liquido,
+            mes,
+            ano,
+            status: 'rascunho',
+            unidade_id: unidadeId,
+          };
+        }
+
+        // Padrão 01: comportamento original
         const adicionaisCol = (adicionais || []).filter(
           (a: any) => a.colaborador_id === col.id && isAdicionalVigente(a)
         );
@@ -124,7 +166,6 @@ const FolhaProcessamento = () => {
         );
 
         let totalDescontos = 0;
-        // Individual
         descontosInd.forEach((d: any) => {
           if (d.is_percentual) {
             totalDescontos += (salarioBase + totalAdicionais) * Number(d.valor) / 100;
@@ -132,7 +173,6 @@ const FolhaProcessamento = () => {
             totalDescontos += Number(d.valor);
           }
         });
-        // Global
         descontosGlobais.forEach((d: any) => {
           if (d.is_percentual) {
             totalDescontos += (salarioBase + totalAdicionais) * Number(d.valor) / 100;
@@ -154,6 +194,7 @@ const FolhaProcessamento = () => {
           salario_base: salarioBase,
           total_adicionais: totalAdicionais,
           total_descontos: totalDescontos,
+          total_encargos: 0,
           bruto,
           liquido,
           mes,
