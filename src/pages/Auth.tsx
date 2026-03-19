@@ -25,6 +25,7 @@ const Auth = () => {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
+      registrarLog({ tipo: 'sucesso', categoria: 'autenticacao', descricao: `Login realizado: ${email}` });
       navigate('/pin');
     } catch (error: any) {
       const msg = error.message?.includes('Invalid login')
