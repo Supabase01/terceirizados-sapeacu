@@ -158,7 +158,7 @@ const FolhaProcessamento = () => {
 
         // Padrão 01: comportamento original
         const adicionaisCol = (adicionais || []).filter(
-          (a: any) => a.colaborador_id === col.id && isAdicionalVigente(a)
+          (a: any) => ((a.escopo === 'global' && !a.colaborador_id) || a.colaborador_id === col.id) && isAdicionalVigente(a)
         );
         const totalAdicionais = adicionaisCol.reduce((s: number, a: any) => s + Number(a.valor), 0);
 
