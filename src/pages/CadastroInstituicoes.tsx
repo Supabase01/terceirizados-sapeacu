@@ -313,7 +313,7 @@ const CadastroInstituicoes = () => {
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={(open) => !open && closeDialog()}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>{editId ? 'Editar Instituição' : 'Nova Instituição'}</DialogTitle>
           </DialogHeader>
