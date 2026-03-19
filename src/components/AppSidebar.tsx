@@ -24,6 +24,7 @@ const modules = [
       { title: 'Secretarias', url: '/cadastro/secretarias', icon: Building2 },
       { title: 'Funções', url: '/cadastro/funcoes', icon: Briefcase },
       { title: 'Lotações', url: '/cadastro/lotacoes', icon: MapPin },
+      { title: 'Encargos', url: '/cadastro/encargos', icon: Percent, padrao: 'padrao_02' },
     ],
   },
   {

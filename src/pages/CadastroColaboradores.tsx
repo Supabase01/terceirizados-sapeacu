@@ -366,7 +366,7 @@ const CadastroColaboradores = () => {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Salário Base</Label>
+                <Label>{(() => { const p = sessionStorage.getItem('unidade_padrao'); return p === 'padrao_02' ? 'Salário Líquido' : 'Salário Base'; })()}</Label>
                 <Input type="number" placeholder="0.00" value={form.salario_base} onChange={(e) => updateField('salario_base', e.target.value)} />
               </div>
               <div className="space-y-2">

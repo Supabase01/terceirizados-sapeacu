@@ -366,6 +366,19 @@ const CadastroUnidades = () => {
 
             <Separator />
 
+            <div className="space-y-1.5">
+              <Label>Padrão do Sistema *</Label>
+              <Select value={form.padrao} onValueChange={(v) => setForm({ ...form, padrao: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="padrao_01">Padrão 01 — Salário Base (Base + Adicionais = Bruto)</SelectItem>
+                  <SelectItem value="padrao_02">Padrão 02 — Salário Líquido + Encargos</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Separator />
+
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Cidade</Label>
