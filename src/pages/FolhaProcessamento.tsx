@@ -184,6 +184,7 @@ const FolhaProcessamento = () => {
     onSuccess: (count) => {
       queryClient.invalidateQueries({ queryKey: ['folha-processamento'] });
       toast({ title: 'Folha gerada', description: `${count} registros gerados para ${getMonthLabel(mes)}/${ano}.` });
+      registrarLog({ tipo: 'sucesso', categoria: 'folha', descricao: `Folha rascunho gerada: ${count} registros para ${getMonthLabel(mes)}/${ano}`, unidadeId });
     },
     onError: (err: any) => {
       toast({ title: 'Erro ao gerar folha', description: err.message, variant: 'destructive' });
