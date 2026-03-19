@@ -191,6 +191,7 @@ const CadastroUnidades = () => {
       instituicao_tipo: item.instituicao_tipo || 'prefeitura',
       cidade: item.cidade || '',
       estado: item.estado || 'BA',
+      padrao: item.padrao || 'padrao_01',
     });
     setDialogOpen(true);
   };
