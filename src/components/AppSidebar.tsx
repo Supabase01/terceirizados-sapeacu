@@ -48,7 +48,7 @@ const modules = [
     label: 'Importação',
     icon: Upload,
     items: [
-      { title: 'Folha de Pagamento', url: '/import', icon: Upload },
+      { title: 'Folha de Pagamento', url: '/import', icon: FileSpreadsheet },
       { title: 'Colaboradores', url: '/import/colaboradores', icon: Users },
     ],
   },
