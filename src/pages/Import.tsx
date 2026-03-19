@@ -137,6 +137,7 @@ const Import = () => {
       }
 
       setResult({ success: true, message });
+      registrarLog({ tipo: 'sucesso', categoria: 'importacao', descricao: `Importação de folha: ${inserted} registros`, detalhes: { arquivo: file.name, registros: inserted, nao_encontrados: notFound.length }, unidadeId: unidadeId });
       toast({ title: 'Importação concluída', description: `${inserted} registros como rascunho.` });
     } catch (err: any) {
       setResult({ success: false, message: err.message || 'Erro durante a importação.' });
