@@ -21,6 +21,7 @@ interface UnidadeForm {
   instituicao_tipo: string;
   cidade: string;
   estado: string;
+  padrao: string;
 }
 
 const emptyForm: UnidadeForm = {
@@ -29,6 +30,7 @@ const emptyForm: UnidadeForm = {
   instituicao_tipo: 'prefeitura',
   cidade: '',
   estado: 'BA',
+  padrao: 'padrao_01',
 };
 
 const CadastroUnidades = () => {
@@ -120,6 +122,7 @@ const CadastroUnidades = () => {
         instituicao_tipo: form.instituicao_tipo,
         cidade: form.cidade || null,
         estado: form.estado || null,
+        padrao: form.padrao,
       };
 
       if (editId) {
@@ -188,6 +191,7 @@ const CadastroUnidades = () => {
       instituicao_tipo: item.instituicao_tipo || 'prefeitura',
       cidade: item.cidade || '',
       estado: item.estado || 'BA',
+      padrao: item.padrao || 'padrao_01',
     });
     setDialogOpen(true);
   };
@@ -258,6 +262,7 @@ const CadastroUnidades = () => {
                   <TableHead>Nome da Unidade</TableHead>
                   <TableHead>Instituição</TableHead>
                   <TableHead>Tipo</TableHead>
+                  <TableHead>Padrão</TableHead>
                   <TableHead>Cidade/UF</TableHead>
                   <TableHead className="w-24">Status</TableHead>
                   <TableHead className="w-36">Ações</TableHead>
@@ -265,13 +270,13 @@ const CadastroUnidades = () => {
               </TableHeader>
               <TableBody>
                 {isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Carregando...</TableCell>
-                  </TableRow>
+                   <TableRow>
+                     <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Carregando...</TableCell>
+                   </TableRow>
                 ) : filtered.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Nenhuma unidade encontrada</TableCell>
-                  </TableRow>
+                   <TableRow>
+                     <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Nenhuma unidade encontrada</TableCell>
+                   </TableRow>
                 ) : (
                   filtered.map((item: any) => (
                     <TableRow key={item.id}>
@@ -280,6 +285,11 @@ const CadastroUnidades = () => {
                       <TableCell>
                         <Badge variant={item.instituicao_tipo === 'prefeitura' ? 'default' : 'outline'}>
                           {item.instituicao_tipo === 'prefeitura' ? 'Prefeitura' : 'Terceirizada'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">
+                          {item.padrao === 'padrao_02' ? 'Padrão 02' : 'Padrão 01'}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-sm">
@@ -350,6 +360,19 @@ const CadastroUnidades = () => {
                   {filteredInstitutions.map((inst: any) => (
                     <SelectItem key={inst.id} value={inst.id}>{inst.nome}</SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Separator />
+
+            <div className="space-y-1.5">
+              <Label>Padrão do Sistema *</Label>
+              <Select value={form.padrao} onValueChange={(v) => setForm({ ...form, padrao: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="padrao_01">Padrão 01 — Salário Base (Base + Adicionais = Bruto)</SelectItem>
+                  <SelectItem value="padrao_02">Padrão 02 — Salário Líquido + Encargos</SelectItem>
                 </SelectContent>
               </Select>
             </div>

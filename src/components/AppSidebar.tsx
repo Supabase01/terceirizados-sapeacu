@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BarChart3, Upload, ShieldAlert, FileText, Users, Building2, Briefcase, MapPin, Settings, Shield, ChevronDown, Landmark, FolderKanban, PlusCircle, MinusCircle, ClipboardList, History, Map, Crown, FileSpreadsheet, Monitor } from 'lucide-react';
+import { BarChart3, Upload, ShieldAlert, FileText, Users, Building2, Briefcase, MapPin, Settings, Shield, ChevronDown, Landmark, FolderKanban, PlusCircle, MinusCircle, ClipboardList, History, Map, Crown, FileSpreadsheet, Monitor, Percent } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useLocation } from 'react-router-dom';
 import {
@@ -13,6 +13,7 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 import { useAllowedRoutes } from '@/hooks/useUserRoles';
+import { useUnidade } from '@/contexts/UnidadeContext';
 
 const modules = [
   {
@@ -23,6 +24,7 @@ const modules = [
       { title: 'Secretarias', url: '/cadastro/secretarias', icon: Building2 },
       { title: 'Funções', url: '/cadastro/funcoes', icon: Briefcase },
       { title: 'Lotações', url: '/cadastro/lotacoes', icon: MapPin },
+      { title: 'Encargos', url: '/cadastro/encargos', icon: Percent, padrao: 'padrao_02' },
     ],
   },
   {
@@ -71,6 +73,7 @@ export function AppSidebar() {
   const collapsed = state === 'collapsed';
   const location = useLocation();
   const { data: allowedRoutes } = useAllowedRoutes();
+  const { unidadePadrao } = useUnidade();
   const [openGroup, setOpenGroup] = useState<string | null>(null);
 
   const allowedSet = new Set(allowedRoutes?.map(r => r.route_path) || []);
@@ -78,7 +81,11 @@ export function AppSidebar() {
   const visibleModules = modules
     .map(mod => ({
       ...mod,
-      items: mod.items.filter(item => allowedSet.has(item.url)),
+      items: mod.items.filter(item => {
+        if (!allowedSet.has(item.url)) return false;
+        if ((item as any).padrao && (item as any).padrao !== unidadePadrao) return false;
+        return true;
+      }),
     }))
     .filter(mod => mod.items.length > 0);
 

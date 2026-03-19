@@ -330,6 +330,54 @@ export type Database = {
           },
         ]
       }
+      encargos: {
+        Row: {
+          ativo: boolean
+          colaborador_id: string | null
+          created_at: string
+          escopo: string
+          id: string
+          nome: string
+          percentual: number
+          unidade_id: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          colaborador_id?: string | null
+          created_at?: string
+          escopo?: string
+          id?: string
+          nome: string
+          percentual?: number
+          unidade_id?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          colaborador_id?: string | null
+          created_at?: string
+          escopo?: string
+          id?: string
+          nome?: string
+          percentual?: number
+          unidade_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "encargos_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "encargos_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades_folha"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       folha_processamento: {
         Row: {
           ano: number
@@ -348,6 +396,7 @@ export type Database = {
           status: string
           total_adicionais: number
           total_descontos: number
+          total_encargos: number
           unidade_id: string | null
           updated_at: string
         }
@@ -368,6 +417,7 @@ export type Database = {
           status?: string
           total_adicionais?: number
           total_descontos?: number
+          total_encargos?: number
           unidade_id?: string | null
           updated_at?: string
         }
@@ -388,6 +438,7 @@ export type Database = {
           status?: string
           total_adicionais?: number
           total_descontos?: number
+          total_encargos?: number
           unidade_id?: string | null
           updated_at?: string
         }
@@ -874,6 +925,7 @@ export type Database = {
           instituicao_id: string | null
           instituicao_tipo: string
           nome: string
+          padrao: string
         }
         Insert: {
           ativo?: boolean
@@ -884,6 +936,7 @@ export type Database = {
           instituicao_id?: string | null
           instituicao_tipo?: string
           nome: string
+          padrao?: string
         }
         Update: {
           ativo?: boolean
@@ -894,6 +947,7 @@ export type Database = {
           instituicao_id?: string | null
           instituicao_tipo?: string
           nome?: string
+          padrao?: string
         }
         Relationships: []
       }

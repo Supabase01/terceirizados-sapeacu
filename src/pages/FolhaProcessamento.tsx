@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { registrarLog } from '@/lib/logSistema';
 import { useUnidade } from '@/contexts/UnidadeContext';
+import { cn } from '@/lib/utils';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,7 +31,8 @@ const getMonthLabel = (m: number) =>
 const FolhaProcessamento = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { unidadeId } = useUnidade();
+  const { unidadeId, unidadePadrao } = useUnidade();
+  const isPadrao02 = unidadePadrao === 'padrao_02';
   const [mes, setMes] = useState(defaultMes);
   const [ano, setAno] = useState(defaultAno);
   const [search, setSearch] = useState('');
@@ -83,17 +85,27 @@ const FolhaProcessamento = () => {
         .eq('unidade_id', unidadeId!);
       if (descErr) throw descErr;
 
+      // 4. Load encargos ativos (for Padrão 02)
+      let encargosData: any[] = [];
+      if (isPadrao02) {
+        const { data: enc, error: encErr } = await supabase
+          .from('encargos')
+          .select('*')
+          .eq('ativo', true)
+          .eq('unidade_id', unidadeId!);
+        if (encErr) throw encErr;
+        encargosData = enc || [];
+      }
+
       // Helper: check if adicional is valid for the period
       const isAdicionalVigente = (a: any) => {
         const inicio = (a.ano ?? 0) * 100 + (a.mes ?? 0);
         const fim = (a.ano_fim ?? 9999) * 100 + (a.mes_fim ?? 12);
         const current = ano * 100 + mes;
         if (a.tipo === 'fixo') {
-          // fixo: always applies if active and within range (or no range)
           if (!a.ano && !a.mes) return true;
           return current >= inicio && current <= fim;
         }
-        // eventual: only in the specific period
         if (!a.ano && !a.mes) return false;
         return current >= inicio && current <= fim;
       };
@@ -101,7 +113,7 @@ const FolhaProcessamento = () => {
       // Helper: check if desconto applies
       const isDescontoVigente = (d: any) => {
         if (d.mes && d.ano) return d.mes === mes && d.ano === ano;
-        return true; // recurrent
+        return true;
       };
 
       // Global descontos
@@ -113,6 +125,38 @@ const FolhaProcessamento = () => {
       const records = colaboradores.map((col: any) => {
         const salarioBase = Number(col.salario_base) || 0;
 
+        if (isPadrao02) {
+          // Padrão 02: salario_base = líquido cadastrado
+          const liquido = salarioBase;
+          // Encargos: global + individual for this collaborator
+          const encargosColab = encargosData.filter(
+            (e: any) => e.escopo === 'global' || e.colaborador_id === col.id
+          );
+          const somaPercentuais = encargosColab.reduce((s: number, e: any) => s + Number(e.percentual), 0);
+          const totalEncargos = liquido * (somaPercentuais / 100);
+          const bruto = liquido + totalEncargos;
+
+          return {
+            colaborador_id: col.id,
+            nome: col.nome,
+            cpf: col.cpf,
+            funcao: (col.funcoes as any)?.nome || '',
+            secretaria: (col.secretarias as any)?.nome || '',
+            lotacao: (col.lotacoes as any)?.nome || '',
+            salario_base: salarioBase,
+            total_adicionais: 0,
+            total_descontos: 0,
+            total_encargos: totalEncargos,
+            bruto,
+            liquido,
+            mes,
+            ano,
+            status: 'rascunho',
+            unidade_id: unidadeId,
+          };
+        }
+
+        // Padrão 01: comportamento original
         const adicionaisCol = (adicionais || []).filter(
           (a: any) => a.colaborador_id === col.id && isAdicionalVigente(a)
         );
@@ -123,7 +167,6 @@ const FolhaProcessamento = () => {
         );
 
         let totalDescontos = 0;
-        // Individual
         descontosInd.forEach((d: any) => {
           if (d.is_percentual) {
             totalDescontos += (salarioBase + totalAdicionais) * Number(d.valor) / 100;
@@ -131,7 +174,6 @@ const FolhaProcessamento = () => {
             totalDescontos += Number(d.valor);
           }
         });
-        // Global
         descontosGlobais.forEach((d: any) => {
           if (d.is_percentual) {
             totalDescontos += (salarioBase + totalAdicionais) * Number(d.valor) / 100;
@@ -153,6 +195,7 @@ const FolhaProcessamento = () => {
           salario_base: salarioBase,
           total_adicionais: totalAdicionais,
           total_descontos: totalDescontos,
+          total_encargos: 0,
           bruto,
           liquido,
           mes,
@@ -286,6 +329,7 @@ const FolhaProcessamento = () => {
   const totalLiquido = folha.reduce((s: number, r: any) => s + Number(r.liquido), 0);
   const totalAdicionais = folha.reduce((s: number, r: any) => s + Number(r.total_adicionais), 0);
   const totalDescontos = folha.reduce((s: number, r: any) => s + Number(r.total_descontos), 0);
+  const totalEncargos = folha.reduce((s: number, r: any) => s + Number(r.total_encargos || 0), 0);
 
   return (
     <Layout>
@@ -339,37 +383,62 @@ const FolhaProcessamento = () => {
 
         {/* Summary cards */}
         {folha.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div className={cn("grid gap-3", isPadrao02 ? "grid-cols-2 md:grid-cols-4" : "grid-cols-2 md:grid-cols-5")}>
             <Card>
               <CardContent className="p-3 text-center">
                 <p className="text-xs text-muted-foreground">Colaboradores</p>
                 <p className="text-lg font-bold text-foreground">{folha.length}</p>
               </CardContent>
             </Card>
-            <Card>
-              <CardContent className="p-3 text-center">
-                <p className="text-xs text-muted-foreground">Total Bruto</p>
-                <p className="text-lg font-bold text-foreground">{formatCurrency(totalBruto)}</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-3 text-center">
-                <p className="text-xs text-muted-foreground">Adicionais</p>
-                <p className="text-lg font-bold text-green-600">{formatCurrency(totalAdicionais)}</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-3 text-center">
-                <p className="text-xs text-muted-foreground">Descontos</p>
-                <p className="text-lg font-bold text-destructive">{formatCurrency(totalDescontos)}</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-3 text-center">
-                <p className="text-xs text-muted-foreground">Total Líquido</p>
-                <p className="text-lg font-bold text-primary">{formatCurrency(totalLiquido)}</p>
-              </CardContent>
-            </Card>
+            {isPadrao02 ? (
+              <>
+                <Card>
+                  <CardContent className="p-3 text-center">
+                    <p className="text-xs text-muted-foreground">Total Líquido</p>
+                    <p className="text-lg font-bold text-primary">{formatCurrency(totalLiquido)}</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-3 text-center">
+                    <p className="text-xs text-muted-foreground">Total Encargos</p>
+                    <p className="text-lg font-bold text-amber-600">{formatCurrency(totalEncargos)}</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-3 text-center">
+                    <p className="text-xs text-muted-foreground">Total Bruto</p>
+                    <p className="text-lg font-bold text-foreground">{formatCurrency(totalBruto)}</p>
+                  </CardContent>
+                </Card>
+              </>
+            ) : (
+              <>
+                <Card>
+                  <CardContent className="p-3 text-center">
+                    <p className="text-xs text-muted-foreground">Total Bruto</p>
+                    <p className="text-lg font-bold text-foreground">{formatCurrency(totalBruto)}</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-3 text-center">
+                    <p className="text-xs text-muted-foreground">Adicionais</p>
+                    <p className="text-lg font-bold text-green-600">{formatCurrency(totalAdicionais)}</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-3 text-center">
+                    <p className="text-xs text-muted-foreground">Descontos</p>
+                    <p className="text-lg font-bold text-destructive">{formatCurrency(totalDescontos)}</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-3 text-center">
+                    <p className="text-xs text-muted-foreground">Total Líquido</p>
+                    <p className="text-lg font-bold text-primary">{formatCurrency(totalLiquido)}</p>
+                  </CardContent>
+                </Card>
+              </>
+            )}
           </div>
         )}
 
@@ -420,11 +489,21 @@ const FolhaProcessamento = () => {
                     <TableHead className="hidden md:table-cell">CPF</TableHead>
                     <TableHead className="hidden lg:table-cell">Função</TableHead>
                     <TableHead className="hidden lg:table-cell">Secretaria</TableHead>
-                    <TableHead className="text-right">Base</TableHead>
-                    <TableHead className="text-right">Adicionais</TableHead>
-                    <TableHead className="text-right">Bruto</TableHead>
-                    <TableHead className="text-right">Descontos</TableHead>
-                    <TableHead className="text-right">Líquido</TableHead>
+                    {isPadrao02 ? (
+                      <>
+                        <TableHead className="text-right">Líquido</TableHead>
+                        <TableHead className="text-right">Encargos</TableHead>
+                        <TableHead className="text-right">Bruto</TableHead>
+                      </>
+                    ) : (
+                      <>
+                        <TableHead className="text-right">Base</TableHead>
+                        <TableHead className="text-right">Adicionais</TableHead>
+                        <TableHead className="text-right">Bruto</TableHead>
+                        <TableHead className="text-right">Descontos</TableHead>
+                        <TableHead className="text-right">Líquido</TableHead>
+                      </>
+                    )}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -434,11 +513,21 @@ const FolhaProcessamento = () => {
                       <TableCell className="hidden md:table-cell text-muted-foreground">{r.cpf}</TableCell>
                       <TableCell className="hidden lg:table-cell text-muted-foreground">{r.funcao || '—'}</TableCell>
                       <TableCell className="hidden lg:table-cell text-muted-foreground">{r.secretaria || '—'}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(Number(r.salario_base))}</TableCell>
-                      <TableCell className="text-right text-green-600">{formatCurrency(Number(r.total_adicionais))}</TableCell>
-                      <TableCell className="text-right font-medium">{formatCurrency(Number(r.bruto))}</TableCell>
-                      <TableCell className="text-right text-destructive">{formatCurrency(Number(r.total_descontos))}</TableCell>
-                      <TableCell className="text-right font-bold text-primary">{formatCurrency(Number(r.liquido))}</TableCell>
+                      {isPadrao02 ? (
+                        <>
+                          <TableCell className="text-right font-bold text-primary">{formatCurrency(Number(r.liquido))}</TableCell>
+                          <TableCell className="text-right text-amber-600">{formatCurrency(Number(r.total_encargos || 0))}</TableCell>
+                          <TableCell className="text-right font-medium">{formatCurrency(Number(r.bruto))}</TableCell>
+                        </>
+                      ) : (
+                        <>
+                          <TableCell className="text-right">{formatCurrency(Number(r.salario_base))}</TableCell>
+                          <TableCell className="text-right text-green-600">{formatCurrency(Number(r.total_adicionais))}</TableCell>
+                          <TableCell className="text-right font-medium">{formatCurrency(Number(r.bruto))}</TableCell>
+                          <TableCell className="text-right text-destructive">{formatCurrency(Number(r.total_descontos))}</TableCell>
+                          <TableCell className="text-right font-bold text-primary">{formatCurrency(Number(r.liquido))}</TableCell>
+                        </>
+                      )}
                     </TableRow>
                   ))}
                 </TableBody>
