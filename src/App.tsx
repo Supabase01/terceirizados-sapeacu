@@ -31,6 +31,7 @@ import FolhaProcessamento from "./pages/FolhaProcessamento";
 import CadastroEncargos from "./pages/CadastroEncargos";
 import AuditLog from "./pages/AuditLog";
 import LogSistema from "./pages/LogSistema";
+import Pagamento from "./pages/Pagamento";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
