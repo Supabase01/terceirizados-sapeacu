@@ -33,6 +33,7 @@ const modules = [
     items: [
       { title: 'Indicadores', url: '/indicadores', icon: BarChart3 },
       { title: 'Em Processamento', url: '/folha/processamento', icon: ClipboardList },
+      { title: 'Pagamento', url: '/folha/pagamento', icon: DollarSign },
       { title: 'Adicionais', url: '/folha/adicionais', icon: PlusCircle },
       { title: 'Descontos', url: '/folha/descontos', icon: MinusCircle },
       { title: 'Relatórios', url: '/relatorios', icon: FileText },
