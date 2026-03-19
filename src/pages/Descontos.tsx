@@ -186,14 +186,15 @@ const Descontos = () => {
                     <TableHead>Colaborador</TableHead>
                     <TableHead className="hidden md:table-cell">Competência</TableHead>
                     <TableHead className="text-right">Valor</TableHead>
+                    <TableHead className="hidden lg:table-cell">Cadastrado em</TableHead>
                     <TableHead className="w-28">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
-                    <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
                   ) : filtered.length === 0 ? (
-                    <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Nenhum desconto encontrado</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Nenhum desconto encontrado</TableCell></TableRow>
                   ) : (
                     filtered.map((item: any) => (
                       <TableRow key={item.id}>
@@ -207,6 +208,9 @@ const Descontos = () => {
                         <TableCell className="hidden md:table-cell">{item.mes && item.ano ? `${String(item.mes).padStart(2, '0')}/${item.ano}` : 'Recorrente'}</TableCell>
                         <TableCell className="text-right font-mono">
                           {item.is_percentual ? `${item.valor}%` : formatCurrency(item.valor)}
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell text-muted-foreground text-xs">
+                          {new Date(item.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-1">
