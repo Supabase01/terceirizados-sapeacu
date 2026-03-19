@@ -287,6 +287,11 @@ const CadastroUnidades = () => {
                           {item.instituicao_tipo === 'prefeitura' ? 'Prefeitura' : 'Terceirizada'}
                         </Badge>
                       </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">
+                          {item.padrao === 'padrao_02' ? 'Padrão 02' : 'Padrão 01'}
+                        </Badge>
+                      </TableCell>
                       <TableCell className="text-sm">
                         {[item.cidade, item.estado].filter(Boolean).join('/') || '—'}
                       </TableCell>
