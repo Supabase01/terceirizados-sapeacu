@@ -42,6 +42,7 @@ const modules = [
     items: [
       { title: 'Alertas', url: '/alertas', icon: ShieldAlert },
       { title: 'Log de Alterações', url: '/auditoria/log', icon: History },
+      { title: 'Log do Sistema', url: '/auditoria/sistema', icon: Monitor },
     ],
   },
   {
