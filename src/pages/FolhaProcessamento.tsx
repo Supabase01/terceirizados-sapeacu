@@ -32,6 +32,7 @@ const getMonthLabel = (m: number) =>
 const FolhaProcessamento = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { isMaster } = useIsMaster();
   const { unidadeId, unidadePadrao } = useUnidade();
   const isPadrao02 = unidadePadrao === 'padrao_02';
   const [mes, setMes] = useState(defaultMes);
