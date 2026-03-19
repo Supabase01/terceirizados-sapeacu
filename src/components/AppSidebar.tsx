@@ -15,21 +15,13 @@ import { useAllowedRoutes } from '@/hooks/useUserRoles';
 
 const modules = [
   {
-    label: 'Administrador',
-    icon: Settings,
+    label: 'Cadastros',
+    icon: Users,
     items: [
-      { title: 'Configurações', url: '/admin/config', icon: Settings },
-      { title: 'Instituições', url: '/admin/instituicoes', icon: Landmark },
-      { title: 'Unidades de Folha', url: '/admin/unidades', icon: FolderKanban },
-      { title: 'Cidades', url: '/admin/cidades', icon: Map },
-      { title: 'Lideranças', url: '/admin/liderancas', icon: Crown },
-    ],
-  },
-  {
-    label: 'Importação',
-    icon: Upload,
-    items: [
-      { title: 'Importar', url: '/import', icon: Upload },
+      { title: 'Colaboradores', url: '/cadastro/colaboradores', icon: Users },
+      { title: 'Secretarias', url: '/cadastro/secretarias', icon: Building2 },
+      { title: 'Funções', url: '/cadastro/funcoes', icon: Briefcase },
+      { title: 'Lotações', url: '/cadastro/lotacoes', icon: MapPin },
     ],
   },
   {
@@ -44,16 +36,6 @@ const modules = [
     ],
   },
   {
-    label: 'Cadastros',
-    icon: Users,
-    items: [
-      { title: 'Colaboradores', url: '/cadastro/colaboradores', icon: Users },
-      { title: 'Secretarias', url: '/cadastro/secretarias', icon: Building2 },
-      { title: 'Funções', url: '/cadastro/funcoes', icon: Briefcase },
-      { title: 'Lotações', url: '/cadastro/lotacoes', icon: MapPin },
-    ],
-  },
-  {
     label: 'Auditoria',
     icon: ShieldAlert,
     items: [
@@ -61,8 +43,25 @@ const modules = [
       { title: 'Log de Alterações', url: '/auditoria/log', icon: History },
     ],
   },
+  {
+    label: 'Importação',
+    icon: Upload,
+    items: [
+      { title: 'Importar', url: '/import', icon: Upload },
+    ],
+  },
+  {
+    label: 'Administrador',
+    icon: Settings,
+    items: [
+      { title: 'Configurações', url: '/admin/config', icon: Settings },
+      { title: 'Instituições', url: '/admin/instituicoes', icon: Landmark },
+      { title: 'Unidades de Folha', url: '/admin/unidades', icon: FolderKanban },
+      { title: 'Cidades', url: '/admin/cidades', icon: Map },
+      { title: 'Lideranças', url: '/admin/liderancas', icon: Crown },
+    ],
+  },
 ];
-
 export function AppSidebar() {
   const { state, setOpen } = useSidebar();
   const collapsed = state === 'collapsed';
