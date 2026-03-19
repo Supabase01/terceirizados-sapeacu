@@ -382,37 +382,62 @@ const FolhaProcessamento = () => {
 
         {/* Summary cards */}
         {folha.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div className={cn("grid gap-3", isPadrao02 ? "grid-cols-2 md:grid-cols-4" : "grid-cols-2 md:grid-cols-5")}>
             <Card>
               <CardContent className="p-3 text-center">
                 <p className="text-xs text-muted-foreground">Colaboradores</p>
                 <p className="text-lg font-bold text-foreground">{folha.length}</p>
               </CardContent>
             </Card>
-            <Card>
-              <CardContent className="p-3 text-center">
-                <p className="text-xs text-muted-foreground">Total Bruto</p>
-                <p className="text-lg font-bold text-foreground">{formatCurrency(totalBruto)}</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-3 text-center">
-                <p className="text-xs text-muted-foreground">Adicionais</p>
-                <p className="text-lg font-bold text-green-600">{formatCurrency(totalAdicionais)}</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-3 text-center">
-                <p className="text-xs text-muted-foreground">Descontos</p>
-                <p className="text-lg font-bold text-destructive">{formatCurrency(totalDescontos)}</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-3 text-center">
-                <p className="text-xs text-muted-foreground">Total Líquido</p>
-                <p className="text-lg font-bold text-primary">{formatCurrency(totalLiquido)}</p>
-              </CardContent>
-            </Card>
+            {isPadrao02 ? (
+              <>
+                <Card>
+                  <CardContent className="p-3 text-center">
+                    <p className="text-xs text-muted-foreground">Total Líquido</p>
+                    <p className="text-lg font-bold text-primary">{formatCurrency(totalLiquido)}</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-3 text-center">
+                    <p className="text-xs text-muted-foreground">Total Encargos</p>
+                    <p className="text-lg font-bold text-amber-600">{formatCurrency(totalEncargos)}</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-3 text-center">
+                    <p className="text-xs text-muted-foreground">Total Bruto</p>
+                    <p className="text-lg font-bold text-foreground">{formatCurrency(totalBruto)}</p>
+                  </CardContent>
+                </Card>
+              </>
+            ) : (
+              <>
+                <Card>
+                  <CardContent className="p-3 text-center">
+                    <p className="text-xs text-muted-foreground">Total Bruto</p>
+                    <p className="text-lg font-bold text-foreground">{formatCurrency(totalBruto)}</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-3 text-center">
+                    <p className="text-xs text-muted-foreground">Adicionais</p>
+                    <p className="text-lg font-bold text-green-600">{formatCurrency(totalAdicionais)}</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-3 text-center">
+                    <p className="text-xs text-muted-foreground">Descontos</p>
+                    <p className="text-lg font-bold text-destructive">{formatCurrency(totalDescontos)}</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-3 text-center">
+                    <p className="text-xs text-muted-foreground">Total Líquido</p>
+                    <p className="text-lg font-bold text-primary">{formatCurrency(totalLiquido)}</p>
+                  </CardContent>
+                </Card>
+              </>
+            )}
           </div>
         )}
 
