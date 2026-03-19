@@ -320,6 +320,38 @@ const FolhaProcessamento = () => {
     },
   });
 
+  // Revert processed payroll back to draft (master only)
+  const revertMutation = useMutation({
+    mutationFn: async () => {
+      // 1. Revert status to rascunho
+      const { error } = await supabase
+        .from('folha_processamento')
+        .update({ status: 'rascunho', updated_at: new Date().toISOString() })
+        .eq('mes', mes)
+        .eq('ano', ano)
+        .eq('status', 'processado')
+        .eq('unidade_id', unidadeId!);
+      if (error) throw error;
+
+      // 2. Remove synced payroll_records
+      await supabase
+        .from('payroll_records')
+        .delete()
+        .eq('mes', mes)
+        .eq('ano', ano)
+        .eq('unidade_id', unidadeId!);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['folha-processamento'] });
+      queryClient.invalidateQueries({ queryKey: ['payroll-records'] });
+      toast({ title: 'Folha revertida', description: `Folha de ${getMonthLabel(mes)}/${ano} voltou para rascunho.` });
+      registrarLog({ tipo: 'aviso', categoria: 'folha', descricao: `Folha revertida para rascunho: ${getMonthLabel(mes)}/${ano}`, unidadeId });
+    },
+    onError: (err: any) => {
+      toast({ title: 'Erro ao reverter', description: err.message, variant: 'destructive' });
+    },
+  });
+
   // Auto-generate on first load if no records exist
   useEffect(() => {
     if (!isLoading && folha.length === 0 && !generateMutation.isPending) {
