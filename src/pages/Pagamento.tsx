@@ -39,7 +39,7 @@ const Pagamento = () => {
       while (hasMore) {
         let query = supabase
           .from('folha_processamento')
-          .select('id, nome, cpf, liquido, status')
+          .select('id, nome, cpf, liquido, status, colaborador_id, colaboradores(banco, conta, pix)')
           .eq('mes', mes)
           .eq('ano', ano)
           .eq('status', 'processado')
