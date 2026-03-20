@@ -386,7 +386,7 @@ const CadastroColaboradores = () => {
               </div>
               <div className="space-y-2">
                 <Label>CPF *</Label>
-                <Input placeholder="00000000000" value={form.cpf} onChange={(e) => updateField('cpf', e.target.value.replace(/\D/g, '').slice(0, 11))} />
+                <Input placeholder="000.000.000-00" value={formatCPF(form.cpf)} onChange={(e) => updateField('cpf', e.target.value.replace(/\D/g, '').slice(0, 11))} />
               </div>
               <div className="space-y-2">
                 <Label>Matrícula</Label>
