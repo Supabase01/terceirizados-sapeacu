@@ -44,7 +44,7 @@ const Auth = () => {
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
             <ShieldCheck className="h-8 w-8 text-primary" />
           </div>
-          <CardTitle className="text-2xl">Auditoria de Folha</CardTitle>
+          <CardTitle className="text-2xl">Gerencial Folha</CardTitle>
           <CardDescription>Faça login para acessar o sistema</CardDescription>
         </CardHeader>
         <CardContent>
