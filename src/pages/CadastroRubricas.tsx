@@ -51,6 +51,7 @@ export default function CadastroRubricas() {
         codigo: form.codigo,
         nome: form.nome,
         tipo: form.tipo,
+        descricao: form.descricao || null,
         unidade_id: unidadeId,
       };
       if (editId) {
