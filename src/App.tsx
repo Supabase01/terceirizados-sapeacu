@@ -28,6 +28,7 @@ import CadastroUnidades from "./pages/CadastroUnidades";
 import CadastroCidades from "./pages/CadastroCidades";
 import CadastroLiderancas from "./pages/CadastroLiderancas";
 import FolhaProcessamento from "./pages/FolhaProcessamento";
+import FolhaProcessada from "./pages/FolhaProcessada";
 import CadastroEncargos from "./pages/CadastroEncargos";
 import AuditLog from "./pages/AuditLog";
 import LogSistema from "./pages/LogSistema";
@@ -128,6 +129,7 @@ const App = () => (
             <Route path="/auditoria/sistema" element={<AdminRoute><LogSistema /></AdminRoute>} />
             <Route path="/relatorios" element={<ProtectedRoute><Relatorios /></ProtectedRoute>} />
             <Route path="/folha/processamento" element={<ProtectedRoute><FolhaProcessamento /></ProtectedRoute>} />
+            <Route path="/folha/processada" element={<ProtectedRoute><FolhaProcessada /></ProtectedRoute>} />
             <Route path="/folha/pagamento" element={<ProtectedRoute><Pagamento /></ProtectedRoute>} />
             <Route path="/folha/adicionais" element={<ProtectedRoute><AdicionaisPage /></ProtectedRoute>} />
             <Route path="/folha/descontos" element={<ProtectedRoute><DescontosPage /></ProtectedRoute>} />

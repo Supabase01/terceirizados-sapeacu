@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { RefreshCw, Search, CheckCircle2, Loader2, FileText, Undo2 } from 'lucide-react';
+import { RefreshCw, Search, CheckCircle2, Loader2, FileText } from 'lucide-react';
 import { useIsMaster } from '@/hooks/useIsMaster';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -59,6 +59,7 @@ const FolhaProcessamento = () => {
           .select('*')
           .eq('mes', mes)
           .eq('ano', ano)
+          .eq('status', 'rascunho')
           .order('nome', { ascending: true })
           .range(from, from + PAGE - 1);
         if (unidadeId) query = query.eq('unidade_id', unidadeId);
@@ -334,37 +335,7 @@ const FolhaProcessamento = () => {
     },
   });
 
-  // Revert processed payroll back to draft (master only)
-  const revertMutation = useMutation({
-    mutationFn: async () => {
-      // 1. Revert status to rascunho
-      const { error } = await supabase
-        .from('folha_processamento')
-        .update({ status: 'rascunho', updated_at: new Date().toISOString() })
-        .eq('mes', mes)
-        .eq('ano', ano)
-        .eq('status', 'processado')
-        .eq('unidade_id', unidadeId!);
-      if (error) throw error;
-
-      // 2. Remove synced payroll_records
-      await supabase
-        .from('payroll_records')
-        .delete()
-        .eq('mes', mes)
-        .eq('ano', ano)
-        .eq('unidade_id', unidadeId!);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['folha-processamento'] });
-      queryClient.invalidateQueries({ queryKey: ['payroll-records'] });
-      toast({ title: 'Folha revertida', description: `Folha de ${getMonthLabel(mes)}/${ano} voltou para rascunho.` });
-      registrarLog({ tipo: 'aviso', categoria: 'folha', descricao: `Folha revertida para rascunho: ${getMonthLabel(mes)}/${ano}`, unidadeId });
-    },
-    onError: (err: any) => {
-      toast({ title: 'Erro ao reverter', description: err.message, variant: 'destructive' });
-    },
-  });
+  // Revert mutation removed - now handled in FolhaProcessada page
 
   // Auto-generate on first load if no records exist
   useEffect(() => {
@@ -373,8 +344,8 @@ const FolhaProcessamento = () => {
     }
   }, [isLoading, folha.length]);
 
-  const isDraft = folha.length > 0 && folha[0]?.status === 'rascunho';
-  const isProcessed = folha.length > 0 && folha[0]?.status === 'processado';
+  const isDraft = folha.length > 0;
+  const isProcessed = false; // Processed records are now in FolhaProcessada page
 
   // Extract unique secretarias and funcoes from folha data for filters
   const secretariasUnicas = [...new Set(folha.map((r: any) => r.secretaria).filter(Boolean))].sort();
@@ -446,16 +417,6 @@ const FolhaProcessamento = () => {
               <Button onClick={() => setConfirmDialogOpen(true)} className="bg-green-600 hover:bg-green-700 text-white">
                 <CheckCircle2 className="h-4 w-4 mr-1" />
                 Processar
-              </Button>
-            )}
-            {isProcessed && isMaster && (
-              <Button
-                onClick={() => revertMutation.mutate()}
-                disabled={revertMutation.isPending}
-                variant="destructive"
-              >
-                {revertMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Undo2 className="h-4 w-4 mr-1" />}
-                Reverter
               </Button>
             )}
           </div>
