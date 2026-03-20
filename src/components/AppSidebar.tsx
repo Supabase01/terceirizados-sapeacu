@@ -44,6 +44,12 @@ const modules = [
       { title: 'Pagamento', url: '/folha/pagamento', icon: DollarSign },
       { title: 'Adicionais', url: '/folha/adicionais', icon: PlusCircle },
       { title: 'Descontos', url: '/folha/descontos', icon: MinusCircle },
+    ],
+  },
+  {
+    label: 'Relatórios',
+    icon: FileText,
+    items: [
       { title: 'Relatórios', url: '/relatorios', icon: FileText },
     ],
   },
