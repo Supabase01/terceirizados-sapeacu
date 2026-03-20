@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Pencil, Check, X, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -16,9 +17,10 @@ import { useUnidade } from '@/contexts/UnidadeContext';
 interface RubricaForm {
   codigo: string;
   nome: string;
+  tipo: string;
 }
 
-const emptyForm: RubricaForm = { codigo: '', nome: '' };
+const emptyForm: RubricaForm = { codigo: '', nome: '', tipo: 'adicional' };
 
 export default function CadastroRubricas() {
   const { toast } = useToast();
@@ -46,6 +48,7 @@ export default function CadastroRubricas() {
       const payload = {
         codigo: form.codigo,
         nome: form.nome,
+        tipo: form.tipo,
         unidade_id: unidadeId,
       };
       if (editId) {
@@ -83,7 +86,7 @@ export default function CadastroRubricas() {
   const openNew = () => { setForm(emptyForm); setDialogOpen(true); };
   const openEdit = (item: any) => {
     setEditId(item.id);
-    setForm({ codigo: item.codigo, nome: item.nome });
+    setForm({ codigo: item.codigo, nome: item.nome, tipo: item.tipo || 'adicional' });
     setDialogOpen(true);
   };
 
@@ -115,20 +118,26 @@ export default function CadastroRubricas() {
                 <TableRow>
                   <TableHead className="w-32">Código</TableHead>
                   <TableHead>Nome</TableHead>
+                  <TableHead className="w-28">Tipo</TableHead>
                   <TableHead className="w-24">Status</TableHead>
                   <TableHead className="w-28">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
-                  <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
                 ) : filtered.length === 0 ? (
-                  <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">Nenhuma rubrica encontrada</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Nenhuma rubrica encontrada</TableCell></TableRow>
                 ) : (
                   filtered.map((item: any) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-mono text-sm">{item.codigo}</TableCell>
                       <TableCell className="font-medium">{item.nome}</TableCell>
+                      <TableCell>
+                        <Badge variant={item.tipo === 'adicional' ? 'default' : 'destructive'}>
+                          {item.tipo === 'adicional' ? 'Adicional' : 'Desconto'}
+                        </Badge>
+                      </TableCell>
                       <TableCell><Badge variant={item.ativo ? 'default' : 'secondary'}>{item.ativo ? 'Ativo' : 'Inativo'}</Badge></TableCell>
                       <TableCell>
                         <div className="flex gap-1">
@@ -158,6 +167,16 @@ export default function CadastroRubricas() {
             <div className="space-y-2">
               <Label>Nome *</Label>
               <Input placeholder="Nome da rubrica" value={form.nome} onChange={(e) => setForm(prev => ({ ...prev, nome: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label>Tipo *</Label>
+              <Select value={form.tipo} onValueChange={(v) => setForm(prev => ({ ...prev, tipo: v }))}>
+                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="adicional">Adicional</SelectItem>
+                  <SelectItem value="desconto">Desconto</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter>
