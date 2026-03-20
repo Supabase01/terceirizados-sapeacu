@@ -349,6 +349,27 @@ const CadastroColaboradores = () => {
             </div>
           </CardContent>
         </Card>
+
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-muted-foreground">
+              {totalRecords} colaboradores — Página {page + 1} de {totalPages}
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                className="px-3 py-1 text-sm rounded-md border disabled:opacity-40"
+                disabled={page === 0}
+                onClick={() => setPage(p => p - 1)}
+              >Anterior</button>
+              <span className="text-sm text-muted-foreground">{page + 1}/{totalPages}</span>
+              <button
+                className="px-3 py-1 text-sm rounded-md border disabled:opacity-40"
+                disabled={page >= totalPages - 1}
+                onClick={() => setPage(p => p + 1)}
+              >Próximo</button>
+            </div>
+          </div>
+        )}
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={(open) => !open && closeDialog()}>
