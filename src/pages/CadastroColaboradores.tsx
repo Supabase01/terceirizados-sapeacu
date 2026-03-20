@@ -56,14 +56,14 @@ const CadastroColaboradores = () => {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(0);
 
-  // Debounce search to avoid excessive queries
-  useState(() => {
+  // Debounce search
+  useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(search);
       setPage(0);
     }, 400);
     return () => clearTimeout(timer);
-  });
+  }, [search]);
 
   // Server-side paginated query
   const { data: queryResult, isLoading } = useQuery({
