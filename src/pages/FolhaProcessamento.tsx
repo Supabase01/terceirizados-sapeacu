@@ -59,6 +59,7 @@ const FolhaProcessamento = () => {
           .select('*')
           .eq('mes', mes)
           .eq('ano', ano)
+          .eq('status', 'rascunho')
           .order('nome', { ascending: true })
           .range(from, from + PAGE - 1);
         if (unidadeId) query = query.eq('unidade_id', unidadeId);
