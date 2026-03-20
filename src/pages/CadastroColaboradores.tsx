@@ -193,7 +193,7 @@ const CadastroColaboradores = () => {
         complemento: form.complemento || null,
         bairro: form.bairro || null,
         cidade_id: form.cidade_id || null,
-        cep: form.cep || null,
+        data_nascimento: form.data_nascimento || null,
         lideranca_id: form.lideranca_id || null,
         unidade_id: unidadeId,
       };
