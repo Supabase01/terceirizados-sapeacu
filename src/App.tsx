@@ -33,6 +33,7 @@ import CadastroEncargos from "./pages/CadastroEncargos";
 import AuditLog from "./pages/AuditLog";
 import LogSistema from "./pages/LogSistema";
 import Pagamento from "./pages/Pagamento";
+import CadastroRubricas from "./pages/CadastroRubricas";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
