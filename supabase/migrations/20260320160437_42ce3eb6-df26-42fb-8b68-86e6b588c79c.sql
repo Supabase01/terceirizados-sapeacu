@@ -1,0 +1,1 @@
+ALTER TABLE public.rubricas ADD COLUMN descricao text;

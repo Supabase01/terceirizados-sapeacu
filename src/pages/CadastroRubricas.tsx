@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Textarea } from '@/components/ui/textarea';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import Layout from '@/components/Layout';
@@ -18,9 +19,10 @@ interface RubricaForm {
   codigo: string;
   nome: string;
   tipo: string;
+  descricao: string;
 }
 
-const emptyForm: RubricaForm = { codigo: '', nome: '', tipo: 'adicional' };
+const emptyForm: RubricaForm = { codigo: '', nome: '', tipo: 'adicional', descricao: '' };
 
 export default function CadastroRubricas() {
   const { toast } = useToast();
@@ -49,6 +51,7 @@ export default function CadastroRubricas() {
         codigo: form.codigo,
         nome: form.nome,
         tipo: form.tipo,
+        descricao: form.descricao || null,
         unidade_id: unidadeId,
       };
       if (editId) {
@@ -86,7 +89,7 @@ export default function CadastroRubricas() {
   const openNew = () => { setForm(emptyForm); setDialogOpen(true); };
   const openEdit = (item: any) => {
     setEditId(item.id);
-    setForm({ codigo: item.codigo, nome: item.nome, tipo: item.tipo || 'adicional' });
+    setForm({ codigo: item.codigo, nome: item.nome, tipo: item.tipo || 'adicional', descricao: item.descricao || '' });
     setDialogOpen(true);
   };
 
@@ -177,6 +180,10 @@ export default function CadastroRubricas() {
                   <SelectItem value="desconto">Desconto</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Descrição / Fundamentação</Label>
+              <Textarea placeholder="Descreva a fundamentação legal ou detalhes da rubrica..." value={form.descricao} onChange={(e) => setForm(prev => ({ ...prev, descricao: e.target.value }))} rows={3} />
             </div>
           </div>
           <DialogFooter>
