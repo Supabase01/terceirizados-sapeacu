@@ -48,6 +48,7 @@ export default function CadastroRubricas() {
       const payload = {
         codigo: form.codigo,
         nome: form.nome,
+        tipo: form.tipo,
         unidade_id: unidadeId,
       };
       if (editId) {
