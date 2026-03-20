@@ -67,6 +67,18 @@ const Descontos = () => {
     enabled: !!unidadeId,
   });
 
+  const { data: rubricas = [] } = useQuery({
+    queryKey: ['rubricas-desconto', unidadeId],
+    queryFn: async () => {
+      let query = supabase.from('rubricas').select('*').eq('ativo', true).eq('tipo', 'desconto').order('codigo');
+      if (unidadeId) query = query.eq('unidade_id', unidadeId);
+      const { data, error } = await query;
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!unidadeId,
+  });
+
   const colaboradorOptions = colaboradores.map((c: any) => ({
     value: c.id,
     label: c.nome,
