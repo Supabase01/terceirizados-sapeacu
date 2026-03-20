@@ -181,6 +181,10 @@ export default function CadastroRubricas() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-2">
+              <Label>Descrição / Fundamentação</Label>
+              <Textarea placeholder="Descreva a fundamentação legal ou detalhes da rubrica..." value={form.descricao} onChange={(e) => setForm(prev => ({ ...prev, descricao: e.target.value }))} rows={3} />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={closeDialog}>Cancelar</Button>
