@@ -376,11 +376,20 @@ const FolhaProcessamento = () => {
   const isDraft = folha.length > 0 && folha[0]?.status === 'rascunho';
   const isProcessed = folha.length > 0 && folha[0]?.status === 'processado';
 
+  // Extract unique secretarias and funcoes from folha data for filters
+  const secretariasUnicas = [...new Set(folha.map((r: any) => r.secretaria).filter(Boolean))].sort();
+  const funcoesUnicas = [...new Set(folha.map((r: any) => r.funcao).filter(Boolean))].sort();
+
   // Filtered + paginated
-  const filtered = folha.filter((r: any) =>
-    r.nome?.toLowerCase().includes(search.toLowerCase()) ||
-    r.cpf?.includes(search)
-  );
+  const filtered = folha.filter((r: any) => {
+    const matchSearch = !search || r.nome?.toLowerCase().includes(search.toLowerCase()) || r.cpf?.includes(search);
+    const matchSecretaria = filterSecretaria === 'all' || r.secretaria === filterSecretaria;
+    const matchFuncao = filterFuncao === 'all' || r.funcao === filterFuncao;
+    const valorRef = isPadrao02 ? Number(r.liquido) : Number(r.liquido);
+    const matchValorMin = !filterValorMin || valorRef >= Number(filterValorMin);
+    const matchValorMax = !filterValorMax || valorRef <= Number(filterValorMax);
+    return matchSearch && matchSecretaria && matchFuncao && matchValorMin && matchValorMax;
+  });
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paged = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
