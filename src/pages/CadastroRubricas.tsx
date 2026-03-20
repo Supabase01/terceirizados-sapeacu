@@ -168,6 +168,16 @@ export default function CadastroRubricas() {
               <Label>Nome *</Label>
               <Input placeholder="Nome da rubrica" value={form.nome} onChange={(e) => setForm(prev => ({ ...prev, nome: e.target.value }))} />
             </div>
+            <div className="space-y-2">
+              <Label>Tipo *</Label>
+              <Select value={form.tipo} onValueChange={(v) => setForm(prev => ({ ...prev, tipo: v }))}>
+                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="adicional">Adicional</SelectItem>
+                  <SelectItem value="desconto">Desconto</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={closeDialog}>Cancelar</Button>
