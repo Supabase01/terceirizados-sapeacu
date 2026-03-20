@@ -312,10 +312,10 @@ const CadastroColaboradores = () => {
                 <TableBody>
                   {isLoading ? (
                     <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
-                  ) : filtered.length === 0 ? (
+                  ) : colaboradores.length === 0 ? (
                     <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Nenhum colaborador encontrado</TableCell></TableRow>
                   ) : (
-                    filtered.map((item: any) => (
+                    colaboradores.map((item: any) => (
                       <TableRow key={item.id}>
                         <TableCell className="font-medium">{item.nome}</TableCell>
                         <TableCell className="font-mono text-sm">{formatCPF(item.cpf)}</TableCell>
