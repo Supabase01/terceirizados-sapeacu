@@ -38,6 +38,10 @@ const FolhaProcessamento = () => {
   const [mes, setMes] = useState(defaultMes);
   const [ano, setAno] = useState(defaultAno);
   const [search, setSearch] = useState('');
+  const [filterSecretaria, setFilterSecretaria] = useState('all');
+  const [filterFuncao, setFilterFuncao] = useState('all');
+  const [filterValorMin, setFilterValorMin] = useState('');
+  const [filterValorMax, setFilterValorMax] = useState('');
   const [page, setPage] = useState(0);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
 
@@ -372,11 +376,20 @@ const FolhaProcessamento = () => {
   const isDraft = folha.length > 0 && folha[0]?.status === 'rascunho';
   const isProcessed = folha.length > 0 && folha[0]?.status === 'processado';
 
+  // Extract unique secretarias and funcoes from folha data for filters
+  const secretariasUnicas = [...new Set(folha.map((r: any) => r.secretaria).filter(Boolean))].sort();
+  const funcoesUnicas = [...new Set(folha.map((r: any) => r.funcao).filter(Boolean))].sort();
+
   // Filtered + paginated
-  const filtered = folha.filter((r: any) =>
-    r.nome?.toLowerCase().includes(search.toLowerCase()) ||
-    r.cpf?.includes(search)
-  );
+  const filtered = folha.filter((r: any) => {
+    const matchSearch = !search || r.nome?.toLowerCase().includes(search.toLowerCase()) || r.cpf?.includes(search);
+    const matchSecretaria = filterSecretaria === 'all' || r.secretaria === filterSecretaria;
+    const matchFuncao = filterFuncao === 'all' || r.funcao === filterFuncao;
+    const valorRef = isPadrao02 ? Number(r.liquido) : Number(r.liquido);
+    const matchValorMin = !filterValorMin || valorRef >= Number(filterValorMin);
+    const matchValorMax = !filterValorMax || valorRef <= Number(filterValorMax);
+    return matchSearch && matchSecretaria && matchFuncao && matchValorMin && matchValorMax;
+  });
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paged = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
@@ -524,15 +537,60 @@ const FolhaProcessamento = () => {
           </div>
         )}
 
-        {/* Search */}
-        <div className="relative max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por nome ou CPF..."
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(0); }}
-            className="pl-9"
-          />
+        {/* Filters */}
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="relative w-full sm:w-56">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Nome ou CPF..."
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setPage(0); }}
+              className="pl-9"
+            />
+          </div>
+          <div className="w-full sm:w-48">
+            <Select value={filterSecretaria} onValueChange={(v) => { setFilterSecretaria(v); setPage(0); }}>
+              <SelectTrigger>
+                <SelectValue placeholder="Secretaria" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas Secretarias</SelectItem>
+                {secretariasUnicas.map((s: string) => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="w-full sm:w-48">
+            <Select value={filterFuncao} onValueChange={(v) => { setFilterFuncao(v); setPage(0); }}>
+              <SelectTrigger>
+                <SelectValue placeholder="Função" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas Funções</SelectItem>
+                {funcoesUnicas.map((f: string) => (
+                  <SelectItem key={f} value={f}>{f}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-2">
+            <Input
+              type="number"
+              placeholder="Valor mín"
+              value={filterValorMin}
+              onChange={(e) => { setFilterValorMin(e.target.value); setPage(0); }}
+              className="w-28"
+            />
+            <span className="text-muted-foreground text-sm">a</span>
+            <Input
+              type="number"
+              placeholder="Valor máx"
+              value={filterValorMax}
+              onChange={(e) => { setFilterValorMax(e.target.value); setPage(0); }}
+              className="w-28"
+            />
+          </div>
         </div>
 
         {/* Table */}
