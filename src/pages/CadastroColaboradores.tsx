@@ -24,6 +24,7 @@ interface ColaboradorForm {
   lotacao_id: string;
   salario_base: string;
   data_admissao: string;
+  data_nascimento: string;
   beneficio_social: boolean;
   banco: string;
   conta: string;
@@ -33,14 +34,13 @@ interface ColaboradorForm {
   complemento: string;
   bairro: string;
   cidade_id: string;
-  cep: string;
   lideranca_id: string;
 }
 
 const emptyForm: ColaboradorForm = {
   nome: '', cpf: '', matricula: '', secretaria_id: '', funcao_id: '', lotacao_id: '',
-  salario_base: '', data_admissao: '', beneficio_social: false, banco: '', conta: '', pix: '',
-  endereco: '', numero: '', complemento: '', bairro: '', cidade_id: '', cep: '', lideranca_id: '',
+  salario_base: '', data_admissao: '', data_nascimento: '', beneficio_social: false, banco: '', conta: '', pix: '',
+  endereco: '', numero: '', complemento: '', bairro: '', cidade_id: '', lideranca_id: '',
 };
 
 const PAGE_SIZE = 20;
@@ -193,7 +193,7 @@ const CadastroColaboradores = () => {
         complemento: form.complemento || null,
         bairro: form.bairro || null,
         cidade_id: form.cidade_id || null,
-        cep: form.cep || null,
+        data_nascimento: form.data_nascimento || null,
         lideranca_id: form.lideranca_id || null,
         unidade_id: unidadeId,
       };
@@ -242,6 +242,7 @@ const CadastroColaboradores = () => {
       lotacao_id: item.lotacao_id || '',
       salario_base: String(item.salario_base || ''),
       data_admissao: item.data_admissao || '',
+      data_nascimento: item.data_nascimento || '',
       beneficio_social: item.beneficio_social || false,
       banco: item.banco || '',
       conta: item.conta || '',
@@ -251,7 +252,6 @@ const CadastroColaboradores = () => {
       complemento: item.complemento || '',
       bairro: item.bairro || '',
       cidade_id: item.cidade_id || '',
-      cep: item.cep || '',
       lideranca_id: item.lideranca_id || '',
     });
     setDialogOpen(true);
@@ -271,11 +271,6 @@ const CadastroColaboradores = () => {
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
-  const formatCEP = (value: string) => {
-    const digits = value.replace(/\D/g, '').slice(0, 8);
-    if (digits.length > 5) return digits.replace(/(\d{5})(\d)/, '$1-$2');
-    return digits;
-  };
 
   return (
     <Layout>
@@ -379,7 +374,11 @@ const CadastroColaboradores = () => {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editId ? 'Editar Colaborador' : 'Novo Colaborador'}</DialogTitle></DialogHeader>
           <div className="grid gap-4 py-2">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>Matrícula</Label>
+                <Input value={form.matricula} readOnly disabled className="bg-muted" />
+              </div>
               <div className="space-y-2 md:col-span-2">
                 <Label>Nome *</Label>
                 <Input placeholder="Nome completo" value={form.nome} onChange={(e) => updateField('nome', e.target.value)} />
@@ -389,8 +388,8 @@ const CadastroColaboradores = () => {
                 <Input placeholder="000.000.000-00" value={formatCPF(form.cpf)} onChange={(e) => updateField('cpf', e.target.value.replace(/\D/g, '').slice(0, 11))} />
               </div>
               <div className="space-y-2">
-                <Label>Matrícula</Label>
-                <Input placeholder="Matrícula" value={form.matricula} onChange={(e) => updateField('matricula', e.target.value)} />
+                <Label>Data de Nascimento</Label>
+                <Input type="date" value={form.data_nascimento} onChange={(e) => updateField('data_nascimento', e.target.value)} />
               </div>
             </div>
 
