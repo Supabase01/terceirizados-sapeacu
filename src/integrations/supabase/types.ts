@@ -836,6 +836,7 @@ export type Database = {
           created_at: string
           id: string
           nome: string
+          tipo: string
           unidade_id: string | null
         }
         Insert: {
@@ -844,6 +845,7 @@ export type Database = {
           created_at?: string
           id?: string
           nome: string
+          tipo?: string
           unidade_id?: string | null
         }
         Update: {
@@ -852,6 +854,7 @@ export type Database = {
           created_at?: string
           id?: string
           nome?: string
+          tipo?: string
           unidade_id?: string | null
         }
         Relationships: [
