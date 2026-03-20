@@ -89,7 +89,7 @@ export default function CadastroRubricas() {
   const openNew = () => { setForm(emptyForm); setDialogOpen(true); };
   const openEdit = (item: any) => {
     setEditId(item.id);
-    setForm({ codigo: item.codigo, nome: item.nome, tipo: item.tipo || 'adicional' });
+    setForm({ codigo: item.codigo, nome: item.nome, tipo: item.tipo || 'adicional', descricao: item.descricao || '' });
     setDialogOpen(true);
   };
 
