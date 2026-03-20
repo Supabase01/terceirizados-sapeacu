@@ -55,14 +55,24 @@ const CadastroColaboradores = () => {
   const { data: colaboradores = [], isLoading } = useQuery({
     queryKey: ['colaboradores', unidadeId],
     queryFn: async () => {
-      let query = supabase
-        .from('colaboradores')
-        .select('*, secretarias(nome), funcoes(nome), lotacoes(nome), cidades(nome, estado)')
-        .order('nome');
-      if (unidadeId) query = query.eq('unidade_id', unidadeId);
-      const { data, error } = await query;
-      if (error) throw error;
-      return data;
+      const all: any[] = [];
+      const PAGE = 1000;
+      let offset = 0;
+      let hasMore = true;
+      while (hasMore) {
+        let query = supabase
+          .from('colaboradores')
+          .select('*, secretarias(nome), funcoes(nome), lotacoes(nome), cidades(nome, estado)')
+          .order('nome')
+          .range(offset, offset + PAGE - 1);
+        if (unidadeId) query = query.eq('unidade_id', unidadeId);
+        const { data, error } = await query;
+        if (error) throw error;
+        all.push(...(data || []));
+        hasMore = (data?.length || 0) === PAGE;
+        offset += PAGE;
+      }
+      return all;
     },
     enabled: !!unidadeId,
   });
