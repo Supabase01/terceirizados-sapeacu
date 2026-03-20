@@ -17,6 +17,13 @@ import { useUnidade } from '@/contexts/UnidadeContext';
 
 const modules = [
   {
+    label: 'Indicadores',
+    icon: BarChart3,
+    items: [
+      { title: 'Indicadores', url: '/indicadores', icon: BarChart3 },
+    ],
+  },
+  {
     label: 'Cadastros',
     icon: Users,
     items: [
@@ -32,7 +39,6 @@ const modules = [
     label: 'Folha de Pagamentos',
     icon: FileText,
     items: [
-      { title: 'Indicadores', url: '/indicadores', icon: BarChart3 },
       { title: 'Em Processamento', url: '/folha/processamento', icon: ClipboardList },
       { title: 'Processada', url: '/folha/processada', icon: CheckCircle2 },
       { title: 'Pagamento', url: '/folha/pagamento', icon: DollarSign },
