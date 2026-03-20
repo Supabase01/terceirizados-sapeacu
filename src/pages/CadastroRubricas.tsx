@@ -17,9 +17,10 @@ import { useUnidade } from '@/contexts/UnidadeContext';
 interface RubricaForm {
   codigo: string;
   nome: string;
+  tipo: string;
 }
 
-const emptyForm: RubricaForm = { codigo: '', nome: '' };
+const emptyForm: RubricaForm = { codigo: '', nome: '', tipo: 'adicional' };
 
 export default function CadastroRubricas() {
   const { toast } = useToast();
