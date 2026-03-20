@@ -344,8 +344,8 @@ const FolhaProcessamento = () => {
     }
   }, [isLoading, folha.length]);
 
-  const isDraft = folha.length > 0 && folha[0]?.status === 'rascunho';
-  const isProcessed = folha.length > 0 && folha[0]?.status === 'processado';
+  const isDraft = folha.length > 0;
+  const isProcessed = false; // Processed records are now in FolhaProcessada page
 
   // Extract unique secretarias and funcoes from folha data for filters
   const secretariasUnicas = [...new Set(folha.map((r: any) => r.secretaria).filter(Boolean))].sort();
