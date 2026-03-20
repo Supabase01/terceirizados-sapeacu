@@ -242,6 +242,7 @@ const CadastroColaboradores = () => {
       lotacao_id: item.lotacao_id || '',
       salario_base: String(item.salario_base || ''),
       data_admissao: item.data_admissao || '',
+      data_nascimento: item.data_nascimento || '',
       beneficio_social: item.beneficio_social || false,
       banco: item.banco || '',
       conta: item.conta || '',
@@ -251,7 +252,6 @@ const CadastroColaboradores = () => {
       complemento: item.complemento || '',
       bairro: item.bairro || '',
       cidade_id: item.cidade_id || '',
-      cep: item.cep || '',
       lideranca_id: item.lideranca_id || '',
     });
     setDialogOpen(true);
