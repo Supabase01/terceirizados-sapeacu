@@ -448,10 +448,6 @@ const CadastroColaboradores = () => {
             <div className="border-t pt-4 mt-2">
               <h3 className="text-sm font-semibold text-muted-foreground mb-3">Endereço</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>CEP</Label>
-                  <Input placeholder="00000-000" value={form.cep} onChange={(e) => updateField('cep', formatCEP(e.target.value))} />
-                </div>
                 <div className="space-y-2 md:col-span-2">
                   <Label>Logradouro</Label>
                   <Input placeholder="Rua, Avenida..." value={form.endereco} onChange={(e) => updateField('endereco', e.target.value)} />
