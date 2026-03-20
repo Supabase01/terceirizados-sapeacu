@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import Layout from '@/components/Layout';
@@ -43,6 +43,8 @@ const emptyForm: ColaboradorForm = {
   endereco: '', numero: '', complemento: '', bairro: '', cidade_id: '', cep: '', lideranca_id: '',
 };
 
+const PAGE_SIZE = 20;
+
 const CadastroColaboradores = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -51,31 +53,55 @@ const CadastroColaboradores = () => {
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<ColaboradorForm>(emptyForm);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(0);
 
-  const { data: colaboradores = [], isLoading } = useQuery({
-    queryKey: ['colaboradores', unidadeId],
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(0);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  // Server-side paginated query
+  const { data: queryResult, isLoading } = useQuery({
+    queryKey: ['colaboradores', unidadeId, debouncedSearch, page],
     queryFn: async () => {
-      const all: any[] = [];
-      const PAGE = 1000;
-      let offset = 0;
-      let hasMore = true;
-      while (hasMore) {
-        let query = supabase
-          .from('colaboradores')
-          .select('*, secretarias(nome), funcoes(nome), lotacoes(nome), cidades(nome, estado)')
-          .order('nome')
-          .range(offset, offset + PAGE - 1);
-        if (unidadeId) query = query.eq('unidade_id', unidadeId);
-        const { data, error } = await query;
-        if (error) throw error;
-        all.push(...(data || []));
-        hasMore = (data?.length || 0) === PAGE;
-        offset += PAGE;
+      const from = page * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+
+      // Count query
+      let countQuery = supabase
+        .from('colaboradores')
+        .select('id', { count: 'exact', head: true });
+      if (unidadeId) countQuery = countQuery.eq('unidade_id', unidadeId);
+      if (debouncedSearch) {
+        countQuery = countQuery.or(`nome.ilike.%${debouncedSearch}%,cpf.ilike.%${debouncedSearch}%`);
       }
-      return all;
+      const { count } = await countQuery;
+
+      // Data query
+      let query = supabase
+        .from('colaboradores')
+        .select('*, secretarias(nome), funcoes(nome), lotacoes(nome), cidades(nome, estado)')
+        .order('nome')
+        .range(from, to);
+      if (unidadeId) query = query.eq('unidade_id', unidadeId);
+      if (debouncedSearch) {
+        query = query.or(`nome.ilike.%${debouncedSearch}%,cpf.ilike.%${debouncedSearch}%`);
+      }
+      const { data, error } = await query;
+      if (error) throw error;
+      return { data: data || [], total: count || 0 };
     },
     enabled: !!unidadeId,
   });
+
+  const colaboradores = queryResult?.data || [];
+  const totalRecords = queryResult?.total || 0;
+  const totalPages = Math.max(1, Math.ceil(totalRecords / PAGE_SIZE));
 
   const { data: secretarias = [] } = useQuery({
     queryKey: ['secretarias-ativas', unidadeId],
@@ -235,10 +261,7 @@ const CadastroColaboradores = () => {
     setForm(prev => ({ ...prev, [field]: value }));
   };
 
-  const filtered = colaboradores.filter((c: any) =>
-    c.nome.toLowerCase().includes(search.toLowerCase()) ||
-    c.cpf.includes(search)
-  );
+  // Server-side filtering — no client filter needed
 
   const formatCPF = (cpf: string) => {
     const digits = cpf.replace(/\D/g, '');
@@ -289,10 +312,10 @@ const CadastroColaboradores = () => {
                 <TableBody>
                   {isLoading ? (
                     <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
-                  ) : filtered.length === 0 ? (
+                  ) : colaboradores.length === 0 ? (
                     <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Nenhum colaborador encontrado</TableCell></TableRow>
                   ) : (
-                    filtered.map((item: any) => (
+                    colaboradores.map((item: any) => (
                       <TableRow key={item.id}>
                         <TableCell className="font-medium">{item.nome}</TableCell>
                         <TableCell className="font-mono text-sm">{formatCPF(item.cpf)}</TableCell>
@@ -326,6 +349,27 @@ const CadastroColaboradores = () => {
             </div>
           </CardContent>
         </Card>
+
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-muted-foreground">
+              {totalRecords} colaboradores — Página {page + 1} de {totalPages}
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                className="px-3 py-1 text-sm rounded-md border disabled:opacity-40"
+                disabled={page === 0}
+                onClick={() => setPage(p => p - 1)}
+              >Anterior</button>
+              <span className="text-sm text-muted-foreground">{page + 1}/{totalPages}</span>
+              <button
+                className="px-3 py-1 text-sm rounded-md border disabled:opacity-40"
+                disabled={page >= totalPages - 1}
+                onClick={() => setPage(p => p + 1)}
+              >Próximo</button>
+            </div>
+          </div>
+        )}
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={(open) => !open && closeDialog()}>
