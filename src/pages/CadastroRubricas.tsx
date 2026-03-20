@@ -19,9 +19,10 @@ interface RubricaForm {
   codigo: string;
   nome: string;
   tipo: string;
+  descricao: string;
 }
 
-const emptyForm: RubricaForm = { codigo: '', nome: '', tipo: 'adicional' };
+const emptyForm: RubricaForm = { codigo: '', nome: '', tipo: 'adicional', descricao: '' };
 
 export default function CadastroRubricas() {
   const { toast } = useToast();
