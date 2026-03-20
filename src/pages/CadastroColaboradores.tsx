@@ -281,7 +281,10 @@ const CadastroColaboradores = () => {
     <Layout>
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold text-foreground">Colaboradores</h1>
+          <div>
+            <h1 className="text-xl font-bold text-foreground">Colaboradores</h1>
+            <p className="text-sm text-muted-foreground">{totalRecords} colaboradores cadastrados</p>
+          </div>
           <Button onClick={openNew} size="sm">
             <Plus className="h-4 w-4 mr-1" /> Novo Colaborador
           </Button>
