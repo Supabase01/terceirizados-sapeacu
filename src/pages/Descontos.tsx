@@ -279,7 +279,18 @@ const Descontos = () => {
             )}
             <div className="space-y-2">
               <Label>Descrição *</Label>
-              <Input placeholder="Ex: INSS, ISS, Pensão" value={form.descricao} onChange={(e) => setForm(p => ({ ...p, descricao: e.target.value }))} />
+              {rubricas.length > 0 ? (
+                <Select value={form.descricao} onValueChange={(v) => setForm(p => ({ ...p, descricao: v }))}>
+                  <SelectTrigger><SelectValue placeholder="Selecione a rubrica" /></SelectTrigger>
+                  <SelectContent>
+                    {rubricas.map((r: any) => (
+                      <SelectItem key={r.id} value={r.nome}>{r.codigo} - {r.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input placeholder="Ex: INSS, ISS, Pensão" value={form.descricao} onChange={(e) => setForm(p => ({ ...p, descricao: e.target.value }))} />
+              )}
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
