@@ -24,6 +24,7 @@ interface ColaboradorForm {
   lotacao_id: string;
   salario_base: string;
   data_admissao: string;
+  data_nascimento: string;
   beneficio_social: boolean;
   banco: string;
   conta: string;
@@ -33,14 +34,13 @@ interface ColaboradorForm {
   complemento: string;
   bairro: string;
   cidade_id: string;
-  cep: string;
   lideranca_id: string;
 }
 
 const emptyForm: ColaboradorForm = {
   nome: '', cpf: '', matricula: '', secretaria_id: '', funcao_id: '', lotacao_id: '',
-  salario_base: '', data_admissao: '', beneficio_social: false, banco: '', conta: '', pix: '',
-  endereco: '', numero: '', complemento: '', bairro: '', cidade_id: '', cep: '', lideranca_id: '',
+  salario_base: '', data_admissao: '', data_nascimento: '', beneficio_social: false, banco: '', conta: '', pix: '',
+  endereco: '', numero: '', complemento: '', bairro: '', cidade_id: '', lideranca_id: '',
 };
 
 const PAGE_SIZE = 20;
