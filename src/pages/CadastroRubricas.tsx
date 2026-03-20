@@ -133,6 +133,11 @@ export default function CadastroRubricas() {
                     <TableRow key={item.id}>
                       <TableCell className="font-mono text-sm">{item.codigo}</TableCell>
                       <TableCell className="font-medium">{item.nome}</TableCell>
+                      <TableCell>
+                        <Badge variant={item.tipo === 'adicional' ? 'default' : 'destructive'}>
+                          {item.tipo === 'adicional' ? 'Adicional' : 'Desconto'}
+                        </Badge>
+                      </TableCell>
                       <TableCell><Badge variant={item.ativo ? 'default' : 'secondary'}>{item.ativo ? 'Ativo' : 'Inativo'}</Badge></TableCell>
                       <TableCell>
                         <div className="flex gap-1">
