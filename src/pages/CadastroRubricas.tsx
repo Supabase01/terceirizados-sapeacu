@@ -118,15 +118,16 @@ export default function CadastroRubricas() {
                 <TableRow>
                   <TableHead className="w-32">Código</TableHead>
                   <TableHead>Nome</TableHead>
+                  <TableHead className="w-28">Tipo</TableHead>
                   <TableHead className="w-24">Status</TableHead>
                   <TableHead className="w-28">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
-                  <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
                 ) : filtered.length === 0 ? (
-                  <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">Nenhuma rubrica encontrada</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Nenhuma rubrica encontrada</TableCell></TableRow>
                 ) : (
                   filtered.map((item: any) => (
                     <TableRow key={item.id}>
