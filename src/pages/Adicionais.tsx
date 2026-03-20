@@ -69,6 +69,18 @@ const Adicionais = () => {
     enabled: !!unidadeId,
   });
 
+  const { data: rubricas = [] } = useQuery({
+    queryKey: ['rubricas-adicional', unidadeId],
+    queryFn: async () => {
+      let query = supabase.from('rubricas').select('*').eq('ativo', true).eq('tipo', 'adicional').order('codigo');
+      if (unidadeId) query = query.eq('unidade_id', unidadeId);
+      const { data, error } = await query;
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!unidadeId,
+  });
+
   const colaboradorOptions = colaboradores.map((c: any) => ({
     value: c.id,
     label: c.nome,
@@ -295,7 +307,18 @@ const Adicionais = () => {
             )}
             <div className="space-y-2">
               <Label>Descrição *</Label>
-              <Input placeholder="Ex: Insalubridade, Hora Extra" value={form.descricao} onChange={(e) => setForm(p => ({ ...p, descricao: e.target.value }))} />
+              {rubricas.length > 0 ? (
+                <Select value={form.descricao} onValueChange={(v) => setForm(p => ({ ...p, descricao: v }))}>
+                  <SelectTrigger><SelectValue placeholder="Selecione a rubrica" /></SelectTrigger>
+                  <SelectContent>
+                    {rubricas.map((r: any) => (
+                      <SelectItem key={r.id} value={r.nome}>{r.codigo} - {r.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input placeholder="Ex: Insalubridade, Hora Extra" value={form.descricao} onChange={(e) => setForm(p => ({ ...p, descricao: e.target.value }))} />
+              )}
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
