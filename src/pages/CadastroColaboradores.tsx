@@ -261,10 +261,7 @@ const CadastroColaboradores = () => {
     setForm(prev => ({ ...prev, [field]: value }));
   };
 
-  const filtered = colaboradores.filter((c: any) =>
-    c.nome.toLowerCase().includes(search.toLowerCase()) ||
-    c.cpf.includes(search)
-  );
+  // Server-side filtering — no client filter needed
 
   const formatCPF = (cpf: string) => {
     const digits = cpf.replace(/\D/g, '');
