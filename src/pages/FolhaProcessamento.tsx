@@ -537,15 +537,60 @@ const FolhaProcessamento = () => {
           </div>
         )}
 
-        {/* Search */}
-        <div className="relative max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por nome ou CPF..."
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(0); }}
-            className="pl-9"
-          />
+        {/* Filters */}
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="relative w-full sm:w-56">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Nome ou CPF..."
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setPage(0); }}
+              className="pl-9"
+            />
+          </div>
+          <div className="w-full sm:w-48">
+            <Select value={filterSecretaria} onValueChange={(v) => { setFilterSecretaria(v); setPage(0); }}>
+              <SelectTrigger>
+                <SelectValue placeholder="Secretaria" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas Secretarias</SelectItem>
+                {secretariasUnicas.map((s: string) => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="w-full sm:w-48">
+            <Select value={filterFuncao} onValueChange={(v) => { setFilterFuncao(v); setPage(0); }}>
+              <SelectTrigger>
+                <SelectValue placeholder="Função" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas Funções</SelectItem>
+                {funcoesUnicas.map((f: string) => (
+                  <SelectItem key={f} value={f}>{f}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-2">
+            <Input
+              type="number"
+              placeholder="Valor mín"
+              value={filterValorMin}
+              onChange={(e) => { setFilterValorMin(e.target.value); setPage(0); }}
+              className="w-28"
+            />
+            <span className="text-muted-foreground text-sm">a</span>
+            <Input
+              type="number"
+              placeholder="Valor máx"
+              value={filterValorMax}
+              onChange={(e) => { setFilterValorMax(e.target.value); setPage(0); }}
+              className="w-28"
+            />
+          </div>
         </div>
 
         {/* Table */}
