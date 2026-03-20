@@ -38,6 +38,10 @@ const FolhaProcessamento = () => {
   const [mes, setMes] = useState(defaultMes);
   const [ano, setAno] = useState(defaultAno);
   const [search, setSearch] = useState('');
+  const [filterSecretaria, setFilterSecretaria] = useState('all');
+  const [filterFuncao, setFilterFuncao] = useState('all');
+  const [filterValorMin, setFilterValorMin] = useState('');
+  const [filterValorMax, setFilterValorMax] = useState('');
   const [page, setPage] = useState(0);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
 
