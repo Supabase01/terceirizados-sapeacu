@@ -33,6 +33,7 @@ import CadastroEncargos from "./pages/CadastroEncargos";
 import AuditLog from "./pages/AuditLog";
 import LogSistema from "./pages/LogSistema";
 import Pagamento from "./pages/Pagamento";
+import CadastroRubricas from "./pages/CadastroRubricas";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -138,6 +139,7 @@ const App = () => (
             <Route path="/cadastro/funcoes" element={<ProtectedRoute><CadastroFuncoes /></ProtectedRoute>} />
             <Route path="/cadastro/lotacoes" element={<ProtectedRoute><CadastroLotacoes /></ProtectedRoute>} />
             <Route path="/cadastro/encargos" element={<ProtectedRoute><CadastroEncargos /></ProtectedRoute>} />
+            <Route path="/cadastro/rubricas" element={<ProtectedRoute><CadastroRubricas /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
