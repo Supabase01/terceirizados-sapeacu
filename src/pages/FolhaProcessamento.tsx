@@ -407,23 +407,23 @@ const FolhaProcessamento = () => {
             <p className="text-sm text-muted-foreground">Rascunho da folha de pagamento para conferência antes do fechamento</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <Select value={String(mes)} onValueChange={(v) => { setMes(Number(v)); setPage(0); }}>
-              <SelectTrigger className="w-[100px]">
+            <Select 
+              value={`${mes}-${ano}`} 
+              onValueChange={(v) => { 
+                const [m, y] = v.split('-').map(Number); 
+                setMes(m); 
+                setAno(y); 
+                setPage(0); 
+              }}
+            >
+              <SelectTrigger className="w-[160px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {Array.from({ length: 12 }, (_, i) => (
-                  <SelectItem key={i + 1} value={String(i + 1)}>{getMonthLabel(i + 1)}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={String(ano)} onValueChange={(v) => { setAno(Number(v)); setPage(0); }}>
-              <SelectTrigger className="w-[90px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {[2024, 2025, 2026, 2027].map(y => (
-                  <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                {competencias.map((c) => (
+                  <SelectItem key={`${c.mes}-${c.ano}`} value={`${c.mes}-${c.ano}`}>
+                    {getMonthLabel(c.mes)}/{c.ano}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
