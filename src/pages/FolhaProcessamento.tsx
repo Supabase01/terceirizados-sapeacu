@@ -49,7 +49,7 @@ const FolhaProcessamento = () => {
   const [page, setPage] = useState(0);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
 
-  // Check if previous month is already processed (to hide it from filter)
+  // Check if previous month is already processed or released FOR THIS UNIT
   const { data: prevMonthProcessed } = useQuery({
     queryKey: ['prev-month-processed', prevMes, prevAno, unidadeId],
     queryFn: async () => {
@@ -58,7 +58,7 @@ const FolhaProcessamento = () => {
         .select('id')
         .eq('mes', prevMes)
         .eq('ano', prevAno)
-        .eq('status', 'processado')
+        .in('status', ['processado', 'liberado'])
         .eq('unidade_id', unidadeId!)
         .limit(1);
       return (data?.length ?? 0) > 0;
