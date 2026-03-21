@@ -18,8 +18,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Label } from '@/components/ui/label';
 
 const currentDate = new Date();
-const defaultMes = currentDate.getMonth() + 1;
-const defaultAno = currentDate.getFullYear();
+const currentMes = currentDate.getMonth() + 1;
+const currentAno = currentDate.getFullYear();
 
 const PAGE_SIZE = 20;
 
@@ -29,14 +29,48 @@ const formatCurrency = (v: number) =>
 const getMonthLabel = (m: number) =>
   ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][m - 1] || '';
 
+// Compute previous month
+const prevMes = currentMes === 1 ? 12 : currentMes - 1;
+const prevAno = currentMes === 1 ? currentAno - 1 : currentAno;
+
 const FolhaProcessamento = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { isMaster } = useIsMaster();
   const { unidadeId, unidadePadrao } = useUnidade();
   const isPadrao02 = unidadePadrao === 'padrao_02';
-  const [mes, setMes] = useState(defaultMes);
-  const [ano, setAno] = useState(defaultAno);
+  const [mes, setMes] = useState(currentMes);
+  const [ano, setAno] = useState(currentAno);
+  const [search, setSearch] = useState('');
+  const [filterSecretaria, setFilterSecretaria] = useState('all');
+  const [filterFuncao, setFilterFuncao] = useState('all');
+  const [filterValorMin, setFilterValorMin] = useState('');
+  const [filterValorMax, setFilterValorMax] = useState('');
+  const [page, setPage] = useState(0);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+
+  // Check if previous month is already processed (to hide it from filter)
+  const { data: prevMonthProcessed } = useQuery({
+    queryKey: ['prev-month-processed', prevMes, prevAno, unidadeId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('folha_processamento')
+        .select('id')
+        .eq('mes', prevMes)
+        .eq('ano', prevAno)
+        .eq('status', 'processado')
+        .eq('unidade_id', unidadeId!)
+        .limit(1);
+      return (data?.length ?? 0) > 0;
+    },
+    enabled: !!unidadeId,
+  });
+
+  // Build available competencias
+  const competencias = [
+    { mes: currentMes, ano: currentAno },
+    ...(!prevMonthProcessed ? [{ mes: prevMes, ano: prevAno }] : []),
+  ];
   const [search, setSearch] = useState('');
   const [filterSecretaria, setFilterSecretaria] = useState('all');
   const [filterFuncao, setFilterFuncao] = useState('all');
