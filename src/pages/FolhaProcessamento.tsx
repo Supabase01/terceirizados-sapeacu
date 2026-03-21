@@ -71,13 +71,6 @@ const FolhaProcessamento = () => {
     { mes: currentMes, ano: currentAno },
     ...(!prevMonthProcessed ? [{ mes: prevMes, ano: prevAno }] : []),
   ];
-  const [search, setSearch] = useState('');
-  const [filterSecretaria, setFilterSecretaria] = useState('all');
-  const [filterFuncao, setFilterFuncao] = useState('all');
-  const [filterValorMin, setFilterValorMin] = useState('');
-  const [filterValorMax, setFilterValorMax] = useState('');
-  const [page, setPage] = useState(0);
-  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
 
   // Fetch draft payroll for selected period
   const { data: folha = [], isLoading, refetch } = useQuery({
