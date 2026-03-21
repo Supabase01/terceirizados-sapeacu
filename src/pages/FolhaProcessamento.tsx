@@ -427,23 +427,25 @@ const FolhaProcessamento = () => {
                 ))}
               </SelectContent>
             </Select>
-            <Button
-              onClick={() => generateMutation.mutate()}
-              disabled={generateMutation.isPending || (isProcessed && !isMaster)}
-              variant={folha.length > 0 ? 'outline' : 'default'}
-              title={isProcessed && !isMaster ? 'Apenas o Master pode regerar uma folha processada' : undefined}
-            >
-              {generateMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-1" />
-              ) : (
-                <RefreshCw className="h-4 w-4 mr-1" />
-              )}
-              {folha.length > 0 ? 'Regerar' : 'Gerar Folha'}
-            </Button>
-            {isDraft && folha.length > 0 && (
-              <Button onClick={() => setConfirmDialogOpen(true)} className="bg-green-600 hover:bg-green-700 text-white">
-                <CheckCircle2 className="h-4 w-4 mr-1" />
-                Processar
+            {folha.length > 0 ? (
+              <>
+                <Button disabled variant="outline" className="bg-green-600/10 text-green-700 border-green-600 cursor-default hover:bg-green-600/10">
+                  <CheckCircle2 className="h-4 w-4 mr-1" />
+                  Folha Gerada
+                </Button>
+                <Button onClick={() => generateMutation.mutate()} disabled={generateMutation.isPending} variant="outline" size="sm">
+                  {generateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <RefreshCw className="h-4 w-4 mr-1" />}
+                  Regerar
+                </Button>
+                <Button onClick={() => setConfirmDialogOpen(true)} className="bg-green-600 hover:bg-green-700 text-white">
+                  <CheckCircle2 className="h-4 w-4 mr-1" />
+                  Processar
+                </Button>
+              </>
+            ) : (
+              <Button onClick={() => generateMutation.mutate()} disabled={generateMutation.isPending}>
+                {generateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <RefreshCw className="h-4 w-4 mr-1" />}
+                Gerar Folha
               </Button>
             )}
           </div>
