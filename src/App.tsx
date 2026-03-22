@@ -141,6 +141,7 @@ const App = () => (
             <Route path="/cadastro/lotacoes" element={<ProtectedRoute><CadastroLotacoes /></ProtectedRoute>} />
             <Route path="/cadastro/encargos" element={<ProtectedRoute><CadastroEncargos /></ProtectedRoute>} />
             <Route path="/cadastro/rubricas" element={<ProtectedRoute><CadastroRubricas /></ProtectedRoute>} />
+            <Route path="/minha-conta" element={<AuthGuard><PinGuard><MinhaConta /></PinGuard></AuthGuard>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
