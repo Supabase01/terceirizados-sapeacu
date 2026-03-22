@@ -1,0 +1,1 @@
+DELETE FROM folha_processamento WHERE id = '9b0fa0df-5213-4197-81c6-43abe2e164b4';
