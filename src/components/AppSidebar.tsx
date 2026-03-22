@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BarChart3, Upload, ShieldAlert, FileText, Users, Building2, Briefcase, MapPin, Settings, Shield, ChevronDown, Landmark, FolderKanban, PlusCircle, MinusCircle, ClipboardList, History, Map, Crown, FileSpreadsheet, Monitor, Percent, DollarSign, CheckCircle2, Tag } from 'lucide-react';
+import { BarChart3, Upload, ShieldAlert, FileText, Users, Building2, Briefcase, MapPin, Settings, Shield, ChevronDown, Landmark, FolderKanban, PlusCircle, MinusCircle, ClipboardList, History, Map, Crown, FileSpreadsheet, Monitor, Percent, DollarSign, CheckCircle2, Tag, UserCog } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useLocation } from 'react-router-dom';
 import {
