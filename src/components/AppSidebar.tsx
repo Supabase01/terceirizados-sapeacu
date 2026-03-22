@@ -173,6 +173,23 @@ export function AppSidebar() {
           );
         })}
       </SidebarContent>
+      <SidebarFooter className="px-2 pb-4">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild>
+              <NavLink
+                to="/minha-conta"
+                end
+                className="hover:bg-sidebar-accent/50"
+                activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+              >
+                <UserCog className="mr-2 h-4 w-4 shrink-0" />
+                {!collapsed && <span>Minha Conta</span>}
+              </NavLink>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
     </Sidebar>
   );
 }
