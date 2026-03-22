@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { BarChart3, Upload, ShieldAlert, FileText, Users, Building2, Briefcase, MapPin, Settings, Shield, ChevronDown, Landmark, FolderKanban, PlusCircle, MinusCircle, ClipboardList, History, Map, Crown, FileSpreadsheet, Monitor, Percent, DollarSign, CheckCircle2, Tag } from 'lucide-react';
+import { BarChart3, Upload, ShieldAlert, FileText, Users, Building2, Briefcase, MapPin, Settings, Shield, ChevronDown, Landmark, FolderKanban, PlusCircle, MinusCircle, ClipboardList, History, Map, Crown, FileSpreadsheet, Monitor, Percent, DollarSign, CheckCircle2, Tag, UserCog } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useLocation } from 'react-router-dom';
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -172,6 +173,23 @@ export function AppSidebar() {
           );
         })}
       </SidebarContent>
+      <SidebarFooter className="px-2 pb-4">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild>
+              <NavLink
+                to="/minha-conta"
+                end
+                className="hover:bg-sidebar-accent/50"
+                activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+              >
+                <UserCog className="mr-2 h-4 w-4 shrink-0" />
+                {!collapsed && <span>Minha Conta</span>}
+              </NavLink>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
     </Sidebar>
   );
 }
