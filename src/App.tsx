@@ -34,6 +34,7 @@ import AuditLog from "./pages/AuditLog";
 import LogSistema from "./pages/LogSistema";
 import Pagamento from "./pages/Pagamento";
 import CadastroRubricas from "./pages/CadastroRubricas";
+import MinhaConta from "./pages/MinhaConta";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
