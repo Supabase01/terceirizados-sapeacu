@@ -135,7 +135,7 @@ const MinhaConta = () => {
   const setPinValue = pinStep === 'current' ? setCurrentPin : pinStep === 'new' ? setNewPin : setConfirmPin;
 
   return (
-    <Layout title="Minha Conta">
+    <Layout>
       <div className="grid gap-6 md:grid-cols-2 max-w-4xl">
         {/* Alterar Senha */}
         <Card>
