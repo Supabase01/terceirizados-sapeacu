@@ -54,6 +54,7 @@ const CadastroColaboradores = () => {
   const [form, setForm] = useState<ColaboradorForm>(emptyForm);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [filterSecretaria, setFilterSecretaria] = useState('');
   const [page, setPage] = useState(0);
 
   // Debounce search
