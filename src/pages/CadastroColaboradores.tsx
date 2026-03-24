@@ -68,28 +68,28 @@ const CadastroColaboradores = () => {
 
   // Server-side paginated query
   const { data: queryResult, isLoading } = useQuery({
-    queryKey: ['colaboradores', unidadeId, debouncedSearch, page],
+    queryKey: ['colaboradores', unidadeId, debouncedSearch, filterSecretaria, page],
     queryFn: async () => {
       const from = page * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
 
-      // Count query
       let countQuery = supabase
         .from('colaboradores')
         .select('id', { count: 'exact', head: true });
       if (unidadeId) countQuery = countQuery.eq('unidade_id', unidadeId);
+      if (filterSecretaria) countQuery = countQuery.eq('secretaria_id', filterSecretaria);
       if (debouncedSearch) {
         countQuery = countQuery.or(`nome.ilike.%${debouncedSearch}%,cpf.ilike.%${debouncedSearch}%`);
       }
       const { count } = await countQuery;
 
-      // Data query
       let query = supabase
         .from('colaboradores')
         .select('*, secretarias(nome), funcoes(nome), lotacoes(nome), cidades(nome, estado)')
         .order('nome')
         .range(from, to);
       if (unidadeId) query = query.eq('unidade_id', unidadeId);
+      if (filterSecretaria) query = query.eq('secretaria_id', filterSecretaria);
       if (debouncedSearch) {
         query = query.or(`nome.ilike.%${debouncedSearch}%,cpf.ilike.%${debouncedSearch}%`);
       }
