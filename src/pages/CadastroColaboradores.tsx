@@ -54,6 +54,7 @@ const CadastroColaboradores = () => {
   const [form, setForm] = useState<ColaboradorForm>(emptyForm);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [filterSecretaria, setFilterSecretaria] = useState('');
   const [page, setPage] = useState(0);
 
   // Debounce search
@@ -67,28 +68,28 @@ const CadastroColaboradores = () => {
 
   // Server-side paginated query
   const { data: queryResult, isLoading } = useQuery({
-    queryKey: ['colaboradores', unidadeId, debouncedSearch, page],
+    queryKey: ['colaboradores', unidadeId, debouncedSearch, filterSecretaria, page],
     queryFn: async () => {
       const from = page * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
 
-      // Count query
       let countQuery = supabase
         .from('colaboradores')
         .select('id', { count: 'exact', head: true });
       if (unidadeId) countQuery = countQuery.eq('unidade_id', unidadeId);
+      if (filterSecretaria) countQuery = countQuery.eq('secretaria_id', filterSecretaria);
       if (debouncedSearch) {
         countQuery = countQuery.or(`nome.ilike.%${debouncedSearch}%,cpf.ilike.%${debouncedSearch}%`);
       }
       const { count } = await countQuery;
 
-      // Data query
       let query = supabase
         .from('colaboradores')
         .select('*, secretarias(nome), funcoes(nome), lotacoes(nome), cidades(nome, estado)')
         .order('nome')
         .range(from, to);
       if (unidadeId) query = query.eq('unidade_id', unidadeId);
+      if (filterSecretaria) query = query.eq('secretaria_id', filterSecretaria);
       if (debouncedSearch) {
         query = query.or(`nome.ilike.%${debouncedSearch}%,cpf.ilike.%${debouncedSearch}%`);
       }
@@ -285,9 +286,18 @@ const CadastroColaboradores = () => {
           </Button>
         </div>
 
-        <div className="relative max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Buscar por nome ou CPF..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input placeholder="Buscar por nome ou CPF..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+          </div>
+          <Select value={filterSecretaria} onValueChange={(v) => { setFilterSecretaria(v === 'all' ? '' : v); setPage(0); }}>
+            <SelectTrigger className="w-[220px]"><SelectValue placeholder="Todas as secretarias" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as secretarias</SelectItem>
+              {secretarias.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)}
+            </SelectContent>
+          </Select>
         </div>
 
         <Card>
