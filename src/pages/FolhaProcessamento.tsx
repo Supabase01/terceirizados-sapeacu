@@ -370,13 +370,21 @@ const FolhaProcessamento = () => {
   // Finalize (process) the draft
   const finalizeMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase
+      const selectedSecretariaId = generateSecretaria !== 'all' ? generateSecretaria : null;
+      const secNome = selectedSecretariaId ? secretariasList.find((s: any) => s.id === selectedSecretariaId)?.nome || '' : '';
+
+      // Update status to 'processado' — scoped by secretaria if selected
+      let updateQuery = supabase
         .from('folha_processamento')
         .update({ status: 'processado', updated_at: new Date().toISOString() })
         .eq('mes', mes)
         .eq('ano', ano)
         .eq('status', 'rascunho')
         .eq('unidade_id', unidadeId!);
+      if (selectedSecretariaId && secNome) {
+        updateQuery = updateQuery.eq('secretaria', secNome);
+      }
+      const { error } = await updateQuery;
       if (error) throw error;
 
       const { data: unidade } = await supabase
@@ -386,20 +394,30 @@ const FolhaProcessamento = () => {
         .single();
       const prefeituraName = unidade?.nome || '';
 
-      await supabase
+      // Delete existing payroll_records for this scope
+      let delPayroll = supabase
         .from('payroll_records')
         .delete()
         .eq('mes', mes)
         .eq('ano', ano)
         .eq('unidade_id', unidadeId!);
+      if (selectedSecretariaId && secNome) {
+        delPayroll = delPayroll.eq('pasta', secNome);
+      }
+      await delPayroll;
 
-      const { data: processed } = await supabase
+      // Fetch the just-processed records
+      let processedQuery = supabase
         .from('folha_processamento')
         .select('*')
         .eq('mes', mes)
         .eq('ano', ano)
         .eq('status', 'processado')
         .eq('unidade_id', unidadeId!);
+      if (selectedSecretariaId && secNome) {
+        processedQuery = processedQuery.eq('secretaria', secNome);
+      }
+      const { data: processed } = await processedQuery;
 
       if (processed && processed.length > 0) {
         const payrollRows = processed.map((r: any) => ({
@@ -428,8 +446,9 @@ const FolhaProcessamento = () => {
       queryClient.invalidateQueries({ queryKey: ['payroll-records'] });
       queryClient.invalidateQueries({ queryKey: ['processed-info'] });
       setConfirmDialogOpen(false);
-      toast({ title: 'Folha processada', description: `Folha de ${getMonthLabel(mes)}/${ano} finalizada e enviada para autorização de pagamento.` });
-      registrarLog({ tipo: 'sucesso', categoria: 'folha', descricao: `Folha finalizada: ${getMonthLabel(mes)}/${ano}`, unidadeId });
+      const secLabel = generateSecretaria !== 'all' ? ` — ${secretariasList.find((s: any) => s.id === generateSecretaria)?.nome || 'Secretaria'}` : '';
+      toast({ title: 'Folha processada', description: `Folha de ${getMonthLabel(mes)}/${ano}${secLabel} finalizada e enviada para autorização de pagamento.` });
+      registrarLog({ tipo: 'sucesso', categoria: 'folha', descricao: `Folha finalizada: ${getMonthLabel(mes)}/${ano}${secLabel}`, unidadeId });
     },
     onError: (err: any) => {
       toast({ title: 'Erro ao processar', description: err.message, variant: 'destructive' });
@@ -886,13 +905,22 @@ const FolhaProcessamento = () => {
       <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Processar Folha de {getMonthLabel(mes)}/{ano}?</DialogTitle>
+            <DialogTitle>
+              Processar Folha de {getMonthLabel(mes)}/{ano}
+              {generateSecretaria !== 'all' ? ` — ${secretariasList.find((s: any) => s.id === generateSecretaria)?.nome || ''}` : ''}?
+            </DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Ao processar, a folha será marcada como finalizada e enviada para autorização de pagamento. Tem certeza que deseja continuar?
+            {generateSecretaria !== 'all'
+              ? 'Ao processar, os rascunhos desta secretaria serão finalizados e enviados para autorização de pagamento. Os rascunhos das demais secretarias permanecerão inalterados.'
+              : 'Ao processar, a folha será marcada como finalizada e enviada para autorização de pagamento. Tem certeza que deseja continuar?'}
           </p>
           <p className="text-sm font-medium mt-2">
-            {folha.length} colaboradores — Total líquido: {formatCurrency(totalLiquido)}
+            {generateSecretaria !== 'all'
+              ? `${folha.filter((r: any) => r.secretaria === (secretariasList.find((s: any) => s.id === generateSecretaria)?.nome || '')).length} colaboradores`
+              : `${folha.length} colaboradores`} — Total líquido: {generateSecretaria !== 'all'
+              ? formatCurrency(folha.filter((r: any) => r.secretaria === (secretariasList.find((s: any) => s.id === generateSecretaria)?.nome || '')).reduce((s: number, r: any) => s + Number(r.liquido), 0))
+              : formatCurrency(totalLiquido)}
           </p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmDialogOpen(false)}>Cancelar</Button>
