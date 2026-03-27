@@ -487,6 +487,56 @@ const FolhaProcessamento = () => {
                     Gerar Folha
                   </Button>
                 )}
+                {folha.length > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const dataToExport = hasActiveFilter ? filtered : folha;
+                      const cols = isPadrao02
+                        ? [
+                            { header: 'Nome', key: 'nome' },
+                            { header: 'CPF', key: 'cpf' },
+                            { header: 'Função', key: 'funcao' },
+                            { header: 'Secretaria', key: 'secretaria' },
+                            { header: 'Sal. Base', key: 'salario_base_fmt', align: 'right' as const },
+                            { header: 'Encargos', key: 'encargos_fmt', align: 'right' as const },
+                            { header: 'Bruto', key: 'bruto_fmt', align: 'right' as const },
+                            { header: 'Líquido', key: 'liquido_fmt', align: 'right' as const },
+                          ]
+                        : [
+                            { header: 'Nome', key: 'nome' },
+                            { header: 'CPF', key: 'cpf' },
+                            { header: 'Função', key: 'funcao' },
+                            { header: 'Secretaria', key: 'secretaria' },
+                            { header: 'Sal. Base', key: 'salario_base_fmt', align: 'right' as const },
+                            { header: 'Adicionais', key: 'adicionais_fmt', align: 'right' as const },
+                            { header: 'Descontos', key: 'descontos_fmt', align: 'right' as const },
+                            { header: 'Bruto', key: 'bruto_fmt', align: 'right' as const },
+                            { header: 'Líquido', key: 'liquido_fmt', align: 'right' as const },
+                          ];
+                      const rows = dataToExport.map((r: any) => ({
+                        ...r,
+                        salario_base_fmt: formatCurrency(Number(r.salario_base)),
+                        adicionais_fmt: formatCurrency(Number(r.total_adicionais)),
+                        descontos_fmt: formatCurrency(Number(r.total_descontos)),
+                        encargos_fmt: formatCurrency(Number(r.total_encargos || 0)),
+                        bruto_fmt: formatCurrency(Number(r.bruto)),
+                        liquido_fmt: formatCurrency(Number(r.liquido)),
+                      }));
+                      exportToPDF({
+                        title: `Folha em Processamento — ${getMonthLabel(mes)}/${ano}`,
+                        subtitle: hasActiveFilter ? `Filtrado: ${dataToExport.length} de ${folha.length} colaboradores` : `${dataToExport.length} colaboradores`,
+                        columns: cols,
+                        data: rows,
+                        fileName: `folha_processamento_${mes}_${ano}`,
+                      });
+                    }}
+                  >
+                    <Download className="h-4 w-4 mr-1" />
+                    PDF
+                  </Button>
+                )}
               </>
             )}
           </div>
