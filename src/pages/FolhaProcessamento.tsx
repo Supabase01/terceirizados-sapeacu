@@ -922,7 +922,6 @@ const FolhaProcessamento = () => {
               ? formatCurrency(folha.filter((r: any) => r.secretaria === (secretariasList.find((s: any) => s.id === generateSecretaria)?.nome || '')).reduce((s: number, r: any) => s + Number(r.liquido), 0))
               : formatCurrency(totalLiquido)}
           </p>
-          </p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmDialogOpen(false)}>Cancelar</Button>
             <Button
