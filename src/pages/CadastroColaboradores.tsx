@@ -505,7 +505,7 @@ const CadastroColaboradores = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={closeDialog}>Cancelar</Button>
-            <Button onClick={() => saveMutation.mutate()} disabled={!form.nome.trim() || !form.cpf.trim() || saveMutation.isPending}>
+            <Button onClick={() => saveMutation.mutate()} disabled={!form.nome.trim() || !form.cpf.trim() || !form.secretaria_id || saveMutation.isPending}>
               {saveMutation.isPending ? 'Salvando...' : 'Salvar'}
             </Button>
           </DialogFooter>
