@@ -321,11 +321,13 @@ const FolhaProcessamento = () => {
         };
       });
 
-      // Delete existing drafts for this period (only for selected secretaria if filtered)
+      // Delete existing drafts for the colaboradores being generated
       if (selectedSecretariaId) {
-        // Get the secretaria name to match against draft records
-        const secNome = secretariasList.find((s: any) => s.id === selectedSecretariaId)?.nome || '';
-        if (secNome) {
+        // Delete by colaborador_id to avoid constraint violations
+        const colIds = colaboradores.map((c: any) => c.id);
+        const DEL_BATCH = 100;
+        for (let i = 0; i < colIds.length; i += DEL_BATCH) {
+          const batch = colIds.slice(i, i + DEL_BATCH);
           await supabase
             .from('folha_processamento')
             .delete()
@@ -333,7 +335,7 @@ const FolhaProcessamento = () => {
             .eq('ano', ano)
             .eq('status', 'rascunho')
             .eq('unidade_id', unidadeId!)
-            .eq('secretaria', secNome);
+            .in('colaborador_id', batch);
         }
       } else {
         await supabase
