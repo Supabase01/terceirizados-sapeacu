@@ -905,13 +905,23 @@ const FolhaProcessamento = () => {
       <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Processar Folha de {getMonthLabel(mes)}/{ano}?</DialogTitle>
+            <DialogTitle>
+              Processar Folha de {getMonthLabel(mes)}/{ano}
+              {generateSecretaria !== 'all' ? ` — ${secretariasList.find((s: any) => s.id === generateSecretaria)?.nome || ''}` : ''}?
+            </DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Ao processar, a folha será marcada como finalizada e enviada para autorização de pagamento. Tem certeza que deseja continuar?
+            {generateSecretaria !== 'all'
+              ? 'Ao processar, os rascunhos desta secretaria serão finalizados e enviados para autorização de pagamento. Os rascunhos das demais secretarias permanecerão inalterados.'
+              : 'Ao processar, a folha será marcada como finalizada e enviada para autorização de pagamento. Tem certeza que deseja continuar?'}
           </p>
           <p className="text-sm font-medium mt-2">
-            {folha.length} colaboradores — Total líquido: {formatCurrency(totalLiquido)}
+            {generateSecretaria !== 'all'
+              ? `${folha.filter((r: any) => r.secretaria === (secretariasList.find((s: any) => s.id === generateSecretaria)?.nome || '')).length} colaboradores`
+              : `${folha.length} colaboradores`} — Total líquido: {generateSecretaria !== 'all'
+              ? formatCurrency(folha.filter((r: any) => r.secretaria === (secretariasList.find((s: any) => s.id === generateSecretaria)?.nome || '')).reduce((s: number, r: any) => s + Number(r.liquido), 0))
+              : formatCurrency(totalLiquido)}
+          </p>
           </p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmDialogOpen(false)}>Cancelar</Button>
