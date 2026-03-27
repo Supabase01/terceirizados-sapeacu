@@ -503,6 +503,18 @@ const FolhaProcessamento = () => {
             {/* Show buttons only when NOT processed */}
             {!isSelectedMonthProcessed && (
               <>
+                <Select value={generateSecretaria} onValueChange={setGenerateSecretaria}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Todas secretarias" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas secretarias</SelectItem>
+                    {secretariasList.map((s: any) => (
+                      <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
                 {folha.length > 0 ? (
                   <>
                     <Button disabled variant="outline" className="bg-green-600/10 text-green-700 border-green-600 cursor-default hover:bg-green-600/10">
@@ -511,7 +523,7 @@ const FolhaProcessamento = () => {
                     </Button>
                     <Button onClick={() => generateMutation.mutate()} disabled={generateMutation.isPending} variant="outline" size="sm">
                       {generateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <RefreshCw className="h-4 w-4 mr-1" />}
-                      Regerar
+                      {generateSecretaria !== 'all' ? 'Gerar Secretaria' : 'Regerar'}
                     </Button>
                     <Button onClick={() => setConfirmDialogOpen(true)} className="bg-green-600 hover:bg-green-700 text-white">
                       <CheckCircle2 className="h-4 w-4 mr-1" />
