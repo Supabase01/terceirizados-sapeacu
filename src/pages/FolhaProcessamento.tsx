@@ -51,6 +51,23 @@ const FolhaProcessamento = () => {
   const [filterValorMax, setFilterValorMax] = useState('');
   const [page, setPage] = useState(0);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [generateSecretaria, setGenerateSecretaria] = useState('all');
+
+  // Load secretarias for the generation filter
+  const { data: secretariasList = [] } = useQuery({
+    queryKey: ['secretarias-ativas', unidadeId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('secretarias')
+        .select('id, nome')
+        .eq('ativo', true)
+        .eq('unidade_id', unidadeId!)
+        .order('nome');
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!unidadeId,
+  });
 
   // Check if previous month is already processed or released FOR THIS UNIT
   const { data: prevMonthProcessed } = useQuery({
@@ -145,19 +162,23 @@ const FolhaProcessamento = () => {
   // Generate/regenerate draft
   const generateMutation = useMutation({
     mutationFn: async () => {
-      // 1. Load ALL active colaboradores with joins (paginated to bypass 1000 limit)
+      const selectedSecretariaId = generateSecretaria !== 'all' ? generateSecretaria : null;
+
+      // 1. Load active colaboradores with joins (optionally filtered by secretaria)
       let colaboradores: any[] = [];
       {
         const PAGE = 1000;
         let from = 0;
         let hasMore = true;
         while (hasMore) {
-          const { data: chunk, error: colErr } = await supabase
+          let q = supabase
             .from('colaboradores')
             .select('*, secretarias(nome), funcoes(nome), lotacoes(nome)')
             .eq('ativo', true)
-            .eq('unidade_id', unidadeId!)
-            .range(from, from + PAGE - 1);
+            .eq('unidade_id', unidadeId!);
+          if (selectedSecretariaId) q = q.eq('secretaria_id', selectedSecretariaId);
+          q = q.range(from, from + PAGE - 1);
+          const { data: chunk, error: colErr } = await q;
           if (colErr) throw colErr;
           colaboradores = colaboradores.concat(chunk || []);
           hasMore = (chunk?.length ?? 0) === PAGE;
@@ -300,14 +321,29 @@ const FolhaProcessamento = () => {
         };
       });
 
-      // Delete existing drafts for this period, then insert
-      await supabase
-        .from('folha_processamento')
-        .delete()
-        .eq('mes', mes)
-        .eq('ano', ano)
-        .eq('status', 'rascunho')
-        .eq('unidade_id', unidadeId!);
+      // Delete existing drafts for this period (only for selected secretaria if filtered)
+      if (selectedSecretariaId) {
+        // Get the secretaria name to match against draft records
+        const secNome = secretariasList.find((s: any) => s.id === selectedSecretariaId)?.nome || '';
+        if (secNome) {
+          await supabase
+            .from('folha_processamento')
+            .delete()
+            .eq('mes', mes)
+            .eq('ano', ano)
+            .eq('status', 'rascunho')
+            .eq('unidade_id', unidadeId!)
+            .eq('secretaria', secNome);
+        }
+      } else {
+        await supabase
+          .from('folha_processamento')
+          .delete()
+          .eq('mes', mes)
+          .eq('ano', ano)
+          .eq('status', 'rascunho')
+          .eq('unidade_id', unidadeId!);
+      }
 
       const BATCH = 500;
       for (let i = 0; i < records.length; i += BATCH) {
@@ -320,8 +356,9 @@ const FolhaProcessamento = () => {
     },
     onSuccess: (count) => {
       queryClient.invalidateQueries({ queryKey: ['folha-processamento'] });
-      toast({ title: 'Folha gerada', description: `${count} registros gerados para ${getMonthLabel(mes)}/${ano}.` });
-      registrarLog({ tipo: 'sucesso', categoria: 'folha', descricao: `Folha rascunho gerada: ${count} registros para ${getMonthLabel(mes)}/${ano}`, unidadeId });
+      const secLabel = generateSecretaria !== 'all' ? ` (${secretariasList.find((s: any) => s.id === generateSecretaria)?.nome || 'Secretaria'})` : '';
+      toast({ title: 'Folha gerada', description: `${count} registros gerados para ${getMonthLabel(mes)}/${ano}${secLabel}.` });
+      registrarLog({ tipo: 'sucesso', categoria: 'folha', descricao: `Folha rascunho gerada: ${count} registros para ${getMonthLabel(mes)}/${ano}${secLabel}`, unidadeId });
     },
     onError: (err: any) => {
       toast({ title: 'Erro ao gerar folha', description: err.message, variant: 'destructive' });
@@ -466,6 +503,18 @@ const FolhaProcessamento = () => {
             {/* Show buttons only when NOT processed */}
             {!isSelectedMonthProcessed && (
               <>
+                <Select value={generateSecretaria} onValueChange={setGenerateSecretaria}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Todas secretarias" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas secretarias</SelectItem>
+                    {secretariasList.map((s: any) => (
+                      <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
                 {folha.length > 0 ? (
                   <>
                     <Button disabled variant="outline" className="bg-green-600/10 text-green-700 border-green-600 cursor-default hover:bg-green-600/10">
@@ -474,7 +523,7 @@ const FolhaProcessamento = () => {
                     </Button>
                     <Button onClick={() => generateMutation.mutate()} disabled={generateMutation.isPending} variant="outline" size="sm">
                       {generateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <RefreshCw className="h-4 w-4 mr-1" />}
-                      Regerar
+                      {generateSecretaria !== 'all' ? 'Gerar Secretaria' : 'Regerar'}
                     </Button>
                     <Button onClick={() => setConfirmDialogOpen(true)} className="bg-green-600 hover:bg-green-700 text-white">
                       <CheckCircle2 className="h-4 w-4 mr-1" />
