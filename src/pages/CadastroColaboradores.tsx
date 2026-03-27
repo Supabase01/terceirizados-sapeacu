@@ -405,7 +405,7 @@ const CadastroColaboradores = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Secretaria</Label>
+                <Label>Secretaria *</Label>
                 <Select value={form.secretaria_id} onValueChange={(v) => updateField('secretaria_id', v)}>
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
@@ -505,7 +505,7 @@ const CadastroColaboradores = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={closeDialog}>Cancelar</Button>
-            <Button onClick={() => saveMutation.mutate()} disabled={!form.nome.trim() || !form.cpf.trim() || saveMutation.isPending}>
+            <Button onClick={() => saveMutation.mutate()} disabled={!form.nome.trim() || !form.cpf.trim() || !form.secretaria_id || saveMutation.isPending}>
               {saveMutation.isPending ? 'Salvando...' : 'Salvar'}
             </Button>
           </DialogFooter>
