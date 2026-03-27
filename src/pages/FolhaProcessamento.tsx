@@ -162,19 +162,23 @@ const FolhaProcessamento = () => {
   // Generate/regenerate draft
   const generateMutation = useMutation({
     mutationFn: async () => {
-      // 1. Load ALL active colaboradores with joins (paginated to bypass 1000 limit)
+      const selectedSecretariaId = generateSecretaria !== 'all' ? generateSecretaria : null;
+
+      // 1. Load active colaboradores with joins (optionally filtered by secretaria)
       let colaboradores: any[] = [];
       {
         const PAGE = 1000;
         let from = 0;
         let hasMore = true;
         while (hasMore) {
-          const { data: chunk, error: colErr } = await supabase
+          let q = supabase
             .from('colaboradores')
             .select('*, secretarias(nome), funcoes(nome), lotacoes(nome)')
             .eq('ativo', true)
-            .eq('unidade_id', unidadeId!)
-            .range(from, from + PAGE - 1);
+            .eq('unidade_id', unidadeId!);
+          if (selectedSecretariaId) q = q.eq('secretaria_id', selectedSecretariaId);
+          q = q.range(from, from + PAGE - 1);
+          const { data: chunk, error: colErr } = await q;
           if (colErr) throw colErr;
           colaboradores = colaboradores.concat(chunk || []);
           hasMore = (chunk?.length ?? 0) === PAGE;
