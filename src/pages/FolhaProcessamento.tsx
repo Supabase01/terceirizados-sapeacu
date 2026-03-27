@@ -415,12 +415,14 @@ const FolhaProcessamento = () => {
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paged = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
-  // Totals
-  const totalBruto = folha.reduce((s: number, r: any) => s + Number(r.bruto), 0);
-  const totalLiquido = folha.reduce((s: number, r: any) => s + Number(r.liquido), 0);
-  const totalAdicionais = folha.reduce((s: number, r: any) => s + Number(r.total_adicionais), 0);
-  const totalDescontos = folha.reduce((s: number, r: any) => s + Number(r.total_descontos), 0);
-  const totalEncargos = folha.reduce((s: number, r: any) => s + Number(r.total_encargos || 0), 0);
+  // Totals based on filtered data
+  const hasActiveFilter = search || filterSecretaria !== 'all' || filterFuncao !== 'all' || filterValorMin || filterValorMax;
+  const dataForTotals = hasActiveFilter ? filtered : folha;
+  const totalBruto = dataForTotals.reduce((s: number, r: any) => s + Number(r.bruto), 0);
+  const totalLiquido = dataForTotals.reduce((s: number, r: any) => s + Number(r.liquido), 0);
+  const totalAdicionais = dataForTotals.reduce((s: number, r: any) => s + Number(r.total_adicionais), 0);
+  const totalDescontos = dataForTotals.reduce((s: number, r: any) => s + Number(r.total_descontos), 0);
+  const totalEncargos = dataForTotals.reduce((s: number, r: any) => s + Number(r.total_encargos || 0), 0);
 
   const formatDate = (dateStr: string) => {
     try {
