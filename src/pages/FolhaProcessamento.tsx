@@ -51,6 +51,23 @@ const FolhaProcessamento = () => {
   const [filterValorMax, setFilterValorMax] = useState('');
   const [page, setPage] = useState(0);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [generateSecretaria, setGenerateSecretaria] = useState('all');
+
+  // Load secretarias for the generation filter
+  const { data: secretariasList = [] } = useQuery({
+    queryKey: ['secretarias-ativas', unidadeId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('secretarias')
+        .select('id, nome')
+        .eq('ativo', true)
+        .eq('unidade_id', unidadeId!)
+        .order('nome');
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!unidadeId,
+  });
 
   // Check if previous month is already processed or released FOR THIS UNIT
   const { data: prevMonthProcessed } = useQuery({
