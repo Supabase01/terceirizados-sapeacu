@@ -578,8 +578,8 @@ const FolhaProcessamento = () => {
               <div className={cn("grid gap-3", isPadrao02 ? "grid-cols-2 md:grid-cols-4" : "grid-cols-2 md:grid-cols-5")}>
                 <Card>
                   <CardContent className="p-3 text-center">
-                    <p className="text-xs text-muted-foreground">Colaboradores</p>
-                    <p className="text-lg font-bold text-foreground">{folha.length}</p>
+                    <p className="text-xs text-muted-foreground">Colaboradores{hasActiveFilter ? ' (filtrados)' : ''}</p>
+                     <p className="text-lg font-bold text-foreground">{hasActiveFilter ? `${filtered.length} / ${folha.length}` : folha.length}</p>
                   </CardContent>
                 </Card>
                 {isPadrao02 ? (
