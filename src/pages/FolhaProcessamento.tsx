@@ -321,14 +321,29 @@ const FolhaProcessamento = () => {
         };
       });
 
-      // Delete existing drafts for this period, then insert
-      await supabase
-        .from('folha_processamento')
-        .delete()
-        .eq('mes', mes)
-        .eq('ano', ano)
-        .eq('status', 'rascunho')
-        .eq('unidade_id', unidadeId!);
+      // Delete existing drafts for this period (only for selected secretaria if filtered)
+      if (selectedSecretariaId) {
+        // Get the secretaria name to match against draft records
+        const secNome = secretariasList.find((s: any) => s.id === selectedSecretariaId)?.nome || '';
+        if (secNome) {
+          await supabase
+            .from('folha_processamento')
+            .delete()
+            .eq('mes', mes)
+            .eq('ano', ano)
+            .eq('status', 'rascunho')
+            .eq('unidade_id', unidadeId!)
+            .eq('secretaria', secNome);
+        }
+      } else {
+        await supabase
+          .from('folha_processamento')
+          .delete()
+          .eq('mes', mes)
+          .eq('ano', ano)
+          .eq('status', 'rascunho')
+          .eq('unidade_id', unidadeId!);
+      }
 
       const BATCH = 500;
       for (let i = 0; i < records.length; i += BATCH) {
