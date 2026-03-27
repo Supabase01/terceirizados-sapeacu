@@ -405,7 +405,7 @@ const CadastroColaboradores = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Secretaria</Label>
+                <Label>Secretaria *</Label>
                 <Select value={form.secretaria_id} onValueChange={(v) => updateField('secretaria_id', v)}>
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
