@@ -97,6 +97,10 @@ const CadastroColaboradores = () => {
         .range(from, to);
       if (unidadeId) query = query.eq('unidade_id', unidadeId);
       if (filterSecretaria) query = query.eq('secretaria_id', filterSecretaria);
+      if (filterFuncao) query = query.eq('funcao_id', filterFuncao);
+      if (filterLotacao) query = query.eq('lotacao_id', filterLotacao);
+      if (filterStatus === 'ativo') query = query.eq('ativo', true);
+      if (filterStatus === 'inativo') query = query.eq('ativo', false);
       if (debouncedSearch) {
         query = query.or(`nome.ilike.%${debouncedSearch}%,cpf.ilike.%${debouncedSearch}%`);
       }
