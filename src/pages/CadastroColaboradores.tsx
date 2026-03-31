@@ -303,10 +303,32 @@ const CadastroColaboradores = () => {
             <Input placeholder="Buscar por nome ou CPF..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
           </div>
           <Select value={filterSecretaria} onValueChange={(v) => { setFilterSecretaria(v === 'all' ? '' : v); setPage(0); }}>
-            <SelectTrigger className="w-[220px]"><SelectValue placeholder="Todas as secretarias" /></SelectTrigger>
+            <SelectTrigger className="w-[200px]"><SelectValue placeholder="Todas as secretarias" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todas as secretarias</SelectItem>
               {secretarias.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={filterFuncao} onValueChange={(v) => { setFilterFuncao(v === 'all' ? '' : v); setPage(0); }}>
+            <SelectTrigger className="w-[200px]"><SelectValue placeholder="Todas as funções" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as funções</SelectItem>
+              {funcoes.map((f: any) => <SelectItem key={f.id} value={f.id}>{f.nome}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={filterLotacao} onValueChange={(v) => { setFilterLotacao(v === 'all' ? '' : v); setPage(0); }}>
+            <SelectTrigger className="w-[200px]"><SelectValue placeholder="Todas as lotações" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as lotações</SelectItem>
+              {lotacoes.map((l: any) => <SelectItem key={l.id} value={l.id}>{l.nome}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={filterStatus} onValueChange={(v) => { setFilterStatus(v === 'all' ? '' : v); setPage(0); }}>
+            <SelectTrigger className="w-[160px]"><SelectValue placeholder="Todos os status" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os status</SelectItem>
+              <SelectItem value="ativo">Ativo</SelectItem>
+              <SelectItem value="inativo">Inativo</SelectItem>
             </SelectContent>
           </Select>
         </div>
