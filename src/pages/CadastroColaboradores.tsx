@@ -81,6 +81,10 @@ const CadastroColaboradores = () => {
         .select('id', { count: 'exact', head: true });
       if (unidadeId) countQuery = countQuery.eq('unidade_id', unidadeId);
       if (filterSecretaria) countQuery = countQuery.eq('secretaria_id', filterSecretaria);
+      if (filterFuncao) countQuery = countQuery.eq('funcao_id', filterFuncao);
+      if (filterLotacao) countQuery = countQuery.eq('lotacao_id', filterLotacao);
+      if (filterStatus === 'ativo') countQuery = countQuery.eq('ativo', true);
+      if (filterStatus === 'inativo') countQuery = countQuery.eq('ativo', false);
       if (debouncedSearch) {
         countQuery = countQuery.or(`nome.ilike.%${debouncedSearch}%,cpf.ilike.%${debouncedSearch}%`);
       }
