@@ -55,6 +55,9 @@ const CadastroColaboradores = () => {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filterSecretaria, setFilterSecretaria] = useState('');
+  const [filterFuncao, setFilterFuncao] = useState('');
+  const [filterLotacao, setFilterLotacao] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
   const [page, setPage] = useState(0);
 
   // Debounce search
@@ -68,7 +71,7 @@ const CadastroColaboradores = () => {
 
   // Server-side paginated query
   const { data: queryResult, isLoading } = useQuery({
-    queryKey: ['colaboradores', unidadeId, debouncedSearch, filterSecretaria, page],
+    queryKey: ['colaboradores', unidadeId, debouncedSearch, filterSecretaria, filterFuncao, filterLotacao, filterStatus, page],
     queryFn: async () => {
       const from = page * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
@@ -78,6 +81,10 @@ const CadastroColaboradores = () => {
         .select('id', { count: 'exact', head: true });
       if (unidadeId) countQuery = countQuery.eq('unidade_id', unidadeId);
       if (filterSecretaria) countQuery = countQuery.eq('secretaria_id', filterSecretaria);
+      if (filterFuncao) countQuery = countQuery.eq('funcao_id', filterFuncao);
+      if (filterLotacao) countQuery = countQuery.eq('lotacao_id', filterLotacao);
+      if (filterStatus === 'ativo') countQuery = countQuery.eq('ativo', true);
+      if (filterStatus === 'inativo') countQuery = countQuery.eq('ativo', false);
       if (debouncedSearch) {
         countQuery = countQuery.or(`nome.ilike.%${debouncedSearch}%,cpf.ilike.%${debouncedSearch}%`);
       }
@@ -90,6 +97,10 @@ const CadastroColaboradores = () => {
         .range(from, to);
       if (unidadeId) query = query.eq('unidade_id', unidadeId);
       if (filterSecretaria) query = query.eq('secretaria_id', filterSecretaria);
+      if (filterFuncao) query = query.eq('funcao_id', filterFuncao);
+      if (filterLotacao) query = query.eq('lotacao_id', filterLotacao);
+      if (filterStatus === 'ativo') query = query.eq('ativo', true);
+      if (filterStatus === 'inativo') query = query.eq('ativo', false);
       if (debouncedSearch) {
         query = query.or(`nome.ilike.%${debouncedSearch}%,cpf.ilike.%${debouncedSearch}%`);
       }
@@ -292,10 +303,32 @@ const CadastroColaboradores = () => {
             <Input placeholder="Buscar por nome ou CPF..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
           </div>
           <Select value={filterSecretaria} onValueChange={(v) => { setFilterSecretaria(v === 'all' ? '' : v); setPage(0); }}>
-            <SelectTrigger className="w-[220px]"><SelectValue placeholder="Todas as secretarias" /></SelectTrigger>
+            <SelectTrigger className="w-[200px]"><SelectValue placeholder="Todas as secretarias" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todas as secretarias</SelectItem>
               {secretarias.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={filterFuncao} onValueChange={(v) => { setFilterFuncao(v === 'all' ? '' : v); setPage(0); }}>
+            <SelectTrigger className="w-[200px]"><SelectValue placeholder="Todas as funções" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as funções</SelectItem>
+              {funcoes.map((f: any) => <SelectItem key={f.id} value={f.id}>{f.nome}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={filterLotacao} onValueChange={(v) => { setFilterLotacao(v === 'all' ? '' : v); setPage(0); }}>
+            <SelectTrigger className="w-[200px]"><SelectValue placeholder="Todas as lotações" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as lotações</SelectItem>
+              {lotacoes.map((l: any) => <SelectItem key={l.id} value={l.id}>{l.nome}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={filterStatus} onValueChange={(v) => { setFilterStatus(v === 'all' ? '' : v); setPage(0); }}>
+            <SelectTrigger className="w-[160px]"><SelectValue placeholder="Todos os status" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os status</SelectItem>
+              <SelectItem value="ativo">Ativo</SelectItem>
+              <SelectItem value="inativo">Inativo</SelectItem>
             </SelectContent>
           </Select>
         </div>
