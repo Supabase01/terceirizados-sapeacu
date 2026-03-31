@@ -71,7 +71,7 @@ const CadastroColaboradores = () => {
 
   // Server-side paginated query
   const { data: queryResult, isLoading } = useQuery({
-    queryKey: ['colaboradores', unidadeId, debouncedSearch, filterSecretaria, page],
+    queryKey: ['colaboradores', unidadeId, debouncedSearch, filterSecretaria, filterFuncao, filterLotacao, filterStatus, page],
     queryFn: async () => {
       const from = page * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
