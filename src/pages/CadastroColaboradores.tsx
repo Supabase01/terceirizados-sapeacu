@@ -109,6 +109,8 @@ const CadastroColaboradores = () => {
       return { data: data || [], total: count || 0 };
     },
     enabled: !!unidadeId,
+    placeholderData: keepPreviousData,
+    staleTime: 30_000,
   });
 
   const colaboradores = queryResult?.data || [];
