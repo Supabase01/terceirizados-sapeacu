@@ -55,6 +55,9 @@ const CadastroColaboradores = () => {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filterSecretaria, setFilterSecretaria] = useState('');
+  const [filterFuncao, setFilterFuncao] = useState('');
+  const [filterLotacao, setFilterLotacao] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
   const [page, setPage] = useState(0);
 
   // Debounce search
