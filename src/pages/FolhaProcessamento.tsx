@@ -239,6 +239,42 @@ const FolhaProcessamento = () => {
         (d: any) => d.escopo === 'global' && isDescontoVigente(d)
       );
 
+      // Helper: resolve base value for percentual calculations
+      const resolveBase = (baseCalculo: string | null | undefined, ctx: { salarioBase: number; bruto: number; liquido: number }) => {
+        switch (baseCalculo) {
+          case 'bruto': return ctx.bruto;
+          case 'liquido': return ctx.liquido;
+          case 'salario_base':
+          default: return ctx.salarioBase;
+        }
+      };
+
+      // Compute adicional value: respects modo_calculo (fixo/percentual) and base_calculo
+      const computeAdicional = (a: any, salarioBase: number) => {
+        if (a.modo_calculo === 'percentual') {
+          const pct = Number(a.percentual) || 0;
+          // Adicionais entram ANTES do bruto, então só faz sentido base = salario_base
+          const base = resolveBase(a.base_calculo, { salarioBase, bruto: salarioBase, liquido: salarioBase });
+          return +(base * pct / 100).toFixed(2);
+        }
+        return Number(a.valor) || 0;
+      };
+
+      // Compute desconto value: respects modo_calculo (fixo/percentual) and base_calculo
+      // For base 'liquido', uses bruto as approximation (avoids circular dependency)
+      const computeDesconto = (d: any, ctx: { salarioBase: number; bruto: number }) => {
+        if (d.modo_calculo === 'percentual') {
+          const pct = Number(d.percentual) || 0;
+          const base = resolveBase(d.base_calculo, { ...ctx, liquido: ctx.bruto });
+          return +(base * pct / 100).toFixed(2);
+        }
+        // Legacy support: is_percentual flag on fixo mode
+        if (d.is_percentual) {
+          return +(ctx.bruto * Number(d.valor) / 100).toFixed(2);
+        }
+        return Number(d.valor) || 0;
+      };
+
       // Build records
       const records = colaboradores.map((col: any) => {
         const salarioBase = Number(col.salario_base) || 0;
@@ -272,11 +308,15 @@ const FolhaProcessamento = () => {
           };
         }
 
-        // Padrão 01
+        // Padrão 01 — ordem: Base → Adicionais → Bruto → Descontos → Líquido
         const adicionaisCol = (adicionais || []).filter(
           (a: any) => ((a.escopo === 'global' && !a.colaborador_id) || a.colaborador_id === col.id) && isAdicionalVigente(a)
         );
-        const totalAdicionais = adicionaisCol.reduce((s: number, a: any) => s + Number(a.valor), 0);
+        const totalAdicionais = adicionaisCol.reduce(
+          (s: number, a: any) => s + computeAdicional(a, salarioBase), 0
+        );
+
+        const bruto = salarioBase + totalAdicionais;
 
         const descontosInd = (descontos || []).filter(
           (d: any) => d.escopo === 'individual' && d.colaborador_id === col.id && isDescontoVigente(d)
@@ -284,21 +324,12 @@ const FolhaProcessamento = () => {
 
         let totalDescontos = 0;
         descontosInd.forEach((d: any) => {
-          if (d.is_percentual) {
-            totalDescontos += (salarioBase + totalAdicionais) * Number(d.valor) / 100;
-          } else {
-            totalDescontos += Number(d.valor);
-          }
+          totalDescontos += computeDesconto(d, { salarioBase, bruto });
         });
         descontosGlobais.forEach((d: any) => {
-          if (d.is_percentual) {
-            totalDescontos += (salarioBase + totalAdicionais) * Number(d.valor) / 100;
-          } else {
-            totalDescontos += Number(d.valor);
-          }
+          totalDescontos += computeDesconto(d, { salarioBase, bruto });
         });
 
-        const bruto = salarioBase + totalAdicionais;
         const liquido = bruto - totalDescontos;
 
         return {
