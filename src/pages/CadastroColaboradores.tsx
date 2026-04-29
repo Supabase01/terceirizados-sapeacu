@@ -80,9 +80,12 @@ const CadastroColaboradores = () => {
         .from('colaboradores')
         .select('id', { count: 'exact', head: true });
       if (unidadeId) countQuery = countQuery.eq('unidade_id', unidadeId);
-      if (filterSecretaria) countQuery = countQuery.eq('secretaria_id', filterSecretaria);
-      if (filterFuncao) countQuery = countQuery.eq('funcao_id', filterFuncao);
-      if (filterLotacao) countQuery = countQuery.eq('lotacao_id', filterLotacao);
+      if (filterSecretaria === '__pending__') countQuery = countQuery.is('secretaria_id', null);
+      else if (filterSecretaria) countQuery = countQuery.eq('secretaria_id', filterSecretaria);
+      if (filterFuncao === '__pending__') countQuery = countQuery.is('funcao_id', null);
+      else if (filterFuncao) countQuery = countQuery.eq('funcao_id', filterFuncao);
+      if (filterLotacao === '__pending__') countQuery = countQuery.is('lotacao_id', null);
+      else if (filterLotacao) countQuery = countQuery.eq('lotacao_id', filterLotacao);
       if (filterStatus === 'ativo') countQuery = countQuery.eq('ativo', true);
       if (filterStatus === 'inativo') countQuery = countQuery.eq('ativo', false);
       if (debouncedSearch) {
@@ -96,9 +99,12 @@ const CadastroColaboradores = () => {
         .order('nome')
         .range(from, to);
       if (unidadeId) query = query.eq('unidade_id', unidadeId);
-      if (filterSecretaria) query = query.eq('secretaria_id', filterSecretaria);
-      if (filterFuncao) query = query.eq('funcao_id', filterFuncao);
-      if (filterLotacao) query = query.eq('lotacao_id', filterLotacao);
+      if (filterSecretaria === '__pending__') query = query.is('secretaria_id', null);
+      else if (filterSecretaria) query = query.eq('secretaria_id', filterSecretaria);
+      if (filterFuncao === '__pending__') query = query.is('funcao_id', null);
+      else if (filterFuncao) query = query.eq('funcao_id', filterFuncao);
+      if (filterLotacao === '__pending__') query = query.is('lotacao_id', null);
+      else if (filterLotacao) query = query.eq('lotacao_id', filterLotacao);
       if (filterStatus === 'ativo') query = query.eq('ativo', true);
       if (filterStatus === 'inativo') query = query.eq('ativo', false);
       if (debouncedSearch) {
@@ -308,6 +314,7 @@ const CadastroColaboradores = () => {
             <SelectTrigger className="w-[200px]"><SelectValue placeholder="Todas as secretarias" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todas as secretarias</SelectItem>
+              <SelectItem value="__pending__" className="text-destructive font-medium">⚠ Pendente de vinculação</SelectItem>
               {secretarias.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)}
             </SelectContent>
           </Select>
@@ -315,6 +322,7 @@ const CadastroColaboradores = () => {
             <SelectTrigger className="w-[200px]"><SelectValue placeholder="Todas as funções" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todas as funções</SelectItem>
+              <SelectItem value="__pending__" className="text-destructive font-medium">⚠ Pendente de vinculação</SelectItem>
               {funcoes.map((f: any) => <SelectItem key={f.id} value={f.id}>{f.nome}</SelectItem>)}
             </SelectContent>
           </Select>
@@ -322,6 +330,7 @@ const CadastroColaboradores = () => {
             <SelectTrigger className="w-[200px]"><SelectValue placeholder="Todas as lotações" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todas as lotações</SelectItem>
+              <SelectItem value="__pending__" className="text-destructive font-medium">⚠ Pendente de vinculação</SelectItem>
               {lotacoes.map((l: any) => <SelectItem key={l.id} value={l.id}>{l.nome}</SelectItem>)}
             </SelectContent>
           </Select>
