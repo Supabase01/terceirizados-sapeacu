@@ -65,7 +65,7 @@ const Adicionais = () => {
   const { data: colaboradores = [] } = useQuery({
     queryKey: ['colaboradores-ativos', unidadeId],
     queryFn: async () => {
-      let query = supabase.from('colaboradores').select('id, nome, cpf').eq('ativo', true).order('nome');
+      let query = supabase.from('colaboradores').select('id, nome, cpf, salario_base').eq('ativo', true).order('nome');
       if (unidadeId) query = query.eq('unidade_id', unidadeId);
       const { data, error } = await query;
       if (error) throw error;
