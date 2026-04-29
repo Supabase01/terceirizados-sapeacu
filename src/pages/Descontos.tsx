@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { SearchableSelect } from '@/components/SearchableSelect';
+import { RegraCalculoFields, isRegraCalculoValid, type ModoCalculo, type BaseCalculo } from '@/components/RegraCalculoFields';
 
 interface DescontoForm {
   colaborador_ids: string[];
@@ -24,10 +25,14 @@ interface DescontoForm {
   escopo: string;
   mes: string;
   ano: string;
+  modo_calculo: ModoCalculo;
+  percentual: string;
+  base_calculo: BaseCalculo | '';
 }
 
 const emptyForm: DescontoForm = {
   colaborador_ids: [], descricao: '', valor: '', is_percentual: false, escopo: 'individual', mes: '', ano: '',
+  modo_calculo: 'fixo', percentual: '', base_calculo: '',
 };
 
 const Descontos = () => {
@@ -87,28 +92,49 @@ const Descontos = () => {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
+      const isPercentual = form.modo_calculo === 'percentual';
+      const percentualNum = Number(form.percentual) || 0;
+
+      const computeValorFor = (colaborador: any | null): number => {
+        if (!isPercentual) return Number(form.valor) || 0;
+        const base = Number(colaborador?.salario_base) || 0;
+        return +(base * (percentualNum / 100)).toFixed(2);
+      };
+
       const basePayload: any = {
         descricao: form.descricao,
-        valor: Number(form.valor) || 0,
         is_percentual: form.is_percentual,
         escopo: form.escopo,
         mes: form.mes ? Number(form.mes) : null,
         ano: form.ano ? Number(form.ano) : null,
         unidade_id: unidadeId,
+        modo_calculo: form.modo_calculo,
+        percentual: isPercentual ? percentualNum : null,
+        base_calculo: isPercentual ? form.base_calculo || null : null,
       };
+
       if (editId) {
+        const colab = colaboradores.find((c: any) => c.id === form.colaborador_ids[0]);
         const payload = {
           ...basePayload,
+          valor: computeValorFor(form.escopo === 'global' ? null : colab),
           colaborador_id: form.escopo === 'global' ? null : (form.colaborador_ids[0] || null),
         };
         const { error } = await supabase.from('descontos').update(payload).eq('id', editId);
         if (error) throw error;
       } else {
         if (form.escopo === 'global') {
-          const { error } = await supabase.from('descontos').insert({ ...basePayload, colaborador_id: null });
+          const { error } = await supabase.from('descontos').insert({
+            ...basePayload,
+            valor: computeValorFor(null),
+            colaborador_id: null,
+          });
           if (error) throw error;
         } else {
-          const rows = form.colaborador_ids.map(cid => ({ ...basePayload, colaborador_id: cid }));
+          const rows = form.colaborador_ids.map(cid => {
+            const colab = colaboradores.find((c: any) => c.id === cid);
+            return { ...basePayload, valor: computeValorFor(colab), colaborador_id: cid };
+          });
           if (rows.length === 0) throw new Error('Selecione ao menos um colaborador');
           const { error } = await supabase.from('descontos').insert(rows);
           if (error) throw error;
@@ -146,6 +172,9 @@ const Descontos = () => {
       escopo: item.escopo,
       mes: item.mes ? String(item.mes) : '',
       ano: item.ano ? String(item.ano) : '',
+      modo_calculo: (item.modo_calculo as ModoCalculo) || 'fixo',
+      percentual: item.percentual != null ? String(item.percentual) : '',
+      base_calculo: (item.base_calculo as BaseCalculo) || '',
     });
     setDialogOpen(true);
   };
@@ -159,7 +188,13 @@ const Descontos = () => {
 
   const formatCurrency = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
-  const canSave = form.descricao.trim() && form.valor &&
+  const valorOk = isRegraCalculoValid({
+    modo_calculo: form.modo_calculo,
+    valor: form.valor,
+    percentual: form.percentual,
+    base_calculo: form.base_calculo,
+  });
+  const canSave = form.descricao.trim() && valorOk &&
     (form.escopo === 'global' || form.colaborador_ids.length > 0);
 
   return (
@@ -292,16 +327,22 @@ const Descontos = () => {
                 <Input placeholder="Ex: INSS, ISS, Pensão" value={form.descricao} onChange={(e) => setForm(p => ({ ...p, descricao: e.target.value }))} />
               )}
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Valor *</Label>
-                <Input type="number" placeholder="0.00" value={form.valor} onChange={(e) => setForm(p => ({ ...p, valor: e.target.value }))} />
-              </div>
-              <div className="space-y-2 flex items-end gap-3 pb-0.5">
+            <RegraCalculoFields
+              state={{
+                modo_calculo: form.modo_calculo,
+                valor: form.valor,
+                percentual: form.percentual,
+                base_calculo: form.base_calculo,
+              }}
+              onChange={(next) => setForm(p => ({ ...p, ...next }))}
+              valorLabel={form.is_percentual ? 'Valor (%) *' : 'Valor (R$) *'}
+            />
+            {form.modo_calculo === 'fixo' && (
+              <div className="flex items-center gap-3">
                 <Switch checked={form.is_percentual} onCheckedChange={(v) => setForm(p => ({ ...p, is_percentual: v }))} />
-                <Label>{form.is_percentual ? 'Percentual (%)' : 'Valor fixo (R$)'}</Label>
+                <Label>{form.is_percentual ? 'Tratar valor digitado como percentual (%)' : 'Tratar valor digitado como R$'}</Label>
               </div>
-            </div>
+            )}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Mês (vazio = recorrente)</Label>

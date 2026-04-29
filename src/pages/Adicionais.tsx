@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { SearchableSelect } from '@/components/SearchableSelect';
+import { RegraCalculoFields, isRegraCalculoValid, type ModoCalculo, type BaseCalculo } from '@/components/RegraCalculoFields';
 
 interface AdicionalForm {
   escopo: string;
@@ -25,10 +26,14 @@ interface AdicionalForm {
   ano: string;
   mes_fim: string;
   ano_fim: string;
+  modo_calculo: ModoCalculo;
+  percentual: string;
+  base_calculo: BaseCalculo | '';
 }
 
 const emptyForm: AdicionalForm = {
   escopo: 'individual', colaborador_ids: [], descricao: '', valor: '', tipo: 'fixo', mes: '', ano: '', mes_fim: '', ano_fim: '',
+  modo_calculo: 'fixo', percentual: '', base_calculo: '',
 };
 
 const Adicionais = () => {
@@ -90,9 +95,19 @@ const Adicionais = () => {
   const saveMutation = useMutation({
     mutationFn: async () => {
       const isEventual = form.tipo === 'eventual';
+      const isPercentual = form.modo_calculo === 'percentual';
+      const percentualNum = Number(form.percentual) || 0;
+
+      const computeValorFor = (colaborador: any | null): number => {
+        if (!isPercentual) return Number(form.valor) || 0;
+        const base = Number(colaborador?.salario_base) || 0;
+        // For 'bruto' and 'liquido', without payroll context we use salario_base as best estimate.
+        // The stored value is recalculated/refreshed at payroll processing time if needed.
+        return +(base * (percentualNum / 100)).toFixed(2);
+      };
+
       const basePayload: any = {
         descricao: form.descricao,
-        valor: Number(form.valor) || 0,
         tipo: form.tipo,
         escopo: form.escopo,
         mes: isEventual && form.mes ? Number(form.mes) : null,
@@ -100,22 +115,33 @@ const Adicionais = () => {
         mes_fim: isEventual && form.mes_fim ? Number(form.mes_fim) : null,
         ano_fim: isEventual && form.ano_fim ? Number(form.ano_fim) : null,
         unidade_id: unidadeId,
+        modo_calculo: form.modo_calculo,
+        percentual: isPercentual ? percentualNum : null,
+        base_calculo: isPercentual ? form.base_calculo || null : null,
       };
 
       if (editId) {
+        const colab = colaboradores.find((c: any) => c.id === form.colaborador_ids[0]);
         const payload = {
           ...basePayload,
+          valor: computeValorFor(form.escopo === 'global' ? null : colab),
           colaborador_id: form.escopo === 'global' ? null : (form.colaborador_ids[0] || null),
         };
         const { error } = await supabase.from('adicionais').update(payload).eq('id', editId);
         if (error) throw error;
       } else {
         if (form.escopo === 'global') {
-          const { error } = await supabase.from('adicionais').insert({ ...basePayload, colaborador_id: null });
+          const { error } = await supabase.from('adicionais').insert({
+            ...basePayload,
+            valor: computeValorFor(null),
+            colaborador_id: null,
+          });
           if (error) throw error;
         } else {
-          // Insert one row per selected collaborator
-          const rows = form.colaborador_ids.map(cid => ({ ...basePayload, colaborador_id: cid }));
+          const rows = form.colaborador_ids.map(cid => {
+            const colab = colaboradores.find((c: any) => c.id === cid);
+            return { ...basePayload, valor: computeValorFor(colab), colaborador_id: cid };
+          });
           if (rows.length === 0) throw new Error('Selecione ao menos um colaborador');
           const { error } = await supabase.from('adicionais').insert(rows);
           if (error) throw error;
@@ -155,6 +181,9 @@ const Adicionais = () => {
       ano: item.ano ? String(item.ano) : '',
       mes_fim: item.mes_fim ? String(item.mes_fim) : '',
       ano_fim: item.ano_fim ? String(item.ano_fim) : '',
+      modo_calculo: (item.modo_calculo as ModoCalculo) || 'fixo',
+      percentual: item.percentual != null ? String(item.percentual) : '',
+      base_calculo: (item.base_calculo as BaseCalculo) || '',
     });
     setDialogOpen(true);
   };
@@ -179,7 +208,13 @@ const Adicionais = () => {
     return inicio;
   };
 
-  const canSave = form.descricao.trim() && form.valor &&
+  const valorOk = isRegraCalculoValid({
+    modo_calculo: form.modo_calculo,
+    valor: form.valor,
+    percentual: form.percentual,
+    base_calculo: form.base_calculo,
+  });
+  const canSave = form.descricao.trim() && valorOk &&
     (form.escopo === 'global' || form.colaborador_ids.length > 0);
 
   return (
@@ -320,21 +355,24 @@ const Adicionais = () => {
                 <Input placeholder="Ex: Insalubridade, Hora Extra" value={form.descricao} onChange={(e) => setForm(p => ({ ...p, descricao: e.target.value }))} />
               )}
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Valor (R$) *</Label>
-                <Input type="number" placeholder="0.00" value={form.valor} onChange={(e) => setForm(p => ({ ...p, valor: e.target.value }))} />
-              </div>
-              <div className="space-y-2">
-                <Label>Tipo</Label>
-                <Select value={form.tipo} onValueChange={(v) => setForm(p => ({ ...p, tipo: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="fixo">Fixo (Recorrente)</SelectItem>
-                    <SelectItem value="eventual">Eventual</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <RegraCalculoFields
+              state={{
+                modo_calculo: form.modo_calculo,
+                valor: form.valor,
+                percentual: form.percentual,
+                base_calculo: form.base_calculo,
+              }}
+              onChange={(next) => setForm(p => ({ ...p, ...next }))}
+            />
+            <div className="space-y-2">
+              <Label>Tipo</Label>
+              <Select value={form.tipo} onValueChange={(v) => setForm(p => ({ ...p, tipo: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="fixo">Fixo (Recorrente)</SelectItem>
+                  <SelectItem value="eventual">Eventual</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             {form.tipo === 'eventual' && (
               <>
