@@ -786,6 +786,9 @@ const FolhaProcessamento = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todas Secretarias</SelectItem>
+                    {hasPendingSecretaria && (
+                      <SelectItem value="__pending__" className="text-destructive font-medium">⚠ Pendente de vinculação</SelectItem>
+                    )}
                     {secretariasUnicas.map((s: string) => (
                       <SelectItem key={s} value={s}>{s}</SelectItem>
                     ))}
@@ -799,6 +802,9 @@ const FolhaProcessamento = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todas Funções</SelectItem>
+                    {hasPendingFuncao && (
+                      <SelectItem value="__pending__" className="text-destructive font-medium">⚠ Pendente de vinculação</SelectItem>
+                    )}
                     {funcoesUnicas.map((f: string) => (
                       <SelectItem key={f} value={f}>{f}</SelectItem>
                     ))}
