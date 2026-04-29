@@ -460,12 +460,16 @@ const FolhaProcessamento = () => {
   // Extract unique secretarias and funcoes from folha data for filters
   const secretariasUnicas = [...new Set(folha.map((r: any) => r.secretaria).filter(Boolean))].sort();
   const funcoesUnicas = [...new Set(folha.map((r: any) => r.funcao).filter(Boolean))].sort();
+  const hasPendingSecretaria = folha.some((r: any) => !r.secretaria);
+  const hasPendingFuncao = folha.some((r: any) => !r.funcao);
 
   // Filtered + paginated
   const filtered = folha.filter((r: any) => {
     const matchSearch = !search || r.nome?.toLowerCase().includes(search.toLowerCase()) || r.cpf?.includes(search);
-    const matchSecretaria = filterSecretaria === 'all' || r.secretaria === filterSecretaria;
-    const matchFuncao = filterFuncao === 'all' || r.funcao === filterFuncao;
+    const matchSecretaria = filterSecretaria === 'all'
+      || (filterSecretaria === '__pending__' ? !r.secretaria : r.secretaria === filterSecretaria);
+    const matchFuncao = filterFuncao === 'all'
+      || (filterFuncao === '__pending__' ? !r.funcao : r.funcao === filterFuncao);
     const valorRef = Number(r.liquido);
     const matchValorMin = !filterValorMin || valorRef >= Number(filterValorMin);
     const matchValorMax = !filterValorMax || valorRef <= Number(filterValorMax);
@@ -782,6 +786,9 @@ const FolhaProcessamento = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todas Secretarias</SelectItem>
+                    {hasPendingSecretaria && (
+                      <SelectItem value="__pending__" className="text-destructive font-medium">⚠ Pendente de vinculação</SelectItem>
+                    )}
                     {secretariasUnicas.map((s: string) => (
                       <SelectItem key={s} value={s}>{s}</SelectItem>
                     ))}
@@ -795,6 +802,9 @@ const FolhaProcessamento = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todas Funções</SelectItem>
+                    {hasPendingFuncao && (
+                      <SelectItem value="__pending__" className="text-destructive font-medium">⚠ Pendente de vinculação</SelectItem>
+                    )}
                     {funcoesUnicas.map((f: string) => (
                       <SelectItem key={f} value={f}>{f}</SelectItem>
                     ))}
