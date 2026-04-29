@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { SearchableSelect } from '@/components/SearchableSelect';
+import { RegraCalculoFields, isRegraCalculoValid, type ModoCalculo, type BaseCalculo } from '@/components/RegraCalculoFields';
 
 interface AdicionalForm {
   escopo: string;
@@ -25,10 +26,14 @@ interface AdicionalForm {
   ano: string;
   mes_fim: string;
   ano_fim: string;
+  modo_calculo: ModoCalculo;
+  percentual: string;
+  base_calculo: BaseCalculo | '';
 }
 
 const emptyForm: AdicionalForm = {
   escopo: 'individual', colaborador_ids: [], descricao: '', valor: '', tipo: 'fixo', mes: '', ano: '', mes_fim: '', ano_fim: '',
+  modo_calculo: 'fixo', percentual: '', base_calculo: '',
 };
 
 const Adicionais = () => {
