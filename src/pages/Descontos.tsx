@@ -313,18 +313,19 @@ const Descontos = () => {
               </div>
             )}
             <div className="space-y-2">
-              <Label>Descrição *</Label>
+              <Label>Rubrica *</Label>
               {rubricas.length > 0 ? (
-                <Select value={form.descricao} onValueChange={(v) => setForm(p => ({ ...p, descricao: v }))}>
-                  <SelectTrigger><SelectValue placeholder="Selecione a rubrica" /></SelectTrigger>
-                  <SelectContent>
-                    {rubricas.map((r: any) => (
-                      <SelectItem key={r.id} value={r.nome}>{r.codigo} - {r.nome}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <SearchableSelect
+                  options={rubricas.map((r: any) => ({ value: r.nome, label: `${r.codigo} - ${r.nome}` }))}
+                  value={form.descricao}
+                  onValueChange={(v) => setForm(p => ({ ...p, descricao: v }))}
+                  placeholder="Selecione a rubrica"
+                  emptyText="Nenhuma rubrica encontrada"
+                />
               ) : (
-                <Input placeholder="Ex: INSS, ISS, Pensão" value={form.descricao} onChange={(e) => setForm(p => ({ ...p, descricao: e.target.value }))} />
+                <div className="text-sm text-muted-foreground border border-dashed rounded-md p-3">
+                  Nenhuma rubrica de desconto cadastrada nesta unidade. Cadastre em <strong>Folha → Rubricas</strong> antes de continuar.
+                </div>
               )}
             </div>
             <RegraCalculoFields
