@@ -327,16 +327,22 @@ const Descontos = () => {
                 <Input placeholder="Ex: INSS, ISS, Pensão" value={form.descricao} onChange={(e) => setForm(p => ({ ...p, descricao: e.target.value }))} />
               )}
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Valor *</Label>
-                <Input type="number" placeholder="0.00" value={form.valor} onChange={(e) => setForm(p => ({ ...p, valor: e.target.value }))} />
-              </div>
-              <div className="space-y-2 flex items-end gap-3 pb-0.5">
+            <RegraCalculoFields
+              state={{
+                modo_calculo: form.modo_calculo,
+                valor: form.valor,
+                percentual: form.percentual,
+                base_calculo: form.base_calculo,
+              }}
+              onChange={(next) => setForm(p => ({ ...p, ...next }))}
+              valorLabel={form.is_percentual ? 'Valor (%) *' : 'Valor (R$) *'}
+            />
+            {form.modo_calculo === 'fixo' && (
+              <div className="flex items-center gap-3">
                 <Switch checked={form.is_percentual} onCheckedChange={(v) => setForm(p => ({ ...p, is_percentual: v }))} />
-                <Label>{form.is_percentual ? 'Percentual (%)' : 'Valor fixo (R$)'}</Label>
+                <Label>{form.is_percentual ? 'Tratar valor digitado como percentual (%)' : 'Tratar valor digitado como R$'}</Label>
               </div>
-            </div>
+            )}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Mês (vazio = recorrente)</Label>
