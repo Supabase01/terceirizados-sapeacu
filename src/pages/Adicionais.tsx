@@ -355,21 +355,24 @@ const Adicionais = () => {
                 <Input placeholder="Ex: Insalubridade, Hora Extra" value={form.descricao} onChange={(e) => setForm(p => ({ ...p, descricao: e.target.value }))} />
               )}
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Valor (R$) *</Label>
-                <Input type="number" placeholder="0.00" value={form.valor} onChange={(e) => setForm(p => ({ ...p, valor: e.target.value }))} />
-              </div>
-              <div className="space-y-2">
-                <Label>Tipo</Label>
-                <Select value={form.tipo} onValueChange={(v) => setForm(p => ({ ...p, tipo: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="fixo">Fixo (Recorrente)</SelectItem>
-                    <SelectItem value="eventual">Eventual</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <RegraCalculoFields
+              state={{
+                modo_calculo: form.modo_calculo,
+                valor: form.valor,
+                percentual: form.percentual,
+                base_calculo: form.base_calculo,
+              }}
+              onChange={(next) => setForm(p => ({ ...p, ...next }))}
+            />
+            <div className="space-y-2">
+              <Label>Tipo</Label>
+              <Select value={form.tipo} onValueChange={(v) => setForm(p => ({ ...p, tipo: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="fixo">Fixo (Recorrente)</SelectItem>
+                  <SelectItem value="eventual">Eventual</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             {form.tipo === 'eventual' && (
               <>
