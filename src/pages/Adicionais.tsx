@@ -65,7 +65,7 @@ const Adicionais = () => {
   const { data: colaboradores = [] } = useQuery({
     queryKey: ['colaboradores-ativos', unidadeId],
     queryFn: async () => {
-      let query = supabase.from('colaboradores').select('id, nome, cpf').eq('ativo', true).order('nome');
+      let query = supabase.from('colaboradores').select('id, nome, cpf, salario_base').eq('ativo', true).order('nome');
       if (unidadeId) query = query.eq('unidade_id', unidadeId);
       const { data, error } = await query;
       if (error) throw error;
@@ -98,11 +98,13 @@ const Adicionais = () => {
       const isPercentual = form.modo_calculo === 'percentual';
       const percentualNum = Number(form.percentual) || 0;
 
+      // Snapshot: estimativa do valor calculado no momento do save.
+      // O valor real será recalculado durante o processamento da folha.
+      // Para % sobre 'bruto'/'liquido', sem contexto de folha usamos o salario_base
+      // como melhor aproximação disponível.
       const computeValorFor = (colaborador: any | null): number => {
         if (!isPercentual) return Number(form.valor) || 0;
         const base = Number(colaborador?.salario_base) || 0;
-        // For 'bruto' and 'liquido', without payroll context we use salario_base as best estimate.
-        // The stored value is recalculated/refreshed at payroll processing time if needed.
         return +(base * (percentualNum / 100)).toFixed(2);
       };
 

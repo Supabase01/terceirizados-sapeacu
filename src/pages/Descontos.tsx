@@ -63,7 +63,7 @@ const Descontos = () => {
   const { data: colaboradores = [] } = useQuery({
     queryKey: ['colaboradores-ativos', unidadeId],
     queryFn: async () => {
-      let query = supabase.from('colaboradores').select('id, nome, cpf').eq('ativo', true).order('nome');
+      let query = supabase.from('colaboradores').select('id, nome, cpf, salario_base').eq('ativo', true).order('nome');
       if (unidadeId) query = query.eq('unidade_id', unidadeId);
       const { data, error } = await query;
       if (error) throw error;
@@ -95,6 +95,9 @@ const Descontos = () => {
       const isPercentual = form.modo_calculo === 'percentual';
       const percentualNum = Number(form.percentual) || 0;
 
+      // Snapshot: estimativa do valor do desconto no momento do save.
+      // O valor real é recalculado durante o processamento da folha,
+      // usando bruto/líquido reais. Aqui usamos salario_base como aproximação.
       const computeValorFor = (colaborador: any | null): number => {
         if (!isPercentual) return Number(form.valor) || 0;
         const base = Number(colaborador?.salario_base) || 0;
