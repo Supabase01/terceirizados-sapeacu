@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { SearchableSelect } from '@/components/SearchableSelect';
+import { RegraCalculoFields, isRegraCalculoValid, type ModoCalculo, type BaseCalculo } from '@/components/RegraCalculoFields';
 
 interface DescontoForm {
   colaborador_ids: string[];
@@ -24,10 +25,14 @@ interface DescontoForm {
   escopo: string;
   mes: string;
   ano: string;
+  modo_calculo: ModoCalculo;
+  percentual: string;
+  base_calculo: BaseCalculo | '';
 }
 
 const emptyForm: DescontoForm = {
   colaborador_ids: [], descricao: '', valor: '', is_percentual: false, escopo: 'individual', mes: '', ano: '',
+  modo_calculo: 'fixo', percentual: '', base_calculo: '',
 };
 
 const Descontos = () => {
