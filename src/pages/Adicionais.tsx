@@ -95,9 +95,19 @@ const Adicionais = () => {
   const saveMutation = useMutation({
     mutationFn: async () => {
       const isEventual = form.tipo === 'eventual';
+      const isPercentual = form.modo_calculo === 'percentual';
+      const percentualNum = Number(form.percentual) || 0;
+
+      const computeValorFor = (colaborador: any | null): number => {
+        if (!isPercentual) return Number(form.valor) || 0;
+        const base = Number(colaborador?.salario_base) || 0;
+        // For 'bruto' and 'liquido', without payroll context we use salario_base as best estimate.
+        // The stored value is recalculated/refreshed at payroll processing time if needed.
+        return +(base * (percentualNum / 100)).toFixed(2);
+      };
+
       const basePayload: any = {
         descricao: form.descricao,
-        valor: Number(form.valor) || 0,
         tipo: form.tipo,
         escopo: form.escopo,
         mes: isEventual && form.mes ? Number(form.mes) : null,
@@ -105,22 +115,33 @@ const Adicionais = () => {
         mes_fim: isEventual && form.mes_fim ? Number(form.mes_fim) : null,
         ano_fim: isEventual && form.ano_fim ? Number(form.ano_fim) : null,
         unidade_id: unidadeId,
+        modo_calculo: form.modo_calculo,
+        percentual: isPercentual ? percentualNum : null,
+        base_calculo: isPercentual ? form.base_calculo || null : null,
       };
 
       if (editId) {
+        const colab = colaboradores.find((c: any) => c.id === form.colaborador_ids[0]);
         const payload = {
           ...basePayload,
+          valor: computeValorFor(form.escopo === 'global' ? null : colab),
           colaborador_id: form.escopo === 'global' ? null : (form.colaborador_ids[0] || null),
         };
         const { error } = await supabase.from('adicionais').update(payload).eq('id', editId);
         if (error) throw error;
       } else {
         if (form.escopo === 'global') {
-          const { error } = await supabase.from('adicionais').insert({ ...basePayload, colaborador_id: null });
+          const { error } = await supabase.from('adicionais').insert({
+            ...basePayload,
+            valor: computeValorFor(null),
+            colaborador_id: null,
+          });
           if (error) throw error;
         } else {
-          // Insert one row per selected collaborator
-          const rows = form.colaborador_ids.map(cid => ({ ...basePayload, colaborador_id: cid }));
+          const rows = form.colaborador_ids.map(cid => {
+            const colab = colaboradores.find((c: any) => c.id === cid);
+            return { ...basePayload, valor: computeValorFor(colab), colaborador_id: cid };
+          });
           if (rows.length === 0) throw new Error('Selecione ao menos um colaborador');
           const { error } = await supabase.from('adicionais').insert(rows);
           if (error) throw error;
