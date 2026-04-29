@@ -457,11 +457,17 @@ const FolhaProcessamento = () => {
 
   const isDraft = folha.length > 0;
 
-  // Extract unique secretarias and funcoes from folha data for filters
-  const secretariasUnicas = [...new Set(folha.map((r: any) => r.secretaria).filter(Boolean))].sort();
-  const funcoesUnicas = [...new Set(folha.map((r: any) => r.funcao).filter(Boolean))].sort();
-  const hasPendingSecretaria = folha.some((r: any) => !r.secretaria);
-  const hasPendingFuncao = folha.some((r: any) => !r.funcao);
+  // Dependent filter options: each dropdown shows only values compatible with the OTHER active filter
+  const folhaForSecretarias = folha.filter((r: any) =>
+    filterFuncao === 'all' || (filterFuncao === '__pending__' ? !r.funcao : r.funcao === filterFuncao)
+  );
+  const folhaForFuncoes = folha.filter((r: any) =>
+    filterSecretaria === 'all' || (filterSecretaria === '__pending__' ? !r.secretaria : r.secretaria === filterSecretaria)
+  );
+  const secretariasUnicas = [...new Set(folhaForSecretarias.map((r: any) => r.secretaria).filter(Boolean))].sort();
+  const funcoesUnicas = [...new Set(folhaForFuncoes.map((r: any) => r.funcao).filter(Boolean))].sort();
+  const hasPendingSecretaria = folhaForSecretarias.some((r: any) => !r.secretaria);
+  const hasPendingFuncao = folhaForFuncoes.some((r: any) => !r.funcao);
 
   // Filtered + paginated
   const filtered = folha.filter((r: any) => {
