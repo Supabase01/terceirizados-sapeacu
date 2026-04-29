@@ -181,6 +181,9 @@ const Adicionais = () => {
       ano: item.ano ? String(item.ano) : '',
       mes_fim: item.mes_fim ? String(item.mes_fim) : '',
       ano_fim: item.ano_fim ? String(item.ano_fim) : '',
+      modo_calculo: (item.modo_calculo as ModoCalculo) || 'fixo',
+      percentual: item.percentual != null ? String(item.percentual) : '',
+      base_calculo: (item.base_calculo as BaseCalculo) || '',
     });
     setDialogOpen(true);
   };
@@ -205,7 +208,13 @@ const Adicionais = () => {
     return inicio;
   };
 
-  const canSave = form.descricao.trim() && form.valor &&
+  const valorOk = isRegraCalculoValid({
+    modo_calculo: form.modo_calculo,
+    valor: form.valor,
+    percentual: form.percentual,
+    base_calculo: form.base_calculo,
+  });
+  const canSave = form.descricao.trim() && valorOk &&
     (form.escopo === 'global' || form.colaborador_ids.length > 0);
 
   return (
