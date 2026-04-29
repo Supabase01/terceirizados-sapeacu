@@ -95,6 +95,9 @@ const Descontos = () => {
       const isPercentual = form.modo_calculo === 'percentual';
       const percentualNum = Number(form.percentual) || 0;
 
+      // Snapshot: estimativa do valor do desconto no momento do save.
+      // O valor real é recalculado durante o processamento da folha,
+      // usando bruto/líquido reais. Aqui usamos salario_base como aproximação.
       const computeValorFor = (colaborador: any | null): number => {
         if (!isPercentual) return Number(form.valor) || 0;
         const base = Number(colaborador?.salario_base) || 0;
