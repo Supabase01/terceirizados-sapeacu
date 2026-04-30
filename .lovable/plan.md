@@ -1,102 +1,48 @@
+## Controle de Faltas integrado à Frequência
 
-## Objetivo
-Reorganizar a navegação em torno de **Módulos** (blocos visuais na página principal). Cada módulo agrupa páginas relacionadas. Dentro de um módulo, a sidebar lateral atual continua funcionando, mas filtrada para mostrar somente as páginas daquele módulo, com um botão "Módulos" no topo para voltar ao Hub.
+Adicionar o registro de **quantidade de faltas** ao módulo Frequência e descontá-las automaticamente da folha do colaborador na competência correspondente.
 
-## Os 7 Módulos
-Mantém-se a estrutura atual de grupos como módulos:
-
-1. **Indicadores** — Dashboards e KPIs
-2. **Cadastros** — Colaboradores, Secretarias, Funções, Lotações, Encargos, Rubricas
-3. **Folha de Pagamentos** — Em Processamento, Processada, Pagamento, Adicionais, Descontos
-4. **Relatórios** — Geração de relatórios
-5. **Auditoria** — Alertas, Log de Alterações, Log do Sistema
-6. **Importação** — Folha de Pagamento, Colaboradores
-7. **Administrador** — Configurações, Instituições, Unidades, Cidades, Lideranças
-
-## Fluxo de Navegação
-
-```text
-Login → PIN → Selecionar Unidade → /modulos (HUB)
-                                       │
-                                       ├─→ Clica "Cadastros"
-                                       │      ↓
-                                       │   /cadastro/colaboradores
-                                       │   (sidebar mostra só itens de Cadastros
-                                       │    + botão "← Módulos" no topo)
-                                       │
-                                       └─→ Clica "← Módulos" → volta ao /modulos
+### Regra de cálculo
 ```
-
-## Páginas e Componentes
-
-### 1. Nova página `/modulos` (Hub)
-- Grid responsivo de **cards** (3 colunas em desktop, 2 em tablet, 1 em mobile).
-- Cada card exibe:
-  - Ícone grande do módulo (já existem em `AppSidebar.tsx`)
-  - Título do módulo
-  - Breve descrição (1 linha)
-  - Contador opcional de subpáginas disponíveis
-- Cards filtrados por permissões (`useAllowedRoutes`) e por `padrao` da unidade — se o usuário não tem acesso a nenhuma página do módulo, o card não aparece.
-- Ao clicar, navega para a **primeira subpágina permitida** daquele módulo.
-- Header com nome da unidade ativa + saudação.
-
-### 2. Refatorar `AppSidebar.tsx`
-- Detectar o **módulo ativo** pela rota atual (mapeando rota → módulo via a estrutura `modules`).
-- Renderizar **somente os itens daquele módulo** (sem o accordion de grupos).
-- Topo da sidebar: botão **"← Módulos"** que navega para `/modulos`.
-- Mantém:
-  - Branding "Gerencial Folha"
-  - Comportamento collapsible/hover atual
-  - Footer "Minha Conta"
-- Se a rota não pertencer a nenhum módulo (ex.: `/minha-conta`, `/selecionar-unidade`), sidebar mostra estado neutro com só o botão Módulos.
-
-### 3. Atualizar `App.tsx` (rotas)
-- Adicionar rota `/modulos` → componente `Hub`.
-- Após selecionar unidade, redirecionar para `/modulos` em vez de `/indicadores`.
-- Atualizar `SelecionarUnidade.tsx` (`handleSelect` → `navigate('/modulos')`).
-- Rota `/` (raiz autenticada) também aponta para `/modulos`.
-
-### 4. Estrutura compartilhada `src/config/modules.ts`
-Extrair a constante `modules` de `AppSidebar.tsx` para um arquivo compartilhado, consumido tanto pelo Hub quanto pela Sidebar. Adicionar a cada módulo:
-- `id` (slug: `indicadores`, `cadastros`, etc.)
-- `description` (texto curto para o card do Hub)
-- `color` (token semântico para destaque visual do card)
-
-## Design (tokens semânticos)
-- Cards do Hub: `bg-card`, `border-border`, hover com `border-primary/50` + leve elevação.
-- Ícone do card em círculo `bg-primary/10 text-primary`.
-- Botão "← Módulos" na sidebar: estilo discreto, `text-muted-foreground hover:text-foreground`, com separador abaixo.
-- Tudo via tokens de `index.css` / `tailwind.config.ts` — sem cores hardcoded.
-
-## Permissões e Multi-tenant
-- Hub respeita `useAllowedRoutes()` — módulo aparece só se houver pelo menos 1 subpágina permitida.
-- Filtro `padrao` (P01/P02) continua válido — Encargos some em P01.
-- Sidebar contextual respeita as mesmas regras.
-
-## Detalhes Técnicos
-
-**Arquivos a criar:**
-- `src/config/modules.ts` — definição compartilhada dos módulos
-- `src/pages/Hub.tsx` — página `/modulos` com grid de cards
-- `src/components/ModuleCard.tsx` — card individual do módulo
-
-**Arquivos a editar:**
-- `src/components/AppSidebar.tsx` — modo contextual (filtra por módulo ativo) + botão Módulos
-- `src/App.tsx` — adicionar rota `/modulos`, ajustar rota raiz
-- `src/pages/SelecionarUnidade.tsx` — redirect para `/modulos`
-- `src/pages/Auth.tsx` — redirect pós-login para `/modulos` (se já tem unidade)
-
-**Lógica de "módulo ativo" na sidebar:**
-```ts
-const activeModule = modules.find(m => 
-  m.items.some(i => location.pathname.startsWith(i.url))
-);
+Desconto por faltas = (Salário Bruto / 30) × quantidade de faltas
 ```
+- Aplicado por colaborador na competência (mês/ano) da frequência.
+- O Bruto usado é o calculado na folha daquela competência (Padrão 01: base + adicionais; Padrão 02: líquido + encargos).
+- Faltas = 0 → não gera desconto.
 
-**Memória do projeto:** atualizar `mem://style/design-system` e `mem://style/sidebar-interacao` refletindo a nova arquitetura modular.
+### Mudanças no banco
+1. Adicionar coluna `faltas` (integer, default 0, ≥ 0) na tabela `frequencias`.
+2. Adicionar coluna opcional `desconto_faltas` (numeric, default 0) — calculada e exibida, mas o cálculo "fonte da verdade" continua na geração da folha.
 
-## Fora de escopo (não muda)
-- Lógica de folha, cálculos, validações
-- Permissões RBAC (continua route-based)
-- Layout interno das páginas existentes
-- Fluxo de PIN e seleção de unidade
+### Mudanças na UI — `src/pages/Frequencia.tsx`
+1. Nova coluna **"Faltas"** na tabela com input numérico inline (0 por padrão) por colaborador.
+   - Editável apenas quando o status é `entregue` ou `justificado`.
+   - Salva ao perder foco (onBlur) ou Enter, com debounce.
+2. Novo card de resumo: **"Total de faltas"** (soma de todas as faltas da competência).
+3. **Marcação em lote** (`Marcar como entregue`) → segue zerando faltas (faltas = 0). Mantém comportamento atual.
+4. **Marcação individual** → após marcar como entregue, abre opcionalmente o input de faltas na linha (já visível na coluna). Mantém fluxo simples.
+5. No diálogo de Observação: adicionar campo "Quantidade de faltas" para edição rápida junto com a justificativa.
+6. Badge visual na linha quando `faltas > 0` (ex: `Badge` âmbar "3 faltas").
+
+### Mudanças na Folha — `src/pages/FolhaProcessamento.tsx`
+1. Na função de geração da folha (após calcular `bruto` e antes de aplicar descontos):
+   - Buscar `frequencias` da competência (`mes`, `ano`, `unidade_id`) com `faltas > 0`.
+   - Para cada colaborador com faltas: `descontoFaltas = (bruto / 30) * faltas`.
+   - Somar ao `total_descontos` e subtrair do `liquido`.
+   - Aplica-se a Padrão 01 normalmente. Para Padrão 02, descontar do líquido (recalcular líquido = líquido_original − descontoFaltas; bruto permanece).
+2. Registrar nos detalhes da folha (campo já existente ou via observação) que parte do desconto vem de faltas — opcional, sem nova coluna.
+
+### Feedback visual na folha
+- Na tabela da folha em processamento, exibir um badge pequeno "Nº faltas" ao lado do nome quando houver faltas registradas no mês.
+
+### Arquivos a alterar
+- `supabase/migrations/<novo>.sql` — adicionar `faltas` e `desconto_faltas` em `frequencias`.
+- `src/pages/Frequencia.tsx` — input inline de faltas, card resumo, salvar individual, badge.
+- `src/pages/FolhaProcessamento.tsx` — buscar frequências e aplicar desconto de faltas no cálculo.
+- `src/integrations/supabase/types.ts` — auto-regenerado.
+
+### Detalhes técnicos
+- Salvar faltas via `upsert` no mesmo padrão atual (`onConflict: 'colaborador_id,mes,ano'`).
+- Validação: faltas inteiras ≥ 0 e ≤ 31.
+- Lote sempre força `faltas = 0` (regra do usuário: "em lote por padrão é falta 0").
+- Cálculo do desconto usa `roundMoney` apenas no total final, não no intermediário (padrão do projeto).
