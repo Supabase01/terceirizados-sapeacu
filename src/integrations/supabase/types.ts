@@ -501,6 +501,48 @@ export type Database = {
           },
         ]
       }
+      frequencias: {
+        Row: {
+          ano: number
+          colaborador_id: string
+          created_at: string
+          created_by: string | null
+          data_entrega: string | null
+          id: string
+          mes: number
+          observacao: string | null
+          status: string
+          unidade_id: string
+          updated_at: string
+        }
+        Insert: {
+          ano: number
+          colaborador_id: string
+          created_at?: string
+          created_by?: string | null
+          data_entrega?: string | null
+          id?: string
+          mes: number
+          observacao?: string | null
+          status?: string
+          unidade_id: string
+          updated_at?: string
+        }
+        Update: {
+          ano?: number
+          colaborador_id?: string
+          created_at?: string
+          created_by?: string | null
+          data_entrega?: string | null
+          id?: string
+          mes?: number
+          observacao?: string | null
+          status?: string
+          unidade_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       funcao_sistema_permissoes: {
         Row: {
           allowed: boolean
