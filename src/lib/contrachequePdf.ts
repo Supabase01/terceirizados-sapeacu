@@ -355,6 +355,105 @@ export function downloadSingleContracheque(
   doc.save(`contracheque_${safeName}_${registro.mes}_${registro.ano}.pdf`);
 }
 
+/**
+ * Renders a compact single-page collective payslip listing for a single competência (mês/ano).
+ * One header for the unidade, all collaborators listed with bruto/descontos/líquido.
+ */
+export async function downloadColetivoContracheques(
+  registros: any[],
+  unidadeId: string,
+  mes: number,
+  ano: number,
+  filtros?: { secretaria?: string; lotacao?: string; funcao?: string },
+) {
+  if (registros.length === 0) return;
+  const unidadeInfo = await fetchUnidadeInfo(unidadeId);
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const W = doc.internal.pageSize.width;
+  const H = doc.internal.pageSize.height;
+  const m = 14;
+  let y = 14;
+
+  const inst = unidadeInfo?.instituicao;
+  // Header único
+  doc.setTextColor(51, 65, 85);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.text(inst?.nome || unidadeInfo?.nome || '—', m, y);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(110);
+  let infoY = y + 4.5;
+  const linha1 = [inst?.cnpj && `CNPJ: ${inst.cnpj}`, [inst?.cidade || unidadeInfo?.cidade, inst?.estado || unidadeInfo?.estado].filter(Boolean).join(' - ')].filter(Boolean).join(' • ');
+  if (linha1) { doc.text(linha1, m, infoY); infoY += 3.5; }
+  if (unidadeInfo?.nome && inst?.nome && unidadeInfo.nome !== inst.nome) {
+    doc.text(`Unidade: ${unidadeInfo.nome}`, m, infoY); infoY += 3.5;
+  }
+
+  doc.setTextColor(51, 65, 85);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.text('FOLHA DE PAGAMENTO — COLETIVO', W - m, y, { align: 'right' });
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(110);
+  doc.text(`Competência: ${monthName(mes)}/${ano}`, W - m, y + 4.5, { align: 'right' });
+  const filtrosTxt = [
+    filtros?.secretaria && `Secretaria: ${filtros.secretaria}`,
+    filtros?.lotacao && `Lotação: ${filtros.lotacao}`,
+    filtros?.funcao && `Função: ${filtros.funcao}`,
+  ].filter(Boolean).join(' • ');
+  if (filtrosTxt) doc.text(filtrosTxt, W - m, y + 8, { align: 'right' });
+
+  y = Math.max(infoY, y + 12) + 2;
+  doc.setDrawColor(180);
+  doc.setLineWidth(0.4);
+  doc.line(m, y, W - m, y);
+  y += 4;
+
+  // Tabela compacta
+  const totalBruto = registros.reduce((s, r) => s + Number(r.bruto || 0), 0);
+  const totalDesc = registros.reduce((s, r) => s + Number(r.total_descontos || 0), 0);
+  const totalLiq = registros.reduce((s, r) => s + Number(r.liquido || 0), 0);
+
+  autoTable(doc, {
+    startY: y,
+    head: [['#', 'Matrícula', 'Colaborador', 'CPF', 'Função', 'Secretaria', 'Bruto', 'Descontos', 'Líquido']],
+    body: registros.map((r, i) => [
+      String(i + 1),
+      r.matricula || '-',
+      r.nome,
+      r.cpf || '-',
+      r.funcao || '-',
+      r.secretaria || '-',
+      formatBRL(Number(r.bruto || 0)),
+      formatBRL(Number(r.total_descontos || 0)),
+      formatBRL(Number(r.liquido || 0)),
+    ]),
+    foot: [['', '', '', '', '', `TOTAIS (${registros.length})`, formatBRL(totalBruto), formatBRL(totalDesc), formatBRL(totalLiq)]],
+    theme: 'plain',
+    styles: { fontSize: 7.5, cellPadding: { top: 1.4, bottom: 1.4, left: 2, right: 2 }, textColor: [40, 40, 40] },
+    headStyles: { textColor: [120, 130, 140], fontStyle: 'bold', fontSize: 7, lineWidth: { bottom: 0.2 }, lineColor: [200, 205, 212] },
+    bodyStyles: { lineWidth: { bottom: 0.1 }, lineColor: [235, 238, 242] },
+    footStyles: { textColor: [51, 65, 85], fontStyle: 'bold', fontSize: 8, lineWidth: { top: 0.3 }, lineColor: [180, 188, 198] },
+    columnStyles: {
+      0: { cellWidth: 7, halign: 'right', textColor: [150, 150, 150] },
+      1: { cellWidth: 16 },
+      6: { halign: 'right' },
+      7: { halign: 'right', textColor: [120, 120, 120] },
+      8: { halign: 'right', fontStyle: 'bold' },
+    },
+    margin: { left: m, right: m },
+    didDrawPage: () => {
+      doc.setFontSize(7); doc.setTextColor(150); doc.setFont('helvetica', 'normal');
+      doc.text(`Gerado em ${new Date().toLocaleString('pt-BR')}`, m, H - 8);
+      doc.text(`Página ${doc.getCurrentPageInfo().pageNumber}`, W - m, H - 8, { align: 'right' });
+    },
+  });
+
+  doc.save(`folha_coletivo_${mes.toString().padStart(2,'0')}_${ano}.pdf`);
+}
+
 export async function downloadMultipleContracheques(
   registros: any[],
   unidadeId: string,
