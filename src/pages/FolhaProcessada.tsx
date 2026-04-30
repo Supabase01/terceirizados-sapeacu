@@ -14,9 +14,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Search, CheckCircle2, Loader2, FileText, Undo2, Send, Info, BarChart3 } from 'lucide-react';
+import { Search, CheckCircle2, Loader2, FileText, Undo2, Send, Info, BarChart3, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import ContrachequeDetalhado from '@/components/ContrachequeDetalhado';
 
 const currentDate = new Date();
 const defaultMes = currentDate.getMonth() + 1;
