@@ -265,7 +265,11 @@ const Descontos = () => {
                         <TableCell>{item.escopo === 'global' ? 'Todos' : (item.colaboradores as any)?.nome || '—'}</TableCell>
                         <TableCell className="hidden md:table-cell">{item.mes && item.ano ? `${String(item.mes).padStart(2, '0')}/${item.ano}` : 'Recorrente'}</TableCell>
                         <TableCell className="text-right font-mono">
-                          {item.is_percentual ? `${item.valor}%` : formatCurrency(item.valor)}
+                          {item.modo_calculo === 'percentual' ? (
+                            <span className="text-xs text-muted-foreground font-sans">
+                              {Number(item.percentual || 0).toFixed(2)}% sobre {item.base_calculo === 'bruto' ? 'bruto' : 'salário base'}
+                            </span>
+                          ) : item.is_percentual ? `${item.valor}%` : formatCurrency(item.valor)}
                         </TableCell>
                         <TableCell className="hidden lg:table-cell text-muted-foreground text-xs">
                           {new Date(item.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
