@@ -7,7 +7,7 @@ import { AppSidebar } from '@/components/AppSidebar';
 import { useUnidade } from '@/contexts/UnidadeContext';
 import { Badge } from '@/components/ui/badge';
 
-const Layout = ({ children }: { children: ReactNode }) => {
+const Layout = ({ children, hideSidebar = false }: { children: ReactNode; hideSidebar?: boolean }) => {
   const navigate = useNavigate();
   const { unidadeNome, clearUnidade } = useUnidade();
 
@@ -28,12 +28,12 @@ const Layout = ({ children }: { children: ReactNode }) => {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
-        <AppSidebar />
+        {!hideSidebar && <AppSidebar />}
 
         <div className="flex-1 flex flex-col min-w-0">
           <header className="sticky top-0 z-50 h-12 flex items-center justify-between border-b bg-card/80 backdrop-blur-sm px-3">
             <div className="flex items-center gap-2">
-              <SidebarTrigger className="ml-1" />
+              {!hideSidebar && <SidebarTrigger className="ml-1" />}
               <Button
                 variant="ghost"
                 size="sm"
