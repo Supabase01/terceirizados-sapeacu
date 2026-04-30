@@ -216,26 +216,33 @@ const FolhaProcessamento = () => {
         encargosData = enc || [];
       }
 
-      // Helper: check if adicional is valid for the period
-      const isAdicionalVigente = (a: any) => {
-        const inicio = (a.ano ?? 0) * 100 + (a.mes ?? 0);
-        const fim = (a.ano_fim ?? 9999) * 100 + (a.mes_fim ?? 12);
-        const current = ano * 100 + mes;
-        if (a.tipo === 'fixo') {
-          if (!a.ano && !a.mes) return true;
+      // Helper: vigência por tipo (recorrente | prazo | eventual).
+      // Mantém compatibilidade com o tipo legado 'fixo' = recorrente.
+      const current = ano * 100 + mes;
+      const isVigente = (r: any) => {
+        const tipo = r.tipo || 'recorrente';
+        if (tipo === 'recorrente' || tipo === 'fixo') {
+          // Sem competência = sempre vale
+          if (!r.ano && !r.mes) return true;
+          // Com competência (legado) = trata como prazo
+          const inicio = (r.ano ?? 0) * 100 + (r.mes ?? 0);
+          const fim = (r.ano_fim ?? r.ano ?? 9999) * 100 + (r.mes_fim ?? r.mes ?? 12);
           return current >= inicio && current <= fim;
         }
-        if (!a.ano && !a.mes) return false;
-        return current >= inicio && current <= fim;
+        if (tipo === 'eventual') {
+          return r.mes === mes && r.ano === ano;
+        }
+        if (tipo === 'prazo') {
+          const inicio = (r.ano ?? 0) * 100 + (r.mes ?? 0);
+          const fim = (r.ano_fim ?? 9999) * 100 + (r.mes_fim ?? 12);
+          return current >= inicio && current <= fim;
+        }
+        return false;
       };
+      const isAdicionalVigente = isVigente;
+      const isDescontoVigente = isVigente;
 
-      // Helper: check if desconto applies
-      const isDescontoVigente = (d: any) => {
-        if (d.mes && d.ano) return d.mes === mes && d.ano === ano;
-        return true;
-      };
-
-      // Global descontos
+      // Global descontos (sem colaborador)
       const descontosGlobais = (descontos || []).filter(
         (d: any) => d.escopo === 'global' && isDescontoVigente(d)
       );
@@ -321,7 +328,7 @@ const FolhaProcessamento = () => {
         const bruto = salarioBase + totalAdicionais;
 
         const descontosInd = (descontos || []).filter(
-          (d: any) => d.escopo === 'individual' && d.colaborador_id === col.id && isDescontoVigente(d)
+          (d: any) => (d.escopo === 'individual' || d.escopo === 'grupo') && d.colaborador_id === col.id && isDescontoVigente(d)
         );
 
         let totalDescontos = 0;

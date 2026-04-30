@@ -19,23 +19,34 @@ import { RegraCalculoFields, isRegraCalculoValid, type ModoCalculo, type BaseCal
 import { descontoSchema, zodErrorMap } from '@/lib/validators/financeiro';
 import { roundMoney } from '@/lib/money';
 
+type Escopo = 'global' | 'grupo' | 'individual';
+type TipoVigencia = 'recorrente' | 'prazo' | 'eventual';
+
 interface DescontoForm {
   colaborador_ids: string[];
   descricao: string;
   valor: string;
   is_percentual: boolean;
-  escopo: string;
+  escopo: Escopo;
+  tipo: TipoVigencia;
   mes: string;
   ano: string;
+  mes_fim: string;
+  ano_fim: string;
   modo_calculo: ModoCalculo;
   percentual: string;
   base_calculo: BaseCalculo | '';
 }
 
 const emptyForm: DescontoForm = {
-  colaborador_ids: [], descricao: '', valor: '', is_percentual: false, escopo: 'individual', mes: '', ano: '',
+  colaborador_ids: [], descricao: '', valor: '', is_percentual: false,
+  escopo: 'individual', tipo: 'recorrente',
+  mes: '', ano: '', mes_fim: '', ano_fim: '',
   modo_calculo: 'fixo', percentual: '', base_calculo: '',
 };
+
+const escopoLabel = (e: string) => e === 'global' ? 'Global' : e === 'grupo' ? 'Grupo' : 'Individual';
+const tipoLabel = (t: string) => t === 'eventual' ? 'Eventual' : t === 'prazo' ? 'Por prazo' : 'Recorrente';
 
 const Descontos = () => {
   const { toast } = useToast();
@@ -47,6 +58,7 @@ const Descontos = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [search, setSearch] = useState('');
   const [filterEscopo, setFilterEscopo] = useState<string>('todos');
+  const [filterTipo, setFilterTipo] = useState<string>('todos');
 
   const { data: descontos = [], isLoading } = useQuery({
     queryKey: ['descontos', unidadeId],
@@ -104,8 +116,9 @@ const Descontos = () => {
 
       const isPercentual = form.modo_calculo === 'percentual';
       const percentualNum = Number(form.percentual) || 0;
+      const isPrazo = form.tipo === 'prazo';
+      const isEventual = form.tipo === 'eventual';
 
-      // Snapshot: estimativa para listagem. Cálculo real acontece no processamento da folha.
       const computeValorFor = (colaborador: any | null): number => {
         if (!isPercentual) return roundMoney(Number(form.valor) || 0);
         const base = Number(colaborador?.salario_base) || 0;
@@ -116,8 +129,11 @@ const Descontos = () => {
         descricao: form.descricao,
         is_percentual: form.is_percentual,
         escopo: form.escopo,
-        mes: form.mes ? Number(form.mes) : null,
-        ano: form.ano ? Number(form.ano) : null,
+        tipo: form.tipo,
+        mes: (isPrazo || isEventual) ? Number(form.mes) : null,
+        ano: (isPrazo || isEventual) ? Number(form.ano) : null,
+        mes_fim: isPrazo ? Number(form.mes_fim) : null,
+        ano_fim: isPrazo ? Number(form.ano_fim) : null,
         unidade_id: unidadeId,
         modo_calculo: form.modo_calculo,
         percentual: isPercentual ? percentualNum : null,
@@ -180,9 +196,12 @@ const Descontos = () => {
       descricao: item.descricao,
       valor: String(item.valor),
       is_percentual: item.is_percentual,
-      escopo: item.escopo,
+      escopo: (item.escopo as Escopo) || 'individual',
+      tipo: (item.tipo as TipoVigencia) || 'recorrente',
       mes: item.mes ? String(item.mes) : '',
       ano: item.ano ? String(item.ano) : '',
+      mes_fim: item.mes_fim ? String(item.mes_fim) : '',
+      ano_fim: item.ano_fim ? String(item.ano_fim) : '',
       modo_calculo: (item.modo_calculo as ModoCalculo) || 'fixo',
       percentual: item.percentual != null ? String(item.percentual) : '',
       base_calculo: (item.base_calculo as BaseCalculo) || '',
@@ -194,10 +213,21 @@ const Descontos = () => {
     const matchSearch = d.descricao.toLowerCase().includes(search.toLowerCase()) ||
       (d.colaboradores as any)?.nome?.toLowerCase().includes(search.toLowerCase());
     const matchEscopo = filterEscopo === 'todos' || d.escopo === filterEscopo;
-    return matchSearch && matchEscopo;
+    const matchTipo = filterTipo === 'todos' || (d.tipo || 'recorrente') === filterTipo;
+    return matchSearch && matchEscopo && matchTipo;
   });
 
   const formatCurrency = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
+
+  const formatCompetencia = (item: any) => {
+    if ((item.tipo || 'recorrente') === 'recorrente') return 'Recorrente';
+    const inicio = `${String(item.mes).padStart(2, '0')}/${item.ano}`;
+    if (item.mes_fim && item.ano_fim) {
+      const fim = `${String(item.mes_fim).padStart(2, '0')}/${item.ano_fim}`;
+      return `${inicio} → ${fim}`;
+    }
+    return inicio;
+  };
 
   const valorOk = isRegraCalculoValid({
     modo_calculo: form.modo_calculo,
@@ -205,8 +235,18 @@ const Descontos = () => {
     percentual: form.percentual,
     base_calculo: form.base_calculo,
   });
-  const canSave = form.descricao.trim() && valorOk &&
-    (form.escopo === 'global' || form.colaborador_ids.length > 0);
+
+  const escopoOk =
+    form.escopo === 'global' ? true :
+    form.escopo === 'individual' ? form.colaborador_ids.length === 1 :
+    form.colaborador_ids.length >= 1;
+
+  const vigenciaOk =
+    form.tipo === 'recorrente' ? true :
+    form.tipo === 'eventual' ? !!(form.mes && form.ano) :
+    !!(form.mes && form.ano && form.mes_fim && form.ano_fim);
+
+  const canSave = !!form.descricao.trim() && valorOk && escopoOk && vigenciaOk;
 
   return (
     <Layout>
@@ -223,12 +263,22 @@ const Descontos = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input placeholder="Buscar..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
           </div>
-          <Select value={filterEscopo} onValueChange={setFilterEscopo}>
+          <Select value={filterTipo} onValueChange={setFilterTipo}>
             <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="todos">Todos</SelectItem>
-              <SelectItem value="global">Globais</SelectItem>
-              <SelectItem value="individual">Individuais</SelectItem>
+              <SelectItem value="todos">Todos tipos</SelectItem>
+              <SelectItem value="recorrente">Recorrente</SelectItem>
+              <SelectItem value="prazo">Por prazo</SelectItem>
+              <SelectItem value="eventual">Eventual</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={filterEscopo} onValueChange={setFilterEscopo}>
+            <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos escopos</SelectItem>
+              <SelectItem value="global">Global</SelectItem>
+              <SelectItem value="grupo">Grupo</SelectItem>
+              <SelectItem value="individual">Individual</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -242,6 +292,7 @@ const Descontos = () => {
                     <TableHead>Descrição</TableHead>
                     <TableHead>Escopo</TableHead>
                     <TableHead>Colaborador</TableHead>
+                    <TableHead>Tipo</TableHead>
                     <TableHead className="hidden md:table-cell">Competência</TableHead>
                     <TableHead className="text-right">Valor</TableHead>
                     <TableHead className="hidden lg:table-cell">Cadastrado em</TableHead>
@@ -250,20 +301,28 @@ const Descontos = () => {
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
-                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
                   ) : filtered.length === 0 ? (
-                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Nenhum desconto encontrado</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Nenhum desconto encontrado</TableCell></TableRow>
                   ) : (
-                    filtered.map((item: any) => (
+                    filtered.map((item: any) => {
+                      const esc = item.escopo || 'individual';
+                      const tp = item.tipo || 'recorrente';
+                      return (
                       <TableRow key={item.id}>
                         <TableCell className="font-medium">{item.descricao}</TableCell>
                         <TableCell>
-                          <Badge variant={item.escopo === 'global' ? 'destructive' : 'secondary'}>
-                            {item.escopo === 'global' ? 'Global' : 'Individual'}
+                          <Badge variant={esc === 'global' ? 'destructive' : esc === 'grupo' ? 'default' : 'secondary'}>
+                            {escopoLabel(esc)}
                           </Badge>
                         </TableCell>
-                        <TableCell>{item.escopo === 'global' ? 'Todos' : (item.colaboradores as any)?.nome || '—'}</TableCell>
-                        <TableCell className="hidden md:table-cell">{item.mes && item.ano ? `${String(item.mes).padStart(2, '0')}/${item.ano}` : 'Recorrente'}</TableCell>
+                        <TableCell>{esc === 'global' ? 'Todos' : (item.colaboradores as any)?.nome || '—'}</TableCell>
+                        <TableCell>
+                          <Badge variant={tp === 'recorrente' ? 'default' : 'secondary'}>
+                            {tipoLabel(tp)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">{formatCompetencia(item)}</TableCell>
                         <TableCell className="text-right font-mono">
                           {item.modo_calculo === 'percentual' ? (
                             <span className="text-xs text-muted-foreground font-sans">
@@ -281,7 +340,8 @@ const Descontos = () => {
                           </div>
                         </TableCell>
                       </TableRow>
-                    ))
+                      );
+                    })
                   )}
                 </TableBody>
               </Table>
@@ -294,19 +354,47 @@ const Descontos = () => {
         <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle>{editId ? 'Editar Desconto' : 'Novo Desconto'}</DialogTitle></DialogHeader>
           <div className="grid gap-4 py-2">
+            {/* ===== Escopo ===== */}
             <div className="space-y-2">
               <Label>Escopo *</Label>
-              <Select value={form.escopo} onValueChange={(v) => setForm(p => ({ ...p, escopo: v, colaborador_ids: v === 'global' ? [] : p.colaborador_ids }))}>
+              <Select
+                value={form.escopo}
+                onValueChange={(v) => setForm(p => ({
+                  ...p,
+                  escopo: v as Escopo,
+                  colaborador_ids: v === 'global' ? [] : p.colaborador_ids,
+                }))}
+              >
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="global">Global (Todos os colaboradores)</SelectItem>
-                  <SelectItem value="individual">Individual</SelectItem>
+                  <SelectItem value="global">Global — Todos os colaboradores</SelectItem>
+                  <SelectItem value="grupo">Grupo — Vários colaboradores selecionados</SelectItem>
+                  <SelectItem value="individual">Individual — Um único colaborador</SelectItem>
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground">
+                {form.escopo === 'global' && 'Aplicado automaticamente a todos os ativos.'}
+                {form.escopo === 'grupo' && 'Selecione os colaboradores que receberão este desconto.'}
+                {form.escopo === 'individual' && 'Selecione exatamente um colaborador.'}
+              </p>
             </div>
+
             {form.escopo === 'individual' && (
               <div className="space-y-2">
-                <Label>{editId ? 'Colaborador *' : 'Colaborador(es) *'}</Label>
+                <Label>Colaborador *</Label>
+                <SearchableSelect
+                  options={colaboradorOptions}
+                  value={form.colaborador_ids[0] || ''}
+                  onValueChange={(v) => setForm(p => ({ ...p, colaborador_ids: v ? [v] : [] }))}
+                  placeholder="Selecione o colaborador"
+                  emptyText="Nenhum colaborador encontrado"
+                />
+                {errors.colaborador_ids && <p className="text-xs text-destructive">{errors.colaborador_ids}</p>}
+              </div>
+            )}
+            {form.escopo === 'grupo' && (
+              <div className="space-y-2">
+                <Label>Colaboradores * <span className="text-xs text-muted-foreground">({form.colaborador_ids.length} selecionado{form.colaborador_ids.length === 1 ? '' : 's'})</span></Label>
                 {editId ? (
                   <SearchableSelect
                     options={colaboradorOptions}
@@ -325,9 +413,11 @@ const Descontos = () => {
                     emptyText="Nenhum colaborador encontrado"
                   />
                 )}
+                {editId && <p className="text-xs text-muted-foreground">Edição altera apenas este registro do grupo.</p>}
                 {errors.colaborador_ids && <p className="text-xs text-destructive">{errors.colaborador_ids}</p>}
               </div>
             )}
+
             <div className="space-y-2">
               <Label>Rubrica *</Label>
               {rubricas.length > 0 ? (
@@ -345,6 +435,7 @@ const Descontos = () => {
               )}
               {errors.descricao && <p className="text-xs text-destructive">{errors.descricao}</p>}
             </div>
+
             <RegraCalculoFields
               state={{
                 modo_calculo: form.modo_calculo,
@@ -363,19 +454,69 @@ const Descontos = () => {
                 <Label>{form.is_percentual ? 'Tratar valor digitado como percentual (%)' : 'Tratar valor digitado como R$'}</Label>
               </div>
             )}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Mês (vazio = recorrente)</Label>
-                <Input type="number" min="1" max="12" placeholder="1-12" value={form.mes} onChange={(e) => setForm(p => ({ ...p, mes: e.target.value }))} className={errors.mes ? 'border-destructive' : ''} />
-                {errors.mes && <p className="text-xs text-destructive">{errors.mes}</p>}
-              </div>
-              <div className="space-y-2">
-                <Label>Ano (vazio = recorrente)</Label>
-                <Input type="number" min="2020" placeholder="2026" value={form.ano} onChange={(e) => setForm(p => ({ ...p, ano: e.target.value }))} className={errors.ano ? 'border-destructive' : ''} />
-                {errors.ano && <p className="text-xs text-destructive">{errors.ano}</p>}
-              </div>
+
+            {/* ===== Tipo de vigência ===== */}
+            <div className="space-y-2">
+              <Label>Frequência *</Label>
+              <Select value={form.tipo} onValueChange={(v) => setForm(p => ({
+                ...p,
+                tipo: v as TipoVigencia,
+                ...(v === 'recorrente' ? { mes: '', ano: '', mes_fim: '', ano_fim: '' } : {}),
+                ...(v === 'eventual' ? { mes_fim: '', ano_fim: '' } : {}),
+              }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="recorrente">Recorrente — vigora todos os meses</SelectItem>
+                  <SelectItem value="prazo">Por prazo — período definido (início e fim)</SelectItem>
+                  <SelectItem value="eventual">Eventual — uma única competência</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <p className="text-xs text-muted-foreground">Para descontos recorrentes, deixe mês e ano em branco. Para uma única competência, preencha os dois.</p>
+
+            {form.tipo === 'eventual' && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Mês *</Label>
+                  <Input type="number" min="1" max="12" placeholder="1-12" value={form.mes} onChange={(e) => setForm(p => ({ ...p, mes: e.target.value }))} className={errors.mes ? 'border-destructive' : ''} />
+                  {errors.mes && <p className="text-xs text-destructive">{errors.mes}</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label>Ano *</Label>
+                  <Input type="number" min="2020" placeholder="2026" value={form.ano} onChange={(e) => setForm(p => ({ ...p, ano: e.target.value }))} className={errors.ano ? 'border-destructive' : ''} />
+                  {errors.ano && <p className="text-xs text-destructive">{errors.ano}</p>}
+                </div>
+              </div>
+            )}
+
+            {form.tipo === 'prazo' && (
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Mês Início *</Label>
+                    <Input type="number" min="1" max="12" placeholder="1-12" value={form.mes} onChange={(e) => setForm(p => ({ ...p, mes: e.target.value }))} className={errors.mes ? 'border-destructive' : ''} />
+                    {errors.mes && <p className="text-xs text-destructive">{errors.mes}</p>}
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Ano Início *</Label>
+                    <Input type="number" min="2020" placeholder="2026" value={form.ano} onChange={(e) => setForm(p => ({ ...p, ano: e.target.value }))} className={errors.ano ? 'border-destructive' : ''} />
+                    {errors.ano && <p className="text-xs text-destructive">{errors.ano}</p>}
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Mês Fim *</Label>
+                    <Input type="number" min="1" max="12" placeholder="1-12" value={form.mes_fim} onChange={(e) => setForm(p => ({ ...p, mes_fim: e.target.value }))} className={errors.mes_fim ? 'border-destructive' : ''} />
+                    {errors.mes_fim && <p className="text-xs text-destructive">{errors.mes_fim}</p>}
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Ano Fim *</Label>
+                    <Input type="number" min="2020" placeholder="2026" value={form.ano_fim} onChange={(e) => setForm(p => ({ ...p, ano_fim: e.target.value }))} className={errors.ano_fim ? 'border-destructive' : ''} />
+                    {errors.ano_fim && <p className="text-xs text-destructive">{errors.ano_fim}</p>}
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">Vigência incompleta ou fim anterior ao início será bloqueada.</p>
+              </>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={closeDialog}>Cancelar</Button>
