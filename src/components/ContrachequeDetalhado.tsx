@@ -464,7 +464,7 @@ const LinhaRow = ({ descricao, detalhe, valor, negativo }: { descricao: string; 
       <p className="text-sm truncate">{descricao}</p>
       {detalhe && <p className="text-[11px] text-muted-foreground">{detalhe}</p>}
     </div>
-    <span className={`text-sm font-medium tabular-nums shrink-0 ${negativo ? 'text-rose-600' : ''}`}>
+    <span className={`text-sm font-medium tabular-nums shrink-0 ${negativo ? 'text-foreground' : ''}`}>
       {negativo ? '- ' : ''}{formatBRL(valor)}
     </span>
   </div>
