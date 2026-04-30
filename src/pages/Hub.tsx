@@ -44,6 +44,7 @@ export default function Hub() {
                 icon={mod.icon}
                 itemsCount={mod.items.length}
                 targetUrl={mod.items[0].url}
+                color={mod.color}
               />
             ))}
           </div>
