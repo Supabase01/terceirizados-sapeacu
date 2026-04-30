@@ -457,11 +457,13 @@ const Descontos = () => {
                 valor: form.valor,
                 percentual: form.percentual,
                 base_calculo: form.base_calculo,
+                quantidade: form.quantidade,
+                valor_unitario: form.valor_unitario,
               }}
               onChange={(next) => setForm(p => ({ ...p, ...next }))}
               valorLabel={form.is_percentual ? 'Valor (%) *' : 'Valor (R$) *'}
               excludeBases={['liquido', 'outra']}
-              errors={{ valor: errors.valor, percentual: errors.percentual, base_calculo: errors.base_calculo }}
+              errors={{ valor: errors.valor, percentual: errors.percentual, base_calculo: errors.base_calculo, quantidade: errors.quantidade, valor_unitario: errors.valor_unitario }}
             />
             {form.modo_calculo === 'fixo' && (
               <div className="flex items-center gap-3">
