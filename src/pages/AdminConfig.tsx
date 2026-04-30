@@ -48,6 +48,24 @@ const AdminConfig = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { isAdmin, isLoading: loadingAdmin } = useIsAdmin();
+  const { isMaster: isMasterUser } = useIsMaster();
+  const [deleteUserConfirm, setDeleteUserConfirm] = useState<{ id: string; email: string } | null>(null);
+
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const { data, error } = await supabase.functions.invoke('delete-user', { body: { user_id: userId } });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+    },
+    onSuccess: () => {
+      toast({ title: 'Usuário excluído com sucesso' });
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      setDeleteUserConfirm(null);
+    },
+    onError: (err: any) => {
+      toast({ title: 'Erro ao excluir usuário', description: err.message, variant: 'destructive' });
+    },
+  });
 
   // --- State ---
   const [funcaoDialog, setFuncaoDialog] = useState(false);
