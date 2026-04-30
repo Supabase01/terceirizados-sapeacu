@@ -245,21 +245,25 @@ const ContrachequeDetalhado = ({ open, onOpenChange, registro, unidadeId, isPadr
       y = (doc as any).lastAutoTable.finalY + 4;
     };
 
+    const NEUTRAL_DARK: [number, number, number] = [55, 65, 81];      // slate-700
+    const NEUTRAL_MED: [number, number, number] = [100, 116, 139];    // slate-500
+    const NEUTRAL_HEADER: [number, number, number] = [71, 85, 105];   // slate-600
+
     if (!isPadrao02) {
-      sectionTitle('PROVENTOS', [16, 122, 87]);
+      sectionTitle('PROVENTOS', NEUTRAL_HEADER);
       renderTable(
         [{ descricao: 'Salário Base', valor: data.salarioBase }, ...data.adicionaisLinhas],
         'Total Proventos / Bruto',
         data.bruto,
-        [16, 122, 87],
+        NEUTRAL_DARK,
       );
-      sectionTitle('DESCONTOS', [190, 50, 70]);
-      renderTable(data.descontosLinhas, 'Total de Descontos', data.totalDescontos, [190, 50, 70], true);
+      sectionTitle('DESCONTOS', NEUTRAL_HEADER);
+      renderTable(data.descontosLinhas, 'Total de Descontos', data.totalDescontos, NEUTRAL_DARK, true);
     } else {
-      sectionTitle('LÍQUIDO CONTRATADO', [16, 122, 87]);
-      renderTable([{ descricao: 'Salário Líquido (base)', valor: data.salarioBase }], 'Líquido Base', data.salarioBase, [16, 122, 87]);
-      sectionTitle('ENCARGOS SOBRE O LÍQUIDO', [200, 130, 30]);
-      renderTable(data.encargosLinhas, 'Total de Encargos', data.totalEncargos, [200, 130, 30]);
+      sectionTitle('LÍQUIDO CONTRATADO', NEUTRAL_HEADER);
+      renderTable([{ descricao: 'Salário Líquido (base)', valor: data.salarioBase }], 'Líquido Base', data.salarioBase, NEUTRAL_DARK);
+      sectionTitle('ENCARGOS SOBRE O LÍQUIDO', NEUTRAL_HEADER);
+      renderTable(data.encargosLinhas, 'Total de Encargos', data.totalEncargos, NEUTRAL_DARK);
       // Bruto box
       doc.setFillColor(245, 247, 250);
       doc.rect(m, y, W - m * 2, 8, 'F');
@@ -268,14 +272,14 @@ const ContrachequeDetalhado = ({ open, onOpenChange, registro, unidadeId, isPadr
       doc.text(formatBRL(data.bruto), W - m - 2, y + 5.5, { align: 'right' });
       y += 12;
       if (data.descontosLinhas.length > 0) {
-        sectionTitle('DESCONTOS', [190, 50, 70]);
-        renderTable(data.descontosLinhas, 'Total de Descontos', data.totalDescontos, [190, 50, 70], true);
+        sectionTitle('DESCONTOS', NEUTRAL_HEADER);
+        renderTable(data.descontosLinhas, 'Total de Descontos', data.totalDescontos, NEUTRAL_DARK, true);
       }
     }
 
     // Líquido final
     if (y > 250) { doc.addPage(); y = 20; }
-    doc.setFillColor(41, 65, 122);
+    doc.setFillColor(51, 65, 85); // slate-700, formal
     doc.rect(m, y, W - m * 2, 14, 'F');
     doc.setTextColor(255); doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
     doc.text('VALOR LÍQUIDO A RECEBER', m + 3, y + 9);
