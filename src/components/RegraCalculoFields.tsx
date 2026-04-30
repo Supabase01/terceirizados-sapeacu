@@ -17,6 +17,9 @@ interface Props {
   state: RegraCalculoState;
   onChange: (next: Partial<RegraCalculoState>) => void;
   valorLabel?: string;
+  /** Bases a esconder do dropdown (ex: ['liquido'] em Descontos para evitar cálculo circular) */
+  excludeBases?: BaseCalculo[];
+  errors?: Partial<Record<'valor' | 'percentual' | 'base_calculo', string>>;
 }
 
 export const BASE_CALCULO_LABELS: Record<BaseCalculo, string> = {
@@ -26,7 +29,8 @@ export const BASE_CALCULO_LABELS: Record<BaseCalculo, string> = {
   outra: 'Outra base de cálculo',
 };
 
-export const RegraCalculoFields = ({ state, onChange, valorLabel = 'Valor (R$) *' }: Props) => {
+export const RegraCalculoFields = ({ state, onChange, valorLabel = 'Valor (R$) *', excludeBases = [], errors = {} }: Props) => {
+  const showBase = (b: BaseCalculo) => !excludeBases.includes(b);
   return (
     <div className="space-y-3">
       <div className="space-y-2">
@@ -48,10 +52,13 @@ export const RegraCalculoFields = ({ state, onChange, valorLabel = 'Valor (R$) *
           <Input
             type="number"
             step="0.01"
+            min="0"
             placeholder="0.00"
             value={state.valor}
             onChange={(e) => onChange({ valor: e.target.value })}
+            className={errors.valor ? 'border-destructive focus-visible:ring-destructive' : ''}
           />
+          {errors.valor && <p className="text-xs text-destructive">{errors.valor}</p>}
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3">
@@ -60,10 +67,14 @@ export const RegraCalculoFields = ({ state, onChange, valorLabel = 'Valor (R$) *
             <Input
               type="number"
               step="0.01"
+              min="0"
+              max="100"
               placeholder="0,00"
               value={state.percentual}
               onChange={(e) => onChange({ percentual: e.target.value })}
+              className={errors.percentual ? 'border-destructive focus-visible:ring-destructive' : ''}
             />
+            {errors.percentual && <p className="text-xs text-destructive">{errors.percentual}</p>}
           </div>
           <div className="space-y-2">
             <Label>Base de cálculo *</Label>
@@ -71,14 +82,17 @@ export const RegraCalculoFields = ({ state, onChange, valorLabel = 'Valor (R$) *
               value={state.base_calculo || ''}
               onValueChange={(v) => onChange({ base_calculo: v as BaseCalculo })}
             >
-              <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+              <SelectTrigger className={errors.base_calculo ? 'border-destructive focus:ring-destructive' : ''}>
+                <SelectValue placeholder="Selecione" />
+              </SelectTrigger>
               <SelectContent>
-                <SelectItem value="salario_base">Salário Base</SelectItem>
-                <SelectItem value="bruto">Salário Bruto</SelectItem>
-                <SelectItem value="liquido">Salário Líquido</SelectItem>
-                <SelectItem value="outra" disabled>Outra base (em breve)</SelectItem>
+                {showBase('salario_base') && <SelectItem value="salario_base">Salário Base</SelectItem>}
+                {showBase('bruto') && <SelectItem value="bruto">Salário Bruto</SelectItem>}
+                {showBase('liquido') && <SelectItem value="liquido">Salário Líquido</SelectItem>}
+                {showBase('outra') && <SelectItem value="outra" disabled>Outra base (em breve)</SelectItem>}
               </SelectContent>
             </Select>
+            {errors.base_calculo && <p className="text-xs text-destructive">{errors.base_calculo}</p>}
           </div>
         </div>
       )}
@@ -87,6 +101,6 @@ export const RegraCalculoFields = ({ state, onChange, valorLabel = 'Valor (R$) *
 };
 
 export const isRegraCalculoValid = (s: RegraCalculoState): boolean => {
-  if (s.modo_calculo === 'fixo') return !!s.valor;
-  return !!s.percentual && !!s.base_calculo && s.base_calculo !== 'outra';
+  if (s.modo_calculo === 'fixo') return !!s.valor && Number(s.valor) >= 0;
+  return !!s.percentual && Number(s.percentual) > 0 && Number(s.percentual) <= 100 && !!s.base_calculo && s.base_calculo !== 'outra';
 };

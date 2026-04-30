@@ -15,6 +15,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Label } from '@/components/ui/label';
 import { SearchableSelect } from '@/components/SearchableSelect';
 import { RegraCalculoFields, isRegraCalculoValid, type ModoCalculo, type BaseCalculo } from '@/components/RegraCalculoFields';
+import { adicionalSchema, zodErrorMap } from '@/lib/validators/financeiro';
+import { roundMoney } from '@/lib/money';
 
 interface AdicionalForm {
   escopo: string;
@@ -43,6 +45,7 @@ const Adicionais = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<AdicionalForm>(emptyForm);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [search, setSearch] = useState('');
   const [filterTipo, setFilterTipo] = useState<string>('todos');
   const [filterEscopo, setFilterEscopo] = useState<string>('todos');
@@ -94,18 +97,22 @@ const Adicionais = () => {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
+      const parsed = adicionalSchema.safeParse(form);
+      if (!parsed.success) {
+        setErrors(zodErrorMap(parsed.error));
+        throw new Error('Corrija os campos destacados antes de salvar');
+      }
+      setErrors({});
+
       const isEventual = form.tipo === 'eventual';
       const isPercentual = form.modo_calculo === 'percentual';
       const percentualNum = Number(form.percentual) || 0;
 
-      // Snapshot: estimativa do valor calculado no momento do save.
-      // O valor real será recalculado durante o processamento da folha.
-      // Para % sobre 'bruto'/'liquido', sem contexto de folha usamos o salario_base
-      // como melhor aproximação disponível.
+      // Snapshot: estimativa para listagem. Cálculo real acontece no processamento da folha.
       const computeValorFor = (colaborador: any | null): number => {
-        if (!isPercentual) return Number(form.valor) || 0;
+        if (!isPercentual) return roundMoney(Number(form.valor) || 0);
         const base = Number(colaborador?.salario_base) || 0;
-        return +(base * (percentualNum / 100)).toFixed(2);
+        return roundMoney(base * (percentualNum / 100));
       };
 
       const basePayload: any = {
@@ -169,7 +176,7 @@ const Adicionais = () => {
     },
   });
 
-  const closeDialog = () => { setDialogOpen(false); setEditId(null); setForm(emptyForm); };
+  const closeDialog = () => { setDialogOpen(false); setEditId(null); setForm(emptyForm); setErrors({}); };
 
   const openEdit = (item: any) => {
     setEditId(item.id);
@@ -285,7 +292,13 @@ const Adicionais = () => {
                         <TableCell>{(item.escopo || 'individual') === 'global' ? 'Todos' : (item.colaboradores as any)?.nome || '—'}</TableCell>
                         <TableCell><Badge variant={item.tipo === 'fixo' ? 'default' : 'secondary'}>{item.tipo === 'fixo' ? 'Fixo' : 'Eventual'}</Badge></TableCell>
                         <TableCell className="hidden md:table-cell">{formatCompetencia(item)}</TableCell>
-                        <TableCell className="text-right font-mono">{formatCurrency(item.valor)}</TableCell>
+                        <TableCell className="text-right font-mono">
+                          {item.modo_calculo === 'percentual' ? (
+                            <span className="text-xs text-muted-foreground font-sans">
+                              {Number(item.percentual || 0).toFixed(2)}% sobre {item.base_calculo === 'bruto' ? 'bruto' : item.base_calculo === 'liquido' ? 'líquido' : 'salário base'}
+                            </span>
+                          ) : formatCurrency(item.valor)}
+                        </TableCell>
                         <TableCell className="hidden lg:table-cell text-muted-foreground text-xs">
                           {new Date(item.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                         </TableCell>
@@ -340,6 +353,7 @@ const Adicionais = () => {
                     emptyText="Nenhum colaborador encontrado"
                   />
                 )}
+                {errors.colaborador_ids && <p className="text-xs text-destructive">{errors.colaborador_ids}</p>}
               </div>
             )}
             <div className="space-y-2">
@@ -357,6 +371,7 @@ const Adicionais = () => {
                   Nenhuma rubrica de adicional cadastrada nesta unidade. Cadastre em <strong>Folha → Rubricas</strong> antes de continuar.
                 </div>
               )}
+              {errors.descricao && <p className="text-xs text-destructive">{errors.descricao}</p>}
             </div>
             <RegraCalculoFields
               state={{
@@ -366,6 +381,7 @@ const Adicionais = () => {
                 base_calculo: form.base_calculo,
               }}
               onChange={(next) => setForm(p => ({ ...p, ...next }))}
+              errors={{ valor: errors.valor, percentual: errors.percentual, base_calculo: errors.base_calculo }}
             />
             <div className="space-y-2">
               <Label>Tipo</Label>
@@ -382,23 +398,28 @@ const Adicionais = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Mês Início *</Label>
-                    <Input type="number" min="1" max="12" placeholder="1-12" value={form.mes} onChange={(e) => setForm(p => ({ ...p, mes: e.target.value }))} />
+                    <Input type="number" min="1" max="12" placeholder="1-12" value={form.mes} onChange={(e) => setForm(p => ({ ...p, mes: e.target.value }))} className={errors.mes ? 'border-destructive' : ''} />
+                    {errors.mes && <p className="text-xs text-destructive">{errors.mes}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label>Ano Início *</Label>
-                    <Input type="number" min="2020" placeholder="2026" value={form.ano} onChange={(e) => setForm(p => ({ ...p, ano: e.target.value }))} />
+                    <Input type="number" min="2020" placeholder="2026" value={form.ano} onChange={(e) => setForm(p => ({ ...p, ano: e.target.value }))} className={errors.ano ? 'border-destructive' : ''} />
+                    {errors.ano && <p className="text-xs text-destructive">{errors.ano}</p>}
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Mês Fim (opcional)</Label>
-                    <Input type="number" min="1" max="12" placeholder="1-12" value={form.mes_fim} onChange={(e) => setForm(p => ({ ...p, mes_fim: e.target.value }))} />
+                    <Input type="number" min="1" max="12" placeholder="1-12" value={form.mes_fim} onChange={(e) => setForm(p => ({ ...p, mes_fim: e.target.value }))} className={errors.mes_fim ? 'border-destructive' : ''} />
+                    {errors.mes_fim && <p className="text-xs text-destructive">{errors.mes_fim}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label>Ano Fim (opcional)</Label>
-                    <Input type="number" min="2020" placeholder="2026" value={form.ano_fim} onChange={(e) => setForm(p => ({ ...p, ano_fim: e.target.value }))} />
+                    <Input type="number" min="2020" placeholder="2026" value={form.ano_fim} onChange={(e) => setForm(p => ({ ...p, ano_fim: e.target.value }))} className={errors.ano_fim ? 'border-destructive' : ''} />
+                    {errors.ano_fim && <p className="text-xs text-destructive">{errors.ano_fim}</p>}
                   </div>
                 </div>
+                <p className="text-xs text-muted-foreground">Vigência incompleta (só mês ou só ano) será bloqueada ao salvar.</p>
               </>
             )}
           </div>

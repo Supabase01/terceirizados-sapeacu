@@ -16,6 +16,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Label } from '@/components/ui/label';
 import { SearchableSelect } from '@/components/SearchableSelect';
 import { RegraCalculoFields, isRegraCalculoValid, type ModoCalculo, type BaseCalculo } from '@/components/RegraCalculoFields';
+import { descontoSchema, zodErrorMap } from '@/lib/validators/financeiro';
+import { roundMoney } from '@/lib/money';
 
 interface DescontoForm {
   colaborador_ids: string[];
@@ -42,6 +44,7 @@ const Descontos = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<DescontoForm>(emptyForm);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [search, setSearch] = useState('');
   const [filterEscopo, setFilterEscopo] = useState<string>('todos');
 
@@ -92,16 +95,21 @@ const Descontos = () => {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
+      const parsed = descontoSchema.safeParse(form);
+      if (!parsed.success) {
+        setErrors(zodErrorMap(parsed.error));
+        throw new Error('Corrija os campos destacados antes de salvar');
+      }
+      setErrors({});
+
       const isPercentual = form.modo_calculo === 'percentual';
       const percentualNum = Number(form.percentual) || 0;
 
-      // Snapshot: estimativa do valor do desconto no momento do save.
-      // O valor real é recalculado durante o processamento da folha,
-      // usando bruto/líquido reais. Aqui usamos salario_base como aproximação.
+      // Snapshot: estimativa para listagem. Cálculo real acontece no processamento da folha.
       const computeValorFor = (colaborador: any | null): number => {
-        if (!isPercentual) return Number(form.valor) || 0;
+        if (!isPercentual) return roundMoney(Number(form.valor) || 0);
         const base = Number(colaborador?.salario_base) || 0;
-        return +(base * (percentualNum / 100)).toFixed(2);
+        return roundMoney(base * (percentualNum / 100));
       };
 
       const basePayload: any = {
@@ -163,7 +171,7 @@ const Descontos = () => {
     },
   });
 
-  const closeDialog = () => { setDialogOpen(false); setEditId(null); setForm(emptyForm); };
+  const closeDialog = () => { setDialogOpen(false); setEditId(null); setForm(emptyForm); setErrors({}); };
 
   const openEdit = (item: any) => {
     setEditId(item.id);
@@ -257,7 +265,11 @@ const Descontos = () => {
                         <TableCell>{item.escopo === 'global' ? 'Todos' : (item.colaboradores as any)?.nome || '—'}</TableCell>
                         <TableCell className="hidden md:table-cell">{item.mes && item.ano ? `${String(item.mes).padStart(2, '0')}/${item.ano}` : 'Recorrente'}</TableCell>
                         <TableCell className="text-right font-mono">
-                          {item.is_percentual ? `${item.valor}%` : formatCurrency(item.valor)}
+                          {item.modo_calculo === 'percentual' ? (
+                            <span className="text-xs text-muted-foreground font-sans">
+                              {Number(item.percentual || 0).toFixed(2)}% sobre {item.base_calculo === 'bruto' ? 'bruto' : 'salário base'}
+                            </span>
+                          ) : item.is_percentual ? `${item.valor}%` : formatCurrency(item.valor)}
                         </TableCell>
                         <TableCell className="hidden lg:table-cell text-muted-foreground text-xs">
                           {new Date(item.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
@@ -313,6 +325,7 @@ const Descontos = () => {
                     emptyText="Nenhum colaborador encontrado"
                   />
                 )}
+                {errors.colaborador_ids && <p className="text-xs text-destructive">{errors.colaborador_ids}</p>}
               </div>
             )}
             <div className="space-y-2">
@@ -330,6 +343,7 @@ const Descontos = () => {
                   Nenhuma rubrica de desconto cadastrada nesta unidade. Cadastre em <strong>Folha → Rubricas</strong> antes de continuar.
                 </div>
               )}
+              {errors.descricao && <p className="text-xs text-destructive">{errors.descricao}</p>}
             </div>
             <RegraCalculoFields
               state={{
@@ -340,6 +354,8 @@ const Descontos = () => {
               }}
               onChange={(next) => setForm(p => ({ ...p, ...next }))}
               valorLabel={form.is_percentual ? 'Valor (%) *' : 'Valor (R$) *'}
+              excludeBases={['liquido', 'outra']}
+              errors={{ valor: errors.valor, percentual: errors.percentual, base_calculo: errors.base_calculo }}
             />
             {form.modo_calculo === 'fixo' && (
               <div className="flex items-center gap-3">
@@ -350,13 +366,16 @@ const Descontos = () => {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Mês (vazio = recorrente)</Label>
-                <Input type="number" min="1" max="12" placeholder="1-12" value={form.mes} onChange={(e) => setForm(p => ({ ...p, mes: e.target.value }))} />
+                <Input type="number" min="1" max="12" placeholder="1-12" value={form.mes} onChange={(e) => setForm(p => ({ ...p, mes: e.target.value }))} className={errors.mes ? 'border-destructive' : ''} />
+                {errors.mes && <p className="text-xs text-destructive">{errors.mes}</p>}
               </div>
               <div className="space-y-2">
                 <Label>Ano (vazio = recorrente)</Label>
-                <Input type="number" min="2020" placeholder="2026" value={form.ano} onChange={(e) => setForm(p => ({ ...p, ano: e.target.value }))} />
+                <Input type="number" min="2020" placeholder="2026" value={form.ano} onChange={(e) => setForm(p => ({ ...p, ano: e.target.value }))} className={errors.ano ? 'border-destructive' : ''} />
+                {errors.ano && <p className="text-xs text-destructive">{errors.ano}</p>}
               </div>
             </div>
+            <p className="text-xs text-muted-foreground">Para descontos recorrentes, deixe mês e ano em branco. Para uma única competência, preencha os dois.</p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={closeDialog}>Cancelar</Button>
