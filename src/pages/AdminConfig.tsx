@@ -19,6 +19,7 @@ import { Separator } from '@/components/ui/separator';
 import { Users, Shield, Loader2, Plus, Pencil, Trash2, Briefcase, Lock, Search, KeyRound, Building2, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useIsAdmin } from '@/hooks/useUserRoles';
+import { useIsMaster } from '@/hooks/useIsMaster';
 
 const ALL_ROUTES = [
   { path: '/admin/config', module: 'Administrador', label: 'Painel Admin' },
