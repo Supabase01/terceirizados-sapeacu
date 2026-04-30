@@ -16,6 +16,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Label } from '@/components/ui/label';
 import { SearchableSelect } from '@/components/SearchableSelect';
 import { RegraCalculoFields, isRegraCalculoValid, type ModoCalculo, type BaseCalculo } from '@/components/RegraCalculoFields';
+import { descontoSchema, zodErrorMap } from '@/lib/validators/financeiro';
+import { roundMoney } from '@/lib/money';
 
 interface DescontoForm {
   colaborador_ids: string[];
@@ -42,6 +44,7 @@ const Descontos = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<DescontoForm>(emptyForm);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [search, setSearch] = useState('');
   const [filterEscopo, setFilterEscopo] = useState<string>('todos');
 
@@ -92,16 +95,21 @@ const Descontos = () => {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
+      const parsed = descontoSchema.safeParse(form);
+      if (!parsed.success) {
+        setErrors(zodErrorMap(parsed.error));
+        throw new Error('Corrija os campos destacados antes de salvar');
+      }
+      setErrors({});
+
       const isPercentual = form.modo_calculo === 'percentual';
       const percentualNum = Number(form.percentual) || 0;
 
-      // Snapshot: estimativa do valor do desconto no momento do save.
-      // O valor real é recalculado durante o processamento da folha,
-      // usando bruto/líquido reais. Aqui usamos salario_base como aproximação.
+      // Snapshot: estimativa para listagem. Cálculo real acontece no processamento da folha.
       const computeValorFor = (colaborador: any | null): number => {
-        if (!isPercentual) return Number(form.valor) || 0;
+        if (!isPercentual) return roundMoney(Number(form.valor) || 0);
         const base = Number(colaborador?.salario_base) || 0;
-        return +(base * (percentualNum / 100)).toFixed(2);
+        return roundMoney(base * (percentualNum / 100));
       };
 
       const basePayload: any = {
@@ -163,7 +171,7 @@ const Descontos = () => {
     },
   });
 
-  const closeDialog = () => { setDialogOpen(false); setEditId(null); setForm(emptyForm); };
+  const closeDialog = () => { setDialogOpen(false); setEditId(null); setForm(emptyForm); setErrors({}); };
 
   const openEdit = (item: any) => {
     setEditId(item.id);
