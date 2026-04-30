@@ -19,6 +19,7 @@ export interface ModuleDef {
   description: string;
   icon: LucideIcon;
   items: ModuleItem[];
+  color?: string;
 }
 
 export const modules: ModuleDef[] = [
