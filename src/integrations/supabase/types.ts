@@ -288,6 +288,7 @@ export type Database = {
       descontos: {
         Row: {
           ano: number | null
+          ano_fim: number | null
           ativo: boolean
           base_calculo: string | null
           colaborador_id: string | null
@@ -297,13 +298,16 @@ export type Database = {
           id: string
           is_percentual: boolean
           mes: number | null
+          mes_fim: number | null
           modo_calculo: string
           percentual: number | null
+          tipo: string
           unidade_id: string | null
           valor: number
         }
         Insert: {
           ano?: number | null
+          ano_fim?: number | null
           ativo?: boolean
           base_calculo?: string | null
           colaborador_id?: string | null
@@ -313,13 +317,16 @@ export type Database = {
           id?: string
           is_percentual?: boolean
           mes?: number | null
+          mes_fim?: number | null
           modo_calculo?: string
           percentual?: number | null
+          tipo?: string
           unidade_id?: string | null
           valor?: number
         }
         Update: {
           ano?: number | null
+          ano_fim?: number | null
           ativo?: boolean
           base_calculo?: string | null
           colaborador_id?: string | null
@@ -329,8 +336,10 @@ export type Database = {
           id?: string
           is_percentual?: boolean
           mes?: number | null
+          mes_fim?: number | null
           modo_calculo?: string
           percentual?: number | null
+          tipo?: string
           unidade_id?: string | null
           valor?: number
         }
