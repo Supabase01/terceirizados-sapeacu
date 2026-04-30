@@ -2,7 +2,7 @@ import {
   BarChart3, Upload, ShieldAlert, FileText, Users, Building2, Briefcase, MapPin,
   Settings, Landmark, FolderKanban, PlusCircle, MinusCircle, ClipboardList, History,
   Map, Crown, FileSpreadsheet, Monitor, Percent, DollarSign, CheckCircle2, Tag,
-  ClipboardCheck,
+  ClipboardCheck, Receipt,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -80,6 +80,7 @@ export const modules: ModuleDef[] = [
     color: 'text-amber-600 bg-amber-100 dark:text-amber-400 dark:bg-amber-500/15',
     items: [
       { title: 'Relatórios', url: '/relatorios', icon: FileText },
+      { title: 'Contracheques', url: '/relatorios/contracheque', icon: Receipt },
     ],
   },
   {

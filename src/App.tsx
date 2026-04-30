@@ -18,6 +18,7 @@ import Alertas from "./pages/Alertas";
 import AdicionaisPage from "./pages/Adicionais";
 import DescontosPage from "./pages/Descontos";
 import Relatorios from "./pages/Relatorios";
+import RelatorioContracheque from "./pages/RelatorioContracheque";
 import CadastroColaboradores from "./pages/CadastroColaboradores";
 import CadastroSecretarias from "./pages/CadastroSecretarias";
 import CadastroFuncoes from "./pages/CadastroFuncoes";
@@ -133,6 +134,7 @@ const App = () => (
             <Route path="/auditoria/log" element={<AdminRoute><AuditLog /></AdminRoute>} />
             <Route path="/auditoria/sistema" element={<AdminRoute><LogSistema /></AdminRoute>} />
             <Route path="/relatorios" element={<ProtectedRoute><Relatorios /></ProtectedRoute>} />
+            <Route path="/relatorios/contracheque" element={<ProtectedRoute><RelatorioContracheque /></ProtectedRoute>} />
             <Route path="/folha/processamento" element={<ProtectedRoute><FolhaProcessamento /></ProtectedRoute>} />
             <Route path="/folha/processada" element={<ProtectedRoute><FolhaProcessada /></ProtectedRoute>} />
             <Route path="/folha/pagamento" element={<ProtectedRoute><Pagamento /></ProtectedRoute>} />
