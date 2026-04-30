@@ -2,6 +2,7 @@ import {
   BarChart3, Upload, ShieldAlert, FileText, Users, Building2, Briefcase, MapPin,
   Settings, Landmark, FolderKanban, PlusCircle, MinusCircle, ClipboardList, History,
   Map, Crown, FileSpreadsheet, Monitor, Percent, DollarSign, CheckCircle2, Tag,
+  ClipboardCheck,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -55,6 +56,15 @@ export const modules: ModuleDef[] = [
       { title: 'Pagamento', url: '/folha/pagamento', icon: DollarSign },
       { title: 'Adicionais', url: '/folha/adicionais', icon: PlusCircle },
       { title: 'Descontos', url: '/folha/descontos', icon: MinusCircle },
+    ],
+  },
+  {
+    id: 'frequencia',
+    label: 'Controle de Frequência',
+    description: 'Registro mensal da entrega da folha de frequência por colaborador',
+    icon: ClipboardCheck,
+    items: [
+      { title: 'Frequência mensal', url: '/frequencia', icon: ClipboardCheck },
     ],
   },
   {
