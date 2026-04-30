@@ -25,11 +25,14 @@ const getMonthLabel = (m: number) =>
   ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][m - 1] || '';
 
 const Pagamento = () => {
-  const { unidadeId } = useUnidade();
+  const { unidadeId, unidadePadrao } = useUnidade();
+  const isPadrao02 = unidadePadrao === 'padrao_02';
   const [mes, setMes] = useState(defaultMes);
   const [ano, setAno] = useState(defaultAno);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
+  const [contrachequeOpen, setContrachequeOpen] = useState(false);
+  const [contrachequeRecord, setContrachequeRecord] = useState<any | null>(null);
 
   const { data: folha = [], isLoading } = useQuery({
     queryKey: ['pagamento', mes, ano, unidadeId],
