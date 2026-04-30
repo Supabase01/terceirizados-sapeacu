@@ -247,6 +247,8 @@ const Descontos = () => {
     valor: form.valor,
     percentual: form.percentual,
     base_calculo: form.base_calculo,
+    quantidade: form.quantidade,
+    valor_unitario: form.valor_unitario,
   });
 
   const escopoOk =
