@@ -142,6 +142,7 @@ const Pagamento = () => {
                         <TableHead>Conta</TableHead>
                         <TableHead>PIX</TableHead>
                         <TableHead className="text-right">Valor para Pagamento</TableHead>
+                        <TableHead className="text-center w-12">Ações</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -154,6 +155,17 @@ const Pagamento = () => {
                           <TableCell>{r.colaboradores?.conta || '—'}</TableCell>
                           <TableCell>{r.colaboradores?.pix || '—'}</TableCell>
                           <TableCell className="text-right font-semibold">{formatCurrency(Number(r.liquido))}</TableCell>
+                          <TableCell className="text-center">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8"
+                              onClick={() => { setContrachequeRecord(r); setContrachequeOpen(true); }}
+                              title="Visualizar contracheque detalhado"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
