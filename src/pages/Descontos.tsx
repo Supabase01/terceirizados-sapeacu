@@ -343,6 +343,11 @@ const Descontos = () => {
                             <span className="text-xs text-muted-foreground font-sans">
                               {Number(item.percentual || 0).toFixed(2)}% sobre {item.base_calculo === 'bruto' ? 'bruto' : 'salário base'}
                             </span>
+                          ) : item.modo_calculo === 'quantidade' ? (
+                            <span>
+                              {formatCurrency(item.valor)}
+                              <span className="ml-1 text-xs text-muted-foreground font-sans">({Number(item.quantidade || 0)} × {formatCurrency(Number(item.valor_unitario || 0))})</span>
+                            </span>
                           ) : item.is_percentual ? `${item.valor}%` : formatCurrency(item.valor)}
                         </TableCell>
                         <TableCell className="hidden lg:table-cell text-muted-foreground text-xs">
