@@ -115,14 +115,20 @@ const Adicionais = () => {
       setErrors({});
 
       const isPercentual = form.modo_calculo === 'percentual';
+      const isQuantidade = form.modo_calculo === 'quantidade';
       const percentualNum = Number(form.percentual) || 0;
+      const qtdNum = Number(form.quantidade) || 0;
+      const vuNum = Number(form.valor_unitario) || 0;
       const isPrazo = form.tipo === 'prazo';
       const isEventual = form.tipo === 'eventual';
 
       const computeValorFor = (colaborador: any | null): number => {
-        if (!isPercentual) return roundMoney(Number(form.valor) || 0);
-        const base = Number(colaborador?.salario_base) || 0;
-        return roundMoney(base * (percentualNum / 100));
+        if (isPercentual) {
+          const base = Number(colaborador?.salario_base) || 0;
+          return roundMoney(base * (percentualNum / 100));
+        }
+        if (isQuantidade) return roundMoney(qtdNum * vuNum);
+        return roundMoney(Number(form.valor) || 0);
       };
 
       const basePayload: any = {
@@ -137,6 +143,8 @@ const Adicionais = () => {
         modo_calculo: form.modo_calculo,
         percentual: isPercentual ? percentualNum : null,
         base_calculo: isPercentual ? form.base_calculo || null : null,
+        quantidade: isQuantidade ? qtdNum : null,
+        valor_unitario: isQuantidade ? vuNum : null,
       };
 
       if (editId) {
