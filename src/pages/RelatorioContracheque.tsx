@@ -195,10 +195,11 @@ const RelatorioContracheque = () => {
     }
   };
 
-  // Coletivo - opções de filtro derivadas
-  const secretariasOpts = useMemo(() => Array.from(new Set(folhaColetivo.map((r: any) => r.secretaria).filter(Boolean))).sort(), [folhaColetivo]);
-  const lotacoesOpts = useMemo(() => Array.from(new Set(folhaColetivo.map((r: any) => r.lotacao).filter(Boolean))).sort(), [folhaColetivo]);
-  const funcoesOpts = useMemo(() => Array.from(new Set(folhaColetivo.map((r: any) => r.funcao).filter(Boolean))).sort(), [folhaColetivo]);
+  // Coletivo - opções de filtro vindas das tabelas mestras
+  const secretariasOpts = filtrosOpts.secretarias;
+  const lotacoesOpts = filtrosOpts.lotacoes;
+  const funcoesOpts = filtrosOpts.funcoes;
+
 
   const folhaFiltrada = useMemo(() => folhaColetivo.filter((r: any) =>
     (secretariaFilter === 'todas' || r.secretaria === secretariaFilter) &&
