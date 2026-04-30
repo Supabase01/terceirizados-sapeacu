@@ -34,12 +34,15 @@ interface AdicionalForm {
   modo_calculo: ModoCalculo;
   percentual: string;
   base_calculo: BaseCalculo | '';
+  quantidade: string;
+  valor_unitario: string;
 }
 
 const emptyForm: AdicionalForm = {
   escopo: 'individual', colaborador_ids: [], descricao: '', valor: '', tipo: 'recorrente',
   mes: '', ano: '', mes_fim: '', ano_fim: '',
   modo_calculo: 'fixo', percentual: '', base_calculo: '',
+  quantidade: '', valor_unitario: '',
 };
 
 const escopoLabel = (e: string) => e === 'global' ? 'Global' : e === 'grupo' ? 'Grupo' : 'Individual';
@@ -112,14 +115,20 @@ const Adicionais = () => {
       setErrors({});
 
       const isPercentual = form.modo_calculo === 'percentual';
+      const isQuantidade = form.modo_calculo === 'quantidade';
       const percentualNum = Number(form.percentual) || 0;
+      const qtdNum = Number(form.quantidade) || 0;
+      const vuNum = Number(form.valor_unitario) || 0;
       const isPrazo = form.tipo === 'prazo';
       const isEventual = form.tipo === 'eventual';
 
       const computeValorFor = (colaborador: any | null): number => {
-        if (!isPercentual) return roundMoney(Number(form.valor) || 0);
-        const base = Number(colaborador?.salario_base) || 0;
-        return roundMoney(base * (percentualNum / 100));
+        if (isPercentual) {
+          const base = Number(colaborador?.salario_base) || 0;
+          return roundMoney(base * (percentualNum / 100));
+        }
+        if (isQuantidade) return roundMoney(qtdNum * vuNum);
+        return roundMoney(Number(form.valor) || 0);
       };
 
       const basePayload: any = {
@@ -134,6 +143,8 @@ const Adicionais = () => {
         modo_calculo: form.modo_calculo,
         percentual: isPercentual ? percentualNum : null,
         base_calculo: isPercentual ? form.base_calculo || null : null,
+        quantidade: isQuantidade ? qtdNum : null,
+        valor_unitario: isQuantidade ? vuNum : null,
       };
 
       if (editId) {
@@ -205,6 +216,8 @@ const Adicionais = () => {
       modo_calculo: (item.modo_calculo as ModoCalculo) || 'fixo',
       percentual: item.percentual != null ? String(item.percentual) : '',
       base_calculo: (item.base_calculo as BaseCalculo) || '',
+      quantidade: item.quantidade != null ? String(item.quantidade) : '',
+      valor_unitario: item.valor_unitario != null ? String(item.valor_unitario) : '',
     });
     setDialogOpen(true);
   };
@@ -234,6 +247,8 @@ const Adicionais = () => {
     valor: form.valor,
     percentual: form.percentual,
     base_calculo: form.base_calculo,
+    quantidade: form.quantidade,
+    valor_unitario: form.valor_unitario,
   });
 
   // Botão "Salvar" defensivo (validação completa via Zod no submit)
@@ -327,6 +342,11 @@ const Adicionais = () => {
                           {item.modo_calculo === 'percentual' ? (
                             <span className="text-xs text-muted-foreground font-sans">
                               {Number(item.percentual || 0).toFixed(2)}% sobre {item.base_calculo === 'bruto' ? 'bruto' : item.base_calculo === 'liquido' ? 'líquido' : 'salário base'}
+                            </span>
+                          ) : item.modo_calculo === 'quantidade' ? (
+                            <span title={`${Number(item.quantidade || 0)} × ${formatCurrency(Number(item.valor_unitario || 0))}`}>
+                              {formatCurrency(item.valor)}
+                              <span className="ml-1 text-xs text-muted-foreground font-sans">({Number(item.quantidade || 0)} × {formatCurrency(Number(item.valor_unitario || 0))})</span>
                             </span>
                           ) : formatCurrency(item.valor)}
                         </TableCell>
@@ -444,9 +464,11 @@ const Adicionais = () => {
                 valor: form.valor,
                 percentual: form.percentual,
                 base_calculo: form.base_calculo,
+                quantidade: form.quantidade,
+                valor_unitario: form.valor_unitario,
               }}
               onChange={(next) => setForm(p => ({ ...p, ...next }))}
-              errors={{ valor: errors.valor, percentual: errors.percentual, base_calculo: errors.base_calculo }}
+              errors={{ valor: errors.valor, percentual: errors.percentual, base_calculo: errors.base_calculo, quantidade: errors.quantidade, valor_unitario: errors.valor_unitario }}
             />
 
             {/* ===== Tipo de vigência ===== */}

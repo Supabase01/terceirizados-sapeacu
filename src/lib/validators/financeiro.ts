@@ -48,15 +48,29 @@ const baseRegraFinanceira = z.object({
   escopo: z.enum(['global', 'grupo', 'individual']),
   colaborador_ids: z.array(z.string()).default([]),
   tipo: z.enum(['recorrente', 'prazo', 'eventual']),
-  modo_calculo: z.enum(['fixo', 'percentual']),
+  modo_calculo: z.enum(['fixo', 'percentual', 'quantidade']),
   valor: z.string().trim(),
   percentual: z.string().trim(),
   base_calculo: z.string().trim(),
+  quantidade: z.string().trim().default(''),
+  valor_unitario: z.string().trim().default(''),
   mes: z.string().trim(),
   ano: z.string().trim(),
   mes_fim: z.string().trim(),
   ano_fim: z.string().trim(),
 });
+
+const quantidadeSchema = numberStr
+  .refine((v) => v !== '', { message: 'Quantidade é obrigatória' })
+  .refine((v) => Number(v) > 0, { message: 'Quantidade deve ser maior que zero' })
+  .refine((v) => Number(v) <= 1_000_000, { message: 'Quantidade muito alta' })
+  .refine((v) => /^\d+(\.\d{1,4})?$/.test(v), { message: 'Use no máximo 4 casas decimais' });
+
+const valorUnitarioSchema = numberStr
+  .refine((v) => v !== '', { message: 'Valor unitário é obrigatório' })
+  .refine((v) => Number(v) >= 0, { message: 'Valor unitário não pode ser negativo' })
+  .refine((v) => Number(v) <= VALOR_MAX, { message: `Máximo R$ ${VALOR_MAX.toLocaleString('pt-BR')}` })
+  .refine((v) => /^\d+(\.\d{1,2})?$/.test(v), { message: 'Use no máximo 2 casas decimais' });
 
 function refineRegra(
   data: z.infer<typeof baseRegraFinanceira>,
@@ -81,6 +95,17 @@ function refineRegra(
   if (data.modo_calculo === 'fixo') {
     const r = valorSchema.safeParse(data.valor);
     if (!r.success) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['valor'], message: r.error.issues[0].message });
+  } else if (data.modo_calculo === 'quantidade') {
+    const rq = quantidadeSchema.safeParse(data.quantidade);
+    if (!rq.success) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['quantidade'], message: rq.error.issues[0].message });
+    const rv = valorUnitarioSchema.safeParse(data.valor_unitario);
+    if (!rv.success) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['valor_unitario'], message: rv.error.issues[0].message });
+    if (rq.success && rv.success) {
+      const total = Number(data.quantidade) * Number(data.valor_unitario);
+      if (total > VALOR_MAX) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['valor_unitario'], message: `Total (qtd × unitário) excede R$ ${VALOR_MAX.toLocaleString('pt-BR')}` });
+      }
+    }
   } else {
     const r = percentualSchema.safeParse(data.percentual);
     if (!r.success) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['percentual'], message: r.error.issues[0].message });
