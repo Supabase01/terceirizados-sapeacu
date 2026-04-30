@@ -54,6 +54,8 @@ const FolhaProcessamento = () => {
   const [page, setPage] = useState(0);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [generateSecretaria, setGenerateSecretaria] = useState('all');
+  const [contrachequeOpen, setContrachequeOpen] = useState(false);
+  const [contrachequeRecord, setContrachequeRecord] = useState<any | null>(null);
 
   // Load secretarias for the generation filter
   const { data: secretariasList = [] } = useQuery({
