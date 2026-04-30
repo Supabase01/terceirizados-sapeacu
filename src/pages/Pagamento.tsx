@@ -196,6 +196,14 @@ const Pagamento = () => {
           </CardContent>
         </Card>
       </div>
+
+      <ContrachequeDetalhado
+        open={contrachequeOpen}
+        onOpenChange={setContrachequeOpen}
+        registro={contrachequeRecord}
+        unidadeId={unidadeId || ''}
+        isPadrao02={isPadrao02}
+      />
     </Layout>
   );
 };
