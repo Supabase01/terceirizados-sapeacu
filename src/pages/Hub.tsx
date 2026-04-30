@@ -1,4 +1,4 @@
-import { Layout } from '@/components/Layout';
+import Layout from '@/components/Layout';
 import { ModuleCard } from '@/components/ModuleCard';
 import { modules } from '@/config/modules';
 import { useAllowedRoutes } from '@/hooks/useUserRoles';
