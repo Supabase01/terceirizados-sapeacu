@@ -562,6 +562,7 @@ const AdminConfig = () => {
                         <TableRow>
                           <TableHead>Usuário</TableHead>
                           <TableHead>Vinculação</TableHead>
+                          {isMasterUser && <TableHead className="w-[60px] text-center">Ações</TableHead>}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
