@@ -508,6 +508,8 @@ export type Database = {
           created_at: string
           created_by: string | null
           data_entrega: string | null
+          desconto_faltas: number
+          faltas: number
           id: string
           mes: number
           observacao: string | null
@@ -521,6 +523,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           data_entrega?: string | null
+          desconto_faltas?: number
+          faltas?: number
           id?: string
           mes: number
           observacao?: string | null
@@ -534,6 +538,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           data_entrega?: string | null
+          desconto_faltas?: number
+          faltas?: number
           id?: string
           mes?: number
           observacao?: string | null
