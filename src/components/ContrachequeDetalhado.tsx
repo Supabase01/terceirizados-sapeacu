@@ -173,13 +173,136 @@ const ContrachequeDetalhado = ({ open, onOpenChange, registro, unidadeId, isPadr
 
   if (!registro) return null;
 
+  const handleDownloadPDF = () => {
+    if (!data) return;
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const W = doc.internal.pageSize.width;
+    const m = 15;
+    let y = 15;
+
+    // Top accent
+    doc.setFillColor(41, 65, 122);
+    doc.rect(0, 0, W, 3, 'F');
+    y = 14;
+
+    // Header
+    doc.setTextColor(41, 65, 122);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text('CONTRACHEQUE DETALHADO', m, y);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(100);
+    doc.text(`Competência: ${monthName(registro.mes)}/${registro.ano}`, W - m, y, { align: 'right' });
+    y += 6;
+    doc.setDrawColor(220);
+    doc.line(m, y, W - m, y);
+    y += 5;
+
+    // Employee block
+    const label = (t: string, x: number, yy: number) => {
+      doc.setFontSize(7); doc.setTextColor(140); doc.setFont('helvetica', 'normal');
+      doc.text(t, x, yy);
+    };
+    const value = (t: string, x: number, yy: number, bold = false) => {
+      doc.setFontSize(9); doc.setTextColor(30); doc.setFont('helvetica', bold ? 'bold' : 'normal');
+      doc.text(t, x, yy);
+    };
+    const col2 = m + (W - m * 2) * 0.55;
+    label('COLABORADOR', m, y); value(registro.nome, m, y + 4, true);
+    label('CPF', col2, y); value(registro.cpf || '-', col2, y + 4);
+    y += 10;
+    label('FUNÇÃO', m, y); value(registro.funcao || '-', m, y + 4);
+    label('SECRETARIA', col2, y); value(registro.secretaria || '-', col2, y + 4);
+    y += 10;
+    label('LOTAÇÃO', m, y); value(registro.lotacao || '-', m, y + 4);
+    label('PADRÃO', col2, y); value(isPadrao02 ? 'Padrão 02' : 'Padrão 01', col2, y + 4);
+    y += 8;
+
+    const sectionTitle = (title: string, color: [number, number, number]) => {
+      doc.setFillColor(...color);
+      doc.rect(m, y, W - m * 2, 6, 'F');
+      doc.setTextColor(255); doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
+      doc.text(title, m + 2, y + 4.2);
+      y += 6;
+    };
+
+    const renderTable = (rows: Linha[], totalLabel: string, total: number, color: [number, number, number], negative = false) => {
+      autoTable(doc, {
+        startY: y,
+        head: [['Descrição', 'Detalhe', 'Valor (R$)']],
+        body: rows.length
+          ? rows.map(l => [l.descricao, l.detalhe || '', `${negative ? '- ' : ''}${formatBRL(l.valor)}`])
+          : [['—', 'Sem registros', '-']],
+        foot: [['', totalLabel, `${negative ? '- ' : ''}${formatBRL(total)}`]],
+        theme: 'grid',
+        styles: { fontSize: 8, cellPadding: 1.8, textColor: [40, 40, 40] },
+        headStyles: { fillColor: [245, 247, 250], textColor: [80, 80, 80], fontStyle: 'bold', fontSize: 7 },
+        footStyles: { fillColor: [245, 247, 250], textColor: color, fontStyle: 'bold' },
+        columnStyles: { 1: { textColor: [120, 120, 120], fontSize: 7 }, 2: { halign: 'right' } },
+        margin: { left: m, right: m },
+      });
+      y = (doc as any).lastAutoTable.finalY + 4;
+    };
+
+    if (!isPadrao02) {
+      sectionTitle('PROVENTOS', [16, 122, 87]);
+      renderTable(
+        [{ descricao: 'Salário Base', valor: data.salarioBase }, ...data.adicionaisLinhas],
+        'Total Proventos / Bruto',
+        data.bruto,
+        [16, 122, 87],
+      );
+      sectionTitle('DESCONTOS', [190, 50, 70]);
+      renderTable(data.descontosLinhas, 'Total de Descontos', data.totalDescontos, [190, 50, 70], true);
+    } else {
+      sectionTitle('LÍQUIDO CONTRATADO', [16, 122, 87]);
+      renderTable([{ descricao: 'Salário Líquido (base)', valor: data.salarioBase }], 'Líquido Base', data.salarioBase, [16, 122, 87]);
+      sectionTitle('ENCARGOS SOBRE O LÍQUIDO', [200, 130, 30]);
+      renderTable(data.encargosLinhas, 'Total de Encargos', data.totalEncargos, [200, 130, 30]);
+      // Bruto box
+      doc.setFillColor(245, 247, 250);
+      doc.rect(m, y, W - m * 2, 8, 'F');
+      doc.setTextColor(60); doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
+      doc.text('Salário Bruto (Líquido + Encargos)', m + 2, y + 5.5);
+      doc.text(formatBRL(data.bruto), W - m - 2, y + 5.5, { align: 'right' });
+      y += 12;
+      if (data.descontosLinhas.length > 0) {
+        sectionTitle('DESCONTOS', [190, 50, 70]);
+        renderTable(data.descontosLinhas, 'Total de Descontos', data.totalDescontos, [190, 50, 70], true);
+      }
+    }
+
+    // Líquido final
+    if (y > 250) { doc.addPage(); y = 20; }
+    doc.setFillColor(41, 65, 122);
+    doc.rect(m, y, W - m * 2, 14, 'F');
+    doc.setTextColor(255); doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
+    doc.text('VALOR LÍQUIDO A RECEBER', m + 3, y + 9);
+    doc.setFontSize(13);
+    doc.text(formatBRL(data.liquido), W - m - 3, y + 9, { align: 'right' });
+    y += 22;
+
+    // Footer
+    doc.setFontSize(7); doc.setTextColor(150); doc.setFont('helvetica', 'normal');
+    doc.text(`Gerado em ${new Date().toLocaleString('pt-BR')}`, W / 2, doc.internal.pageSize.height - 8, { align: 'center' });
+
+    const safeName = (registro.nome || 'colaborador').replace(/\s+/g, '_');
+    doc.save(`contracheque_${safeName}_${registro.mes}_${registro.ano}.pdf`);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Wallet className="h-5 w-5 text-primary" />
-            Contracheque Detalhado
+          <DialogTitle className="flex items-center justify-between gap-2 pr-8">
+            <span className="flex items-center gap-2">
+              <Wallet className="h-5 w-5 text-primary" />
+              Contracheque Detalhado
+            </span>
+            <Button size="sm" variant="outline" onClick={handleDownloadPDF} disabled={!data}>
+              <Download className="h-4 w-4 mr-1" /> Baixar PDF
+            </Button>
           </DialogTitle>
         </DialogHeader>
 
