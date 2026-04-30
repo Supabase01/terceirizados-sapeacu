@@ -356,6 +356,29 @@ const ContrachequeDetalhado = ({ open, onOpenChange, registro, unidadeId, isPadr
           </DialogTitle>
         </DialogHeader>
 
+        {/* Unidade / Instituição */}
+        {unidadeInfo && (
+          <div className="rounded-lg border bg-muted/40 p-3">
+            <p className="font-semibold text-sm leading-tight">
+              {unidadeInfo.instituicao?.nome || unidadeInfo.nome}
+            </p>
+            <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground">
+              {unidadeInfo.instituicao?.cnpj && <span>CNPJ: {unidadeInfo.instituicao.cnpj}</span>}
+              {(unidadeInfo.instituicao?.cidade || unidadeInfo.cidade) && (
+                <span>
+                  {unidadeInfo.instituicao?.cidade || unidadeInfo.cidade}
+                  {(unidadeInfo.instituicao?.estado || unidadeInfo.estado) && ` - ${unidadeInfo.instituicao?.estado || unidadeInfo.estado}`}
+                </span>
+              )}
+              {unidadeInfo.instituicao?.telefone && <span>Tel: {unidadeInfo.instituicao.telefone}</span>}
+              {unidadeInfo.instituicao?.email && <span>{unidadeInfo.instituicao.email}</span>}
+              {unidadeInfo.instituicao?.nome && unidadeInfo.nome && unidadeInfo.nome !== unidadeInfo.instituicao.nome && (
+                <span>Unidade: {unidadeInfo.nome}</span>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Header info */}
         <div className="rounded-lg border bg-muted/30 p-4 space-y-2">
           <div className="flex items-start justify-between gap-4">
