@@ -300,14 +300,19 @@ const FolhaProcessamento = () => {
       const records = colaboradores.map((col: any) => {
         const salarioBase = Number(col.salario_base) || 0;
 
+        const faltas = faltasMap.get(col.id) || 0;
+
         if (isPadrao02) {
-          const liquido = salarioBase;
+          const liquidoOriginal = salarioBase;
           const encargosColab = encargosData.filter(
             (e: any) => e.escopo === 'global' || e.colaborador_id === col.id
           );
           const somaPercentuais = encargosColab.reduce((s: number, e: any) => s + Number(e.percentual), 0);
-          const totalEncargos = liquido * (somaPercentuais / 100);
-          const bruto = liquido + totalEncargos;
+          const totalEncargos = liquidoOriginal * (somaPercentuais / 100);
+          const bruto = liquidoOriginal + totalEncargos;
+          // Desconto de faltas: bruto / 30 * faltas
+          const descontoFaltas = faltas > 0 ? (bruto / 30) * faltas : 0;
+          const liquido = liquidoOriginal - descontoFaltas;
 
           return {
             colaborador_id: col.id,
@@ -318,7 +323,7 @@ const FolhaProcessamento = () => {
             lotacao: (col.lotacoes as any)?.nome || '',
             salario_base: roundMoney(salarioBase),
             total_adicionais: 0,
-            total_descontos: 0,
+            total_descontos: roundMoney(descontoFaltas),
             total_encargos: roundMoney(totalEncargos),
             bruto: roundMoney(bruto),
             liquido: roundMoney(liquido),
@@ -350,6 +355,11 @@ const FolhaProcessamento = () => {
         descontosGlobais.forEach((d: any) => {
           totalDescontos += computeDesconto(d, { salarioBase, bruto });
         });
+
+        // Desconto por faltas: Bruto / 30 * Nº faltas
+        if (faltas > 0) {
+          totalDescontos += (bruto / 30) * faltas;
+        }
 
         const liquido = bruto - totalDescontos;
 
