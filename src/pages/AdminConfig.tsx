@@ -19,6 +19,7 @@ import { Separator } from '@/components/ui/separator';
 import { Users, Shield, Loader2, Plus, Pencil, Trash2, Briefcase, Lock, Search, KeyRound, Building2, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useIsAdmin } from '@/hooks/useUserRoles';
+import { useIsMaster } from '@/hooks/useIsMaster';
 
 const ALL_ROUTES = [
   { path: '/admin/config', module: 'Administrador', label: 'Painel Admin' },
@@ -47,6 +48,24 @@ const AdminConfig = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { isAdmin, isLoading: loadingAdmin } = useIsAdmin();
+  const { isMaster: isMasterUser } = useIsMaster();
+  const [deleteUserConfirm, setDeleteUserConfirm] = useState<{ id: string; email: string } | null>(null);
+
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const { data, error } = await supabase.functions.invoke('delete-user', { body: { user_id: userId } });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+    },
+    onSuccess: () => {
+      toast({ title: 'Usuário excluído com sucesso' });
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      setDeleteUserConfirm(null);
+    },
+    onError: (err: any) => {
+      toast({ title: 'Erro ao excluir usuário', description: err.message, variant: 'destructive' });
+    },
+  });
 
   // --- State ---
   const [funcaoDialog, setFuncaoDialog] = useState(false);
@@ -543,6 +562,7 @@ const AdminConfig = () => {
                         <TableRow>
                           <TableHead>Usuário</TableHead>
                           <TableHead>Vinculação</TableHead>
+                          {isMasterUser && <TableHead className="w-[60px] text-center">Ações</TableHead>}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -618,12 +638,25 @@ const AdminConfig = () => {
                                   </div>
                                 </div>
                               </TableCell>
+                              <TableCell>
+                                {isMasterUser && !isMaster && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 text-destructive hover:text-destructive"
+                                    onClick={() => setDeleteUserConfirm({ id: user.id, email: user.email })}
+                                    title="Excluir usuário"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                )}
+                              </TableCell>
                             </TableRow>
                           );
                         })}
                         {filteredUsers.length === 0 && (
                           <TableRow>
-                            <TableCell colSpan={2} className="text-center text-muted-foreground py-8">
+                            <TableCell colSpan={isMasterUser ? 3 : 2} className="text-center text-muted-foreground py-8">
                               {userSearch ? 'Nenhum usuário encontrado' : 'Nenhum usuário cadastrado'}
                             </TableCell>
                           </TableRow>
@@ -1236,6 +1269,30 @@ const AdminConfig = () => {
               onClick={() => deleteConfirm && deleteFuncao.mutate(deleteConfirm)}
             >
               {deleteFuncao.isPending ? 'Excluindo...' : 'Excluir'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!deleteUserConfirm} onOpenChange={(open) => !open && setDeleteUserConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Usuário</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação irá remover permanentemente o usuário <strong>{deleteUserConfirm?.email}</strong>, suas funções, vínculos com unidades e permissões. Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteUserMutation.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                if (deleteUserConfirm) deleteUserMutation.mutate(deleteUserConfirm.id);
+              }}
+            >
+              {deleteUserMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Excluir'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
