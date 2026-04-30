@@ -18,6 +18,7 @@ import Alertas from "./pages/Alertas";
 import AdicionaisPage from "./pages/Adicionais";
 import DescontosPage from "./pages/Descontos";
 import Relatorios from "./pages/Relatorios";
+import RelatorioContracheque from "./pages/RelatorioContracheque";
 import CadastroColaboradores from "./pages/CadastroColaboradores";
 import CadastroSecretarias from "./pages/CadastroSecretarias";
 import CadastroFuncoes from "./pages/CadastroFuncoes";
