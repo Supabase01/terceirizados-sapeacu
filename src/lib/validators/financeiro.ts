@@ -95,6 +95,17 @@ function refineRegra(
   if (data.modo_calculo === 'fixo') {
     const r = valorSchema.safeParse(data.valor);
     if (!r.success) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['valor'], message: r.error.issues[0].message });
+  } else if (data.modo_calculo === 'quantidade') {
+    const rq = quantidadeSchema.safeParse(data.quantidade);
+    if (!rq.success) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['quantidade'], message: rq.error.issues[0].message });
+    const rv = valorUnitarioSchema.safeParse(data.valor_unitario);
+    if (!rv.success) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['valor_unitario'], message: rv.error.issues[0].message });
+    if (rq.success && rv.success) {
+      const total = Number(data.quantidade) * Number(data.valor_unitario);
+      if (total > VALOR_MAX) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['valor_unitario'], message: `Total (qtd × unitário) excede R$ ${VALOR_MAX.toLocaleString('pt-BR')}` });
+      }
+    }
   } else {
     const r = percentualSchema.safeParse(data.percentual);
     if (!r.success) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['percentual'], message: r.error.issues[0].message });
