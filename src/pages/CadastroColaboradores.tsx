@@ -453,7 +453,15 @@ const CadastroColaboradores = () => {
               </div>
               <div className="space-y-2">
                 <Label>CPF *</Label>
-                <Input placeholder="000.000.000-00" value={formatCPF(form.cpf)} onChange={(e) => updateField('cpf', e.target.value.replace(/\D/g, '').slice(0, 11))} />
+                <Input
+                  placeholder="000.000.000-00"
+                  value={formatCPF(form.cpf)}
+                  onChange={(e) => updateField('cpf', e.target.value.replace(/\D/g, '').slice(0, 11))}
+                  className={form.cpf.length === 11 && !isValidCPF(form.cpf) ? 'border-destructive focus-visible:ring-destructive' : ''}
+                />
+                {form.cpf.length === 11 && !isValidCPF(form.cpf) && (
+                  <p className="text-xs text-destructive">CPF inválido. Verifique os dígitos.</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label>Data de Nascimento</Label>
@@ -563,7 +571,7 @@ const CadastroColaboradores = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={closeDialog}>Cancelar</Button>
-            <Button onClick={() => saveMutation.mutate()} disabled={!form.nome.trim() || !form.cpf.trim() || !form.secretaria_id || saveMutation.isPending}>
+            <Button onClick={() => saveMutation.mutate()} disabled={!form.nome.trim() || !isValidCPF(form.cpf) || !form.secretaria_id || saveMutation.isPending}>
               {saveMutation.isPending ? 'Salvando...' : 'Salvar'}
             </Button>
           </DialogFooter>
