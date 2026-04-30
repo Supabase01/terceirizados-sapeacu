@@ -36,6 +36,7 @@ import Pagamento from "./pages/Pagamento";
 import CadastroRubricas from "./pages/CadastroRubricas";
 import MinhaConta from "./pages/MinhaConta";
 import Hub from "./pages/Hub";
+import Frequencia from "./pages/Frequencia";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
