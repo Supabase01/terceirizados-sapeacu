@@ -17,6 +17,9 @@ interface Props {
   state: RegraCalculoState;
   onChange: (next: Partial<RegraCalculoState>) => void;
   valorLabel?: string;
+  /** Bases a esconder do dropdown (ex: ['liquido'] em Descontos para evitar cálculo circular) */
+  excludeBases?: BaseCalculo[];
+  errors?: Partial<Record<'valor' | 'percentual' | 'base_calculo', string>>;
 }
 
 export const BASE_CALCULO_LABELS: Record<BaseCalculo, string> = {
@@ -26,7 +29,8 @@ export const BASE_CALCULO_LABELS: Record<BaseCalculo, string> = {
   outra: 'Outra base de cálculo',
 };
 
-export const RegraCalculoFields = ({ state, onChange, valorLabel = 'Valor (R$) *' }: Props) => {
+export const RegraCalculoFields = ({ state, onChange, valorLabel = 'Valor (R$) *', excludeBases = [], errors = {} }: Props) => {
+  const showBase = (b: BaseCalculo) => !excludeBases.includes(b);
   return (
     <div className="space-y-3">
       <div className="space-y-2">
