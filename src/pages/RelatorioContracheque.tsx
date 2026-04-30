@@ -102,24 +102,6 @@ const RelatorioContracheque = () => {
     enabled: !!unidadeId && !!colaboradorId,
   });
 
-  // ===== Coletivo: opções de filtro (tabelas mestras) =====
-  const { data: filtrosOpts = { secretarias: [], lotacoes: [], funcoes: [] } } = useQuery({
-    queryKey: ['filtros-coletivo', unidadeId],
-    queryFn: async () => {
-      const [secs, lots, funs] = await Promise.all([
-        supabase.from('secretarias').select('nome').eq('unidade_id', unidadeId!).eq('ativo', true).order('nome'),
-        supabase.from('lotacoes').select('nome').eq('unidade_id', unidadeId!).eq('ativo', true).order('nome'),
-        supabase.from('funcoes').select('nome').eq('unidade_id', unidadeId!).eq('ativo', true).order('nome'),
-      ]);
-      return {
-        secretarias: (secs.data || []).map((s: any) => s.nome),
-        lotacoes: (lots.data || []).map((s: any) => s.nome),
-        funcoes: (funs.data || []).map((s: any) => s.nome),
-      };
-    },
-    enabled: !!unidadeId,
-  });
-
   // ===== Coletivo: folha do mês =====
   const colaboradoresKey = colaboradores.length;
   const { data: folhaColetivo = [], isLoading: loadingColetivo } = useQuery({
