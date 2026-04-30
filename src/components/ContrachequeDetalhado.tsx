@@ -180,13 +180,13 @@ const ContrachequeDetalhado = ({ open, onOpenChange, registro, unidadeId, isPadr
     const m = 15;
     let y = 15;
 
-    // Top accent
-    doc.setFillColor(41, 65, 122);
+    // Top accent (neutral)
+    doc.setFillColor(71, 85, 105); // slate-600
     doc.rect(0, 0, W, 3, 'F');
     y = 14;
 
     // Header
-    doc.setTextColor(41, 65, 122);
+    doc.setTextColor(51, 65, 85); // slate-700
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(14);
     doc.text('CONTRACHEQUE DETALHADO', m, y);
