@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { registrarLog } from '@/lib/logSistema';
 import { useUnidade } from '@/contexts/UnidadeContext';
+import { roundMoney } from '@/lib/money';
 import { cn } from '@/lib/utils';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -250,27 +251,28 @@ const FolhaProcessamento = () => {
       };
 
       // Compute adicional value: respects modo_calculo (fixo/percentual) and base_calculo
+      // ATENÇÃO: NÃO arredondar aqui — propaga erro de centavos. Arredondamento só nos totais finais.
       const computeAdicional = (a: any, salarioBase: number) => {
         if (a.modo_calculo === 'percentual') {
           const pct = Number(a.percentual) || 0;
           // Adicionais entram ANTES do bruto, então só faz sentido base = salario_base
           const base = resolveBase(a.base_calculo, { salarioBase, bruto: salarioBase, liquido: salarioBase });
-          return +(base * pct / 100).toFixed(2);
+          return base * pct / 100;
         }
         return Number(a.valor) || 0;
       };
 
       // Compute desconto value: respects modo_calculo (fixo/percentual) and base_calculo
-      // For base 'liquido', uses bruto as approximation (avoids circular dependency)
+      // Base 'liquido' bloqueada no cadastro; aqui mantemos fallback defensivo apenas.
       const computeDesconto = (d: any, ctx: { salarioBase: number; bruto: number }) => {
         if (d.modo_calculo === 'percentual') {
           const pct = Number(d.percentual) || 0;
           const base = resolveBase(d.base_calculo, { ...ctx, liquido: ctx.bruto });
-          return +(base * pct / 100).toFixed(2);
+          return base * pct / 100;
         }
         // Legacy support: is_percentual flag on fixo mode
         if (d.is_percentual) {
-          return +(ctx.bruto * Number(d.valor) / 100).toFixed(2);
+          return ctx.bruto * Number(d.valor) / 100;
         }
         return Number(d.valor) || 0;
       };
