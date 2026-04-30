@@ -102,24 +102,6 @@ const RelatorioContracheque = () => {
     enabled: !!unidadeId && !!colaboradorId,
   });
 
-  // ===== Coletivo: opções de filtro (tabelas mestras) =====
-  const { data: filtrosOpts = { secretarias: [], lotacoes: [], funcoes: [] } } = useQuery({
-    queryKey: ['filtros-coletivo', unidadeId],
-    queryFn: async () => {
-      const [secs, lots, funs] = await Promise.all([
-        supabase.from('secretarias').select('nome').eq('unidade_id', unidadeId!).eq('ativo', true).order('nome'),
-        supabase.from('lotacoes').select('nome').eq('unidade_id', unidadeId!).eq('ativo', true).order('nome'),
-        supabase.from('funcoes').select('nome').eq('unidade_id', unidadeId!).eq('ativo', true).order('nome'),
-      ]);
-      return {
-        secretarias: (secs.data || []).map((s: any) => s.nome),
-        lotacoes: (lots.data || []).map((s: any) => s.nome),
-        funcoes: (funs.data || []).map((s: any) => s.nome),
-      };
-    },
-    enabled: !!unidadeId,
-  });
-
   // ===== Coletivo: folha do mês =====
   const colaboradoresKey = colaboradores.length;
   const { data: folhaColetivo = [], isLoading: loadingColetivo } = useQuery({
@@ -195,10 +177,19 @@ const RelatorioContracheque = () => {
     }
   };
 
-  // Coletivo - opções de filtro vindas das tabelas mestras
-  const secretariasOpts = filtrosOpts.secretarias;
-  const lotacoesOpts = filtrosOpts.lotacoes;
-  const funcoesOpts = filtrosOpts.funcoes;
+  // Coletivo - opções de filtro derivadas da folha gerada do mês
+  const secretariasOpts = useMemo(
+    () => Array.from(new Set(folhaColetivo.map((r: any) => r.secretaria).filter(Boolean))).sort() as string[],
+    [folhaColetivo],
+  );
+  const lotacoesOpts = useMemo(
+    () => Array.from(new Set(folhaColetivo.map((r: any) => r.lotacao).filter(Boolean))).sort() as string[],
+    [folhaColetivo],
+  );
+  const funcoesOpts = useMemo(
+    () => Array.from(new Set(folhaColetivo.map((r: any) => r.funcao).filter(Boolean))).sort() as string[],
+    [folhaColetivo],
+  );
 
 
   const folhaFiltrada = useMemo(() => folhaColetivo.filter((r: any) =>
