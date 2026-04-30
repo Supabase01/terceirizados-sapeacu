@@ -35,6 +35,7 @@ import LogSistema from "./pages/LogSistema";
 import Pagamento from "./pages/Pagamento";
 import CadastroRubricas from "./pages/CadastroRubricas";
 import MinhaConta from "./pages/MinhaConta";
+import Hub from "./pages/Hub";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -116,6 +117,7 @@ const App = () => (
             <Route path="/" element={<Auth />} />
             <Route path="/pin" element={<AuthGuard><PinAccess /></AuthGuard>} />
             <Route path="/selecionar-unidade" element={<AuthGuard><PinGuard><SelecionarUnidade /></PinGuard></AuthGuard>} />
+            <Route path="/modulos" element={<AuthGuard><PinGuard><Hub /></PinGuard></AuthGuard>} />
             {/* Admin routes - no unidade required */}
             <Route path="/admin/config" element={<AdminRoute><AdminConfig /></AdminRoute>} />
             <Route path="/admin/instituicoes" element={<AdminRoute><CadastroInstituicoes /></AdminRoute>} />

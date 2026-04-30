@@ -41,7 +41,7 @@ export default function SelecionarUnidade() {
 
   const handleSelect = (unidade: any) => {
     setUnidade(unidade.id, unidade.nome, unidade.padrao || 'padrao_01');
-    navigate('/indicadores');
+    navigate('/modulos');
   };
 
   const handleLogout = async () => {
