@@ -34,12 +34,15 @@ interface AdicionalForm {
   modo_calculo: ModoCalculo;
   percentual: string;
   base_calculo: BaseCalculo | '';
+  quantidade: string;
+  valor_unitario: string;
 }
 
 const emptyForm: AdicionalForm = {
   escopo: 'individual', colaborador_ids: [], descricao: '', valor: '', tipo: 'recorrente',
   mes: '', ano: '', mes_fim: '', ano_fim: '',
   modo_calculo: 'fixo', percentual: '', base_calculo: '',
+  quantidade: '', valor_unitario: '',
 };
 
 const escopoLabel = (e: string) => e === 'global' ? 'Global' : e === 'grupo' ? 'Grupo' : 'Individual';
