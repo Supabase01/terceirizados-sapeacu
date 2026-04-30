@@ -18,12 +18,15 @@ import { RegraCalculoFields, isRegraCalculoValid, type ModoCalculo, type BaseCal
 import { adicionalSchema, zodErrorMap } from '@/lib/validators/financeiro';
 import { roundMoney } from '@/lib/money';
 
+type Escopo = 'global' | 'grupo' | 'individual';
+type TipoVigencia = 'recorrente' | 'prazo' | 'eventual';
+
 interface AdicionalForm {
-  escopo: string;
+  escopo: Escopo;
   colaborador_ids: string[];
   descricao: string;
   valor: string;
-  tipo: string;
+  tipo: TipoVigencia;
   mes: string;
   ano: string;
   mes_fim: string;
@@ -34,9 +37,13 @@ interface AdicionalForm {
 }
 
 const emptyForm: AdicionalForm = {
-  escopo: 'individual', colaborador_ids: [], descricao: '', valor: '', tipo: 'fixo', mes: '', ano: '', mes_fim: '', ano_fim: '',
+  escopo: 'individual', colaborador_ids: [], descricao: '', valor: '', tipo: 'recorrente',
+  mes: '', ano: '', mes_fim: '', ano_fim: '',
   modo_calculo: 'fixo', percentual: '', base_calculo: '',
 };
+
+const escopoLabel = (e: string) => e === 'global' ? 'Global' : e === 'grupo' ? 'Grupo' : 'Individual';
+const tipoLabel = (t: string) => t === 'eventual' ? 'Eventual' : t === 'prazo' ? 'Por prazo' : 'Recorrente';
 
 const Adicionais = () => {
   const { toast } = useToast();
@@ -104,11 +111,11 @@ const Adicionais = () => {
       }
       setErrors({});
 
-      const isEventual = form.tipo === 'eventual';
       const isPercentual = form.modo_calculo === 'percentual';
       const percentualNum = Number(form.percentual) || 0;
+      const isPrazo = form.tipo === 'prazo';
+      const isEventual = form.tipo === 'eventual';
 
-      // Snapshot: estimativa para listagem. Cálculo real acontece no processamento da folha.
       const computeValorFor = (colaborador: any | null): number => {
         if (!isPercentual) return roundMoney(Number(form.valor) || 0);
         const base = Number(colaborador?.salario_base) || 0;
@@ -119,10 +126,10 @@ const Adicionais = () => {
         descricao: form.descricao,
         tipo: form.tipo,
         escopo: form.escopo,
-        mes: isEventual && form.mes ? Number(form.mes) : null,
-        ano: isEventual && form.ano ? Number(form.ano) : null,
-        mes_fim: isEventual && form.mes_fim ? Number(form.mes_fim) : null,
-        ano_fim: isEventual && form.ano_fim ? Number(form.ano_fim) : null,
+        mes: (isPrazo || isEventual) ? Number(form.mes) : null,
+        ano: (isPrazo || isEventual) ? Number(form.ano) : null,
+        mes_fim: isPrazo ? Number(form.mes_fim) : null,
+        ano_fim: isPrazo ? Number(form.ano_fim) : null,
         unidade_id: unidadeId,
         modo_calculo: form.modo_calculo,
         percentual: isPercentual ? percentualNum : null,
@@ -130,6 +137,7 @@ const Adicionais = () => {
       };
 
       if (editId) {
+        // Edição preserva escopo. Para grupo/individual mantém colaborador_id atual no form.
         const colab = colaboradores.find((c: any) => c.id === form.colaborador_ids[0]);
         const payload = {
           ...basePayload,
@@ -147,6 +155,7 @@ const Adicionais = () => {
           });
           if (error) throw error;
         } else {
+          // individual = exatamente 1 (validado pelo Zod). grupo = N linhas.
           const rows = form.colaborador_ids.map(cid => {
             const colab = colaboradores.find((c: any) => c.id === cid);
             return { ...basePayload, valor: computeValorFor(colab), colaborador_id: cid };
@@ -179,13 +188,16 @@ const Adicionais = () => {
   const closeDialog = () => { setDialogOpen(false); setEditId(null); setForm(emptyForm); setErrors({}); };
 
   const openEdit = (item: any) => {
+    // Compat legado: tipo 'fixo' → 'recorrente'
+    let tipo: TipoVigencia = (item.tipo as TipoVigencia) || 'recorrente';
+    if ((tipo as any) === 'fixo') tipo = item.mes_fim ? 'prazo' : (item.mes ? 'eventual' : 'recorrente');
     setEditId(item.id);
     setForm({
-      escopo: item.escopo || 'individual',
+      escopo: (item.escopo as Escopo) || 'individual',
       colaborador_ids: item.colaborador_id ? [item.colaborador_id] : [],
       descricao: item.descricao,
       valor: String(item.valor),
-      tipo: item.tipo,
+      tipo,
       mes: item.mes ? String(item.mes) : '',
       ano: item.ano ? String(item.ano) : '',
       mes_fim: item.mes_fim ? String(item.mes_fim) : '',
@@ -208,7 +220,7 @@ const Adicionais = () => {
   const formatCurrency = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
   const formatCompetencia = (item: any) => {
-    if (!item.mes || !item.ano) return 'Recorrente';
+    if (item.tipo === 'recorrente' || (!item.mes && !item.ano)) return 'Recorrente';
     const inicio = `${String(item.mes).padStart(2, '0')}/${item.ano}`;
     if (item.mes_fim && item.ano_fim) {
       const fim = `${String(item.mes_fim).padStart(2, '0')}/${item.ano_fim}`;
@@ -223,8 +235,19 @@ const Adicionais = () => {
     percentual: form.percentual,
     base_calculo: form.base_calculo,
   });
-  const canSave = form.descricao.trim() && valorOk &&
-    (form.escopo === 'global' || form.colaborador_ids.length > 0);
+
+  // Botão "Salvar" defensivo (validação completa via Zod no submit)
+  const escopoOk =
+    form.escopo === 'global' ? true :
+    form.escopo === 'individual' ? form.colaborador_ids.length === 1 :
+    /* grupo */ form.colaborador_ids.length >= 1;
+
+  const vigenciaOk =
+    form.tipo === 'recorrente' ? true :
+    form.tipo === 'eventual' ? !!(form.mes && form.ano) :
+    /* prazo */ !!(form.mes && form.ano && form.mes_fim && form.ano_fim);
+
+  const canSave = !!form.descricao.trim() && valorOk && escopoOk && vigenciaOk;
 
   return (
     <Layout>
@@ -242,19 +265,21 @@ const Adicionais = () => {
             <Input placeholder="Buscar..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
           </div>
           <Select value={filterTipo} onValueChange={setFilterTipo}>
-            <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Todos tipos</SelectItem>
-              <SelectItem value="fixo">Fixos</SelectItem>
-              <SelectItem value="eventual">Eventuais</SelectItem>
+              <SelectItem value="recorrente">Recorrente</SelectItem>
+              <SelectItem value="prazo">Por prazo</SelectItem>
+              <SelectItem value="eventual">Eventual</SelectItem>
             </SelectContent>
           </Select>
           <Select value={filterEscopo} onValueChange={setFilterEscopo}>
             <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Todos escopos</SelectItem>
-              <SelectItem value="global">Globais</SelectItem>
-              <SelectItem value="individual">Individuais</SelectItem>
+              <SelectItem value="global">Global</SelectItem>
+              <SelectItem value="grupo">Grupo</SelectItem>
+              <SelectItem value="individual">Individual</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -281,16 +306,22 @@ const Adicionais = () => {
                   ) : filtered.length === 0 ? (
                     <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Nenhum adicional encontrado</TableCell></TableRow>
                   ) : (
-                    filtered.map((item: any) => (
+                    filtered.map((item: any) => {
+                      const esc = item.escopo || 'individual';
+                      return (
                       <TableRow key={item.id}>
                         <TableCell className="font-medium">{item.descricao}</TableCell>
                         <TableCell>
-                          <Badge variant={(item.escopo || 'individual') === 'global' ? 'destructive' : 'secondary'}>
-                            {(item.escopo || 'individual') === 'global' ? 'Global' : 'Individual'}
+                          <Badge variant={esc === 'global' ? 'destructive' : esc === 'grupo' ? 'default' : 'secondary'}>
+                            {escopoLabel(esc)}
                           </Badge>
                         </TableCell>
-                        <TableCell>{(item.escopo || 'individual') === 'global' ? 'Todos' : (item.colaboradores as any)?.nome || '—'}</TableCell>
-                        <TableCell><Badge variant={item.tipo === 'fixo' ? 'default' : 'secondary'}>{item.tipo === 'fixo' ? 'Fixo' : 'Eventual'}</Badge></TableCell>
+                        <TableCell>{esc === 'global' ? 'Todos' : (item.colaboradores as any)?.nome || '—'}</TableCell>
+                        <TableCell>
+                          <Badge variant={item.tipo === 'recorrente' ? 'default' : 'secondary'}>
+                            {tipoLabel(item.tipo)}
+                          </Badge>
+                        </TableCell>
                         <TableCell className="hidden md:table-cell">{formatCompetencia(item)}</TableCell>
                         <TableCell className="text-right font-mono">
                           {item.modo_calculo === 'percentual' ? (
@@ -309,7 +340,8 @@ const Adicionais = () => {
                           </div>
                         </TableCell>
                       </TableRow>
-                    ))
+                      );
+                    })
                   )}
                 </TableBody>
               </Table>
@@ -322,19 +354,48 @@ const Adicionais = () => {
         <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle>{editId ? 'Editar Adicional' : 'Novo Adicional'}</DialogTitle></DialogHeader>
           <div className="grid gap-4 py-2">
+            {/* ===== Escopo ===== */}
             <div className="space-y-2">
               <Label>Escopo *</Label>
-              <Select value={form.escopo} onValueChange={(v) => setForm(p => ({ ...p, escopo: v, colaborador_ids: v === 'global' ? [] : p.colaborador_ids }))}>
+              <Select
+                value={form.escopo}
+                onValueChange={(v) => setForm(p => ({
+                  ...p,
+                  escopo: v as Escopo,
+                  colaborador_ids: v === 'global' ? [] : p.colaborador_ids,
+                }))}
+              >
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="global">Global (Todos os colaboradores)</SelectItem>
-                  <SelectItem value="individual">Individual</SelectItem>
+                  <SelectItem value="global">Global — Todos os colaboradores</SelectItem>
+                  <SelectItem value="grupo">Grupo — Vários colaboradores selecionados</SelectItem>
+                  <SelectItem value="individual">Individual — Um único colaborador</SelectItem>
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground">
+                {form.escopo === 'global' && 'Aplicado automaticamente a todos os ativos.'}
+                {form.escopo === 'grupo' && 'Selecione os colaboradores que receberão este adicional.'}
+                {form.escopo === 'individual' && 'Selecione exatamente um colaborador.'}
+              </p>
             </div>
+
+            {/* ===== Seleção de colaborador(es) ===== */}
             {form.escopo === 'individual' && (
               <div className="space-y-2">
-                <Label>{editId ? 'Colaborador *' : 'Colaborador(es) *'}</Label>
+                <Label>Colaborador *</Label>
+                <SearchableSelect
+                  options={colaboradorOptions}
+                  value={form.colaborador_ids[0] || ''}
+                  onValueChange={(v) => setForm(p => ({ ...p, colaborador_ids: v ? [v] : [] }))}
+                  placeholder="Selecione o colaborador"
+                  emptyText="Nenhum colaborador encontrado"
+                />
+                {errors.colaborador_ids && <p className="text-xs text-destructive">{errors.colaborador_ids}</p>}
+              </div>
+            )}
+            {form.escopo === 'grupo' && (
+              <div className="space-y-2">
+                <Label>Colaboradores * <span className="text-xs text-muted-foreground">({form.colaborador_ids.length} selecionado{form.colaborador_ids.length === 1 ? '' : 's'})</span></Label>
                 {editId ? (
                   <SearchableSelect
                     options={colaboradorOptions}
@@ -353,9 +414,12 @@ const Adicionais = () => {
                     emptyText="Nenhum colaborador encontrado"
                   />
                 )}
+                {editId && <p className="text-xs text-muted-foreground">Edição altera apenas este registro do grupo.</p>}
                 {errors.colaborador_ids && <p className="text-xs text-destructive">{errors.colaborador_ids}</p>}
               </div>
             )}
+
+            {/* ===== Rubrica ===== */}
             <div className="space-y-2">
               <Label>Rubrica *</Label>
               {rubricas.length > 0 ? (
@@ -373,6 +437,7 @@ const Adicionais = () => {
               )}
               {errors.descricao && <p className="text-xs text-destructive">{errors.descricao}</p>}
             </div>
+
             <RegraCalculoFields
               state={{
                 modo_calculo: form.modo_calculo,
@@ -383,17 +448,42 @@ const Adicionais = () => {
               onChange={(next) => setForm(p => ({ ...p, ...next }))}
               errors={{ valor: errors.valor, percentual: errors.percentual, base_calculo: errors.base_calculo }}
             />
+
+            {/* ===== Tipo de vigência ===== */}
             <div className="space-y-2">
-              <Label>Tipo</Label>
-              <Select value={form.tipo} onValueChange={(v) => setForm(p => ({ ...p, tipo: v }))}>
+              <Label>Frequência *</Label>
+              <Select value={form.tipo} onValueChange={(v) => setForm(p => ({
+                ...p,
+                tipo: v as TipoVigencia,
+                // Limpa campos não usados ao trocar
+                ...(v === 'recorrente' ? { mes: '', ano: '', mes_fim: '', ano_fim: '' } : {}),
+                ...(v === 'eventual' ? { mes_fim: '', ano_fim: '' } : {}),
+              }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="fixo">Fixo (Recorrente)</SelectItem>
-                  <SelectItem value="eventual">Eventual</SelectItem>
+                  <SelectItem value="recorrente">Recorrente — vigora todos os meses</SelectItem>
+                  <SelectItem value="prazo">Por prazo — período definido (início e fim)</SelectItem>
+                  <SelectItem value="eventual">Eventual — uma única competência</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+
             {form.tipo === 'eventual' && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Mês *</Label>
+                  <Input type="number" min="1" max="12" placeholder="1-12" value={form.mes} onChange={(e) => setForm(p => ({ ...p, mes: e.target.value }))} className={errors.mes ? 'border-destructive' : ''} />
+                  {errors.mes && <p className="text-xs text-destructive">{errors.mes}</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label>Ano *</Label>
+                  <Input type="number" min="2020" placeholder="2026" value={form.ano} onChange={(e) => setForm(p => ({ ...p, ano: e.target.value }))} className={errors.ano ? 'border-destructive' : ''} />
+                  {errors.ano && <p className="text-xs text-destructive">{errors.ano}</p>}
+                </div>
+              </div>
+            )}
+
+            {form.tipo === 'prazo' && (
               <>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -409,17 +499,17 @@ const Adicionais = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Mês Fim (opcional)</Label>
+                    <Label>Mês Fim *</Label>
                     <Input type="number" min="1" max="12" placeholder="1-12" value={form.mes_fim} onChange={(e) => setForm(p => ({ ...p, mes_fim: e.target.value }))} className={errors.mes_fim ? 'border-destructive' : ''} />
                     {errors.mes_fim && <p className="text-xs text-destructive">{errors.mes_fim}</p>}
                   </div>
                   <div className="space-y-2">
-                    <Label>Ano Fim (opcional)</Label>
+                    <Label>Ano Fim *</Label>
                     <Input type="number" min="2020" placeholder="2026" value={form.ano_fim} onChange={(e) => setForm(p => ({ ...p, ano_fim: e.target.value }))} className={errors.ano_fim ? 'border-destructive' : ''} />
                     {errors.ano_fim && <p className="text-xs text-destructive">{errors.ano_fim}</p>}
                   </div>
                 </div>
-                <p className="text-xs text-muted-foreground">Vigência incompleta (só mês ou só ano) será bloqueada ao salvar.</p>
+                <p className="text-xs text-muted-foreground">Vigência incompleta ou fim anterior ao início será bloqueada.</p>
               </>
             )}
           </div>
