@@ -31,6 +31,31 @@ interface Linha {
 const ContrachequeDetalhado = ({ open, onOpenChange, registro, unidadeId, isPadrao02 }: Props) => {
   const enabled = !!(open && registro && unidadeId);
 
+  // Fetch unidade + instituição info for header
+  const { data: unidadeInfo } = useQuery({
+    queryKey: ['contracheque-unidade-info', unidadeId],
+    queryFn: async () => {
+      const { data: u } = await supabase
+        .from('unidades_folha')
+        .select('nome, cidade, estado, instituicao_tipo, instituicao_id, padrao')
+        .eq('id', unidadeId)
+        .maybeSingle();
+      if (!u) return null;
+      let instituicao: any = null;
+      if (u.instituicao_id) {
+        const table = u.instituicao_tipo === 'prefeitura' ? 'prefeituras' : 'terceirizadas';
+        const { data: i } = await supabase
+          .from(table)
+          .select('nome, cnpj, endereco, cidade, estado, telefone, email')
+          .eq('id', u.instituicao_id)
+          .maybeSingle();
+        instituicao = i;
+      }
+      return { ...u, instituicao };
+    },
+    enabled,
+  });
+
   const { data, isLoading } = useQuery({
     queryKey: ['contracheque-detalhe', registro?.id, registro?.colaborador_id, registro?.mes, registro?.ano, unidadeId],
     queryFn: async () => {
