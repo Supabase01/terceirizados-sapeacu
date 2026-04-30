@@ -325,6 +325,7 @@ const Descontos = () => {
                     emptyText="Nenhum colaborador encontrado"
                   />
                 )}
+                {errors.colaborador_ids && <p className="text-xs text-destructive">{errors.colaborador_ids}</p>}
               </div>
             )}
             <div className="space-y-2">
@@ -342,6 +343,7 @@ const Descontos = () => {
                   Nenhuma rubrica de desconto cadastrada nesta unidade. Cadastre em <strong>Folha → Rubricas</strong> antes de continuar.
                 </div>
               )}
+              {errors.descricao && <p className="text-xs text-destructive">{errors.descricao}</p>}
             </div>
             <RegraCalculoFields
               state={{
@@ -352,6 +354,8 @@ const Descontos = () => {
               }}
               onChange={(next) => setForm(p => ({ ...p, ...next }))}
               valorLabel={form.is_percentual ? 'Valor (%) *' : 'Valor (R$) *'}
+              excludeBases={['liquido', 'outra']}
+              errors={{ valor: errors.valor, percentual: errors.percentual, base_calculo: errors.base_calculo }}
             />
             {form.modo_calculo === 'fixo' && (
               <div className="flex items-center gap-3">
@@ -362,13 +366,16 @@ const Descontos = () => {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Mês (vazio = recorrente)</Label>
-                <Input type="number" min="1" max="12" placeholder="1-12" value={form.mes} onChange={(e) => setForm(p => ({ ...p, mes: e.target.value }))} />
+                <Input type="number" min="1" max="12" placeholder="1-12" value={form.mes} onChange={(e) => setForm(p => ({ ...p, mes: e.target.value }))} className={errors.mes ? 'border-destructive' : ''} />
+                {errors.mes && <p className="text-xs text-destructive">{errors.mes}</p>}
               </div>
               <div className="space-y-2">
                 <Label>Ano (vazio = recorrente)</Label>
-                <Input type="number" min="2020" placeholder="2026" value={form.ano} onChange={(e) => setForm(p => ({ ...p, ano: e.target.value }))} />
+                <Input type="number" min="2020" placeholder="2026" value={form.ano} onChange={(e) => setForm(p => ({ ...p, ano: e.target.value }))} className={errors.ano ? 'border-destructive' : ''} />
+                {errors.ano && <p className="text-xs text-destructive">{errors.ano}</p>}
               </div>
             </div>
+            <p className="text-xs text-muted-foreground">Para descontos recorrentes, deixe mês e ano em branco. Para uma única competência, preencha os dois.</p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={closeDialog}>Cancelar</Button>
