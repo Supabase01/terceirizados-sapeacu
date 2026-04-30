@@ -59,6 +59,15 @@ export const modules: ModuleDef[] = [
     ],
   },
   {
+    id: 'frequencia',
+    label: 'Controle de Frequência',
+    description: 'Registro mensal da entrega da folha de frequência por colaborador',
+    icon: ClipboardCheck,
+    items: [
+      { title: 'Frequência mensal', url: '/frequencia', icon: ClipboardCheck },
+    ],
+  },
+  {
     id: 'relatorios',
     label: 'Relatórios',
     description: 'Geração e exportação de relatórios',
