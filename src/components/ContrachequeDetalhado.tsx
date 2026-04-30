@@ -341,9 +341,9 @@ const ContrachequeDetalhado = ({ open, onOpenChange, registro, unidadeId, isPadr
               <>
                 {/* Base + Adicionais → Bruto */}
                 <section className="rounded-lg border">
-                  <div className="px-4 py-2 bg-emerald-50 dark:bg-emerald-500/10 border-b flex items-center gap-2">
-                    <ArrowUp className="h-4 w-4 text-emerald-600" />
-                    <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">Proventos</span>
+                  <div className="px-4 py-2 bg-muted/60 border-b flex items-center gap-2">
+                    <ArrowUp className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-semibold text-foreground/80">Proventos</span>
                   </div>
                   <div className="divide-y">
                     <LinhaRow descricao="Salário Base" valor={data.salarioBase} />
@@ -362,9 +362,9 @@ const ContrachequeDetalhado = ({ open, onOpenChange, registro, unidadeId, isPadr
 
                 {/* Descontos */}
                 <section className="rounded-lg border">
-                  <div className="px-4 py-2 bg-rose-50 dark:bg-rose-500/10 border-b flex items-center gap-2">
-                    <ArrowDown className="h-4 w-4 text-rose-600" />
-                    <span className="text-sm font-semibold text-rose-700 dark:text-rose-400">Descontos</span>
+                  <div className="px-4 py-2 bg-muted/60 border-b flex items-center gap-2">
+                    <ArrowDown className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-semibold text-foreground/80">Descontos</span>
                   </div>
                   <div className="divide-y">
                     {data.descontosLinhas.map((l, i) => (
@@ -376,7 +376,7 @@ const ContrachequeDetalhado = ({ open, onOpenChange, registro, unidadeId, isPadr
                   </div>
                   <div className="px-4 py-2 bg-muted/40 border-t flex items-center justify-between">
                     <span className="text-sm font-medium">Total de Descontos</span>
-                    <span className="font-bold tabular-nums text-rose-600">- {formatBRL(data.totalDescontos)}</span>
+                    <span className="font-bold tabular-nums text-foreground">- {formatBRL(data.totalDescontos)}</span>
                   </div>
                 </section>
               </>
