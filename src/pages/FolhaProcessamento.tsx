@@ -216,6 +216,18 @@ const FolhaProcessamento = () => {
         encargosData = enc || [];
       }
 
+      // 5. Load frequências da competência (para desconto por faltas)
+      const { data: frequenciasData, error: freqErr } = await supabase
+        .from('frequencias')
+        .select('colaborador_id, faltas')
+        .eq('unidade_id', unidadeId!)
+        .eq('mes', mes)
+        .eq('ano', ano)
+        .gt('faltas', 0);
+      if (freqErr) throw freqErr;
+      const faltasMap = new Map<string, number>();
+      (frequenciasData || []).forEach((f: any) => faltasMap.set(f.colaborador_id, Number(f.faltas) || 0));
+
       // Helper: vigência por tipo (recorrente | prazo | eventual).
       // Mantém compatibilidade com o tipo legado 'fixo' = recorrente.
       const current = ano * 100 + mes;
