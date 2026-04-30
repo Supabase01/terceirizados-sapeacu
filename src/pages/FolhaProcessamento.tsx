@@ -962,6 +962,17 @@ const FolhaProcessamento = () => {
                               <TableCell className="text-right font-bold text-primary">{formatCurrency(Number(r.liquido))}</TableCell>
                             </>
                           )}
+                          <TableCell className="text-center">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8"
+                              onClick={() => { setContrachequeRecord(r); setContrachequeOpen(true); }}
+                              title="Visualizar contracheque detalhado"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
