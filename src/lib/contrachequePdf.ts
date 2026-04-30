@@ -213,11 +213,7 @@ export function renderContrachequeOnPdf(
 ) {
   const W = doc.internal.pageSize.width;
   const m = 15;
-  let y = 12;
-
-  // Top accent
-  doc.setFillColor(71, 85, 105);
-  doc.rect(0, 0, W, 3, 'F');
+  let y = 16;
 
   const inst = unidadeInfo?.instituicao;
   doc.setTextColor(51, 65, 85);
