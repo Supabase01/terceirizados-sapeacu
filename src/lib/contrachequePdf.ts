@@ -265,17 +265,21 @@ export function renderContrachequeOnPdf(
   y += 10;
   label('LOTAÇÃO', m, y); value(registro.lotacao || '-', m, y + 4);
   label('PADRÃO', col2, y); value(isPadrao02 ? 'Padrão 02' : 'Padrão 01', col2, y + 4);
-  y += 8;
+  y += 9;
 
-  const sectionTitle = (title: string, color: [number, number, number]) => {
-    doc.setFillColor(color[0], color[1], color[2]);
-    doc.rect(m, y, W - m * 2, 6, 'F');
-    doc.setTextColor(255); doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
-    doc.text(title, m + 2, y + 4.2);
-    y += 6;
+  const sectionTitle = (title: string) => {
+    doc.setTextColor(51, 65, 85);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.text(title, m, y + 3.5);
+    doc.setDrawColor(51, 65, 85);
+    doc.setLineWidth(0.4);
+    doc.line(m, y + 5, W - m, y + 5);
+    doc.setLineWidth(0.2);
+    y += 7;
   };
 
-  const renderTable = (rows: Linha[], totalLabel: string, total: number, color: [number, number, number], negative = false) => {
+  const renderTable = (rows: Linha[], totalLabel: string, total: number, negative = false) => {
     autoTable(doc, {
       startY: y,
       head: [['Descrição', 'Detalhe', 'Valor (R$)']],
@@ -283,54 +287,57 @@ export function renderContrachequeOnPdf(
         ? rows.map(l => [l.descricao, l.detalhe || '', `${negative ? '- ' : ''}${formatBRL(l.valor)}`])
         : [['—', 'Sem registros', '-']],
       foot: [['', totalLabel, `${negative ? '- ' : ''}${formatBRL(total)}`]],
-      theme: 'grid',
-      styles: { fontSize: 8, cellPadding: 1.8, textColor: [40, 40, 40] },
-      headStyles: { fillColor: [245, 247, 250], textColor: [80, 80, 80], fontStyle: 'bold', fontSize: 7 },
-      footStyles: { fillColor: [245, 247, 250], textColor: color, fontStyle: 'bold' },
-      columnStyles: { 1: { textColor: [120, 120, 120], fontSize: 7 }, 2: { halign: 'right' } },
+      theme: 'plain',
+      styles: { fontSize: 8, cellPadding: { top: 1.6, bottom: 1.6, left: 2, right: 2 }, textColor: [40, 40, 40], lineColor: [225, 228, 232], lineWidth: 0 },
+      headStyles: { textColor: [120, 130, 140], fontStyle: 'bold', fontSize: 7, lineWidth: { bottom: 0.2 }, lineColor: [200, 205, 212] },
+      bodyStyles: { lineWidth: { bottom: 0.1 }, lineColor: [235, 238, 242] },
+      footStyles: { textColor: [51, 65, 85], fontStyle: 'bold', lineWidth: { top: 0.3 }, lineColor: [180, 188, 198] },
+      columnStyles: { 1: { textColor: [140, 145, 152], fontSize: 7 }, 2: { halign: 'right' } },
       margin: { left: m, right: m },
     });
-    y = (doc as any).lastAutoTable.finalY + 4;
+    y = (doc as any).lastAutoTable.finalY + 5;
   };
 
-  const NEUTRAL_DARK: [number, number, number] = [55, 65, 81];
-  const NEUTRAL_HEADER: [number, number, number] = [71, 85, 105];
-
   if (!isPadrao02) {
-    sectionTitle('PROVENTOS', NEUTRAL_HEADER);
+    sectionTitle('PROVENTOS');
     renderTable(
       [{ descricao: 'Salário Base', valor: data.salarioBase }, ...data.adicionaisLinhas],
       'Total Proventos / Bruto',
       data.bruto,
-      NEUTRAL_DARK,
     );
-    sectionTitle('DESCONTOS', NEUTRAL_HEADER);
-    renderTable(data.descontosLinhas, 'Total de Descontos', data.totalDescontos, NEUTRAL_DARK, true);
+    sectionTitle('DESCONTOS');
+    renderTable(data.descontosLinhas, 'Total de Descontos', data.totalDescontos, true);
   } else {
-    sectionTitle('LÍQUIDO CONTRATADO', NEUTRAL_HEADER);
-    renderTable([{ descricao: 'Salário Líquido (base)', valor: data.salarioBase }], 'Líquido Base', data.salarioBase, NEUTRAL_DARK);
-    sectionTitle('ENCARGOS SOBRE O LÍQUIDO', NEUTRAL_HEADER);
-    renderTable(data.encargosLinhas, 'Total de Encargos', data.totalEncargos, NEUTRAL_DARK);
-    doc.setFillColor(245, 247, 250);
-    doc.rect(m, y, W - m * 2, 8, 'F');
+    sectionTitle('LÍQUIDO CONTRATADO');
+    renderTable([{ descricao: 'Salário Líquido (base)', valor: data.salarioBase }], 'Líquido Base', data.salarioBase);
+    sectionTitle('ENCARGOS SOBRE O LÍQUIDO');
+    renderTable(data.encargosLinhas, 'Total de Encargos', data.totalEncargos);
+    doc.setDrawColor(220, 224, 230);
+    doc.setLineWidth(0.2);
+    doc.line(m, y, W - m, y);
     doc.setTextColor(60); doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
-    doc.text('Salário Bruto (Líquido + Encargos)', m + 2, y + 5.5);
-    doc.text(formatBRL(data.bruto), W - m - 2, y + 5.5, { align: 'right' });
+    doc.text('Salário Bruto (Líquido + Encargos)', m, y + 5);
+    doc.text(formatBRL(data.bruto), W - m, y + 5, { align: 'right' });
+    doc.line(m, y + 7.5, W - m, y + 7.5);
     y += 12;
     if (data.descontosLinhas.length > 0) {
-      sectionTitle('DESCONTOS', NEUTRAL_HEADER);
-      renderTable(data.descontosLinhas, 'Total de Descontos', data.totalDescontos, NEUTRAL_DARK, true);
+      sectionTitle('DESCONTOS');
+      renderTable(data.descontosLinhas, 'Total de Descontos', data.totalDescontos, true);
     }
   }
 
   if (y > 250) { doc.addPage(); y = 20; }
-  doc.setFillColor(51, 65, 85);
-  doc.rect(m, y, W - m * 2, 14, 'F');
-  doc.setTextColor(255); doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
-  doc.text('VALOR LÍQUIDO A RECEBER', m + 3, y + 9);
+  // Líquido a receber - linhas destacadas, sem faixa cheia
+  doc.setDrawColor(51, 65, 85);
+  doc.setLineWidth(0.6);
+  doc.line(m, y, W - m, y);
+  doc.setTextColor(51, 65, 85); doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+  doc.text('VALOR LÍQUIDO A RECEBER', m, y + 7);
   doc.setFontSize(13);
-  doc.text(formatBRL(data.liquido), W - m - 3, y + 9, { align: 'right' });
-  y += 22;
+  doc.text(formatBRL(data.liquido), W - m, y + 7, { align: 'right' });
+  doc.setLineWidth(0.2);
+  doc.line(m, y + 10, W - m, y + 10);
+  y += 18;
 
   doc.setFontSize(7); doc.setTextColor(150); doc.setFont('helvetica', 'normal');
   doc.text(`Gerado em ${new Date().toLocaleString('pt-BR')}`, W / 2, doc.internal.pageSize.height - 8, { align: 'center' });
