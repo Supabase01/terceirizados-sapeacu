@@ -440,7 +440,7 @@ const ContrachequeDetalhado = ({ open, onOpenChange, registro, unidadeId, isPadr
             )}
 
             {/* Líquido final */}
-            <div className="rounded-lg border-2 border-primary bg-primary/5 px-4 py-4 flex items-center justify-between">
+            <div className="rounded-lg border border-foreground/20 bg-muted/50 px-4 py-4 flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted-foreground uppercase tracking-wide">Valor Líquido a Receber</p>
                 <p className="text-[11px] text-muted-foreground mt-0.5">
@@ -449,7 +449,7 @@ const ContrachequeDetalhado = ({ open, onOpenChange, registro, unidadeId, isPadr
                     : 'Bruto − Total de Descontos'}
                 </p>
               </div>
-              <span className="text-2xl font-bold text-primary tabular-nums">{formatBRL(data.liquido)}</span>
+              <span className="text-2xl font-bold text-foreground tabular-nums">{formatBRL(data.liquido)}</span>
             </div>
           </div>
         )}
