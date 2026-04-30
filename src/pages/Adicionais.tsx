@@ -292,7 +292,13 @@ const Adicionais = () => {
                         <TableCell>{(item.escopo || 'individual') === 'global' ? 'Todos' : (item.colaboradores as any)?.nome || '—'}</TableCell>
                         <TableCell><Badge variant={item.tipo === 'fixo' ? 'default' : 'secondary'}>{item.tipo === 'fixo' ? 'Fixo' : 'Eventual'}</Badge></TableCell>
                         <TableCell className="hidden md:table-cell">{formatCompetencia(item)}</TableCell>
-                        <TableCell className="text-right font-mono">{formatCurrency(item.valor)}</TableCell>
+                        <TableCell className="text-right font-mono">
+                          {item.modo_calculo === 'percentual' ? (
+                            <span className="text-xs text-muted-foreground font-sans">
+                              {Number(item.percentual || 0).toFixed(2)}% sobre {item.base_calculo === 'bruto' ? 'bruto' : item.base_calculo === 'liquido' ? 'líquido' : 'salário base'}
+                            </span>
+                          ) : formatCurrency(item.valor)}
+                        </TableCell>
                         <TableCell className="hidden lg:table-cell text-muted-foreground text-xs">
                           {new Date(item.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                         </TableCell>
