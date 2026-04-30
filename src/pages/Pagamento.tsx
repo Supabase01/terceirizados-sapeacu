@@ -5,10 +5,12 @@ import { useUnidade } from '@/contexts/UnidadeContext';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, DollarSign } from 'lucide-react';
+import { Search, DollarSign, Eye } from 'lucide-react';
+import ContrachequeDetalhado from '@/components/ContrachequeDetalhado';
 
 const currentDate = new Date();
 const defaultMes = currentDate.getMonth() + 1;
@@ -23,11 +25,14 @@ const getMonthLabel = (m: number) =>
   ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][m - 1] || '';
 
 const Pagamento = () => {
-  const { unidadeId } = useUnidade();
+  const { unidadeId, unidadePadrao } = useUnidade();
+  const isPadrao02 = unidadePadrao === 'padrao_02';
   const [mes, setMes] = useState(defaultMes);
   const [ano, setAno] = useState(defaultAno);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
+  const [contrachequeOpen, setContrachequeOpen] = useState(false);
+  const [contrachequeRecord, setContrachequeRecord] = useState<any | null>(null);
 
   const { data: folha = [], isLoading } = useQuery({
     queryKey: ['pagamento', mes, ano, unidadeId],
@@ -39,7 +44,7 @@ const Pagamento = () => {
       while (hasMore) {
         let query = supabase
           .from('folha_processamento')
-          .select('id, nome, cpf, liquido, status, colaborador_id, colaboradores(banco, conta, pix)')
+          .select('*, colaboradores(banco, conta, pix)')
           .eq('mes', mes)
           .eq('ano', ano)
           .eq('status', 'liberado')
@@ -137,6 +142,7 @@ const Pagamento = () => {
                         <TableHead>Conta</TableHead>
                         <TableHead>PIX</TableHead>
                         <TableHead className="text-right">Valor para Pagamento</TableHead>
+                        <TableHead className="text-center w-12">Ações</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -149,6 +155,17 @@ const Pagamento = () => {
                           <TableCell>{r.colaboradores?.conta || '—'}</TableCell>
                           <TableCell>{r.colaboradores?.pix || '—'}</TableCell>
                           <TableCell className="text-right font-semibold">{formatCurrency(Number(r.liquido))}</TableCell>
+                          <TableCell className="text-center">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8"
+                              onClick={() => { setContrachequeRecord(r); setContrachequeOpen(true); }}
+                              title="Visualizar contracheque detalhado"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -179,6 +196,14 @@ const Pagamento = () => {
           </CardContent>
         </Card>
       </div>
+
+      <ContrachequeDetalhado
+        open={contrachequeOpen}
+        onOpenChange={setContrachequeOpen}
+        registro={contrachequeRecord}
+        unidadeId={unidadeId || ''}
+        isPadrao02={isPadrao02}
+      />
     </Layout>
   );
 };
