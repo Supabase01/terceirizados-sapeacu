@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { useUnidade } from '@/contexts/UnidadeContext';
+import { isValidCPF, cleanCPF } from '@/lib/cpf';
 
 interface ColaboradorForm {
   nome: string;
@@ -195,9 +196,13 @@ const CadastroColaboradores = () => {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
+      const cpfDigits = cleanCPF(form.cpf);
+      if (!isValidCPF(cpfDigits)) {
+        throw new Error('CPF inválido. Verifique os dígitos informados.');
+      }
       const payload: any = {
         nome: form.nome,
-        cpf: form.cpf,
+        cpf: cpfDigits,
         matricula: form.matricula || null,
         secretaria_id: form.secretaria_id || null,
         funcao_id: form.funcao_id || null,
@@ -233,9 +238,18 @@ const CadastroColaboradores = () => {
     onError: (err: any) => {
       const msg = err?.message || '';
       const isDuplicate = msg.includes('colaboradores_unidade_matricula_unique');
+      const isInvalidCpf = msg.startsWith('CPF inválido');
       toast({
-        title: isDuplicate ? 'Matrícula já existe nesta unidade' : 'Erro ao salvar',
-        description: isDuplicate ? 'Use outra matrícula ou deixe em branco para gerar automaticamente.' : msg.includes('unique') ? 'CPF já cadastrado' : 'Verifique os dados',
+        title: isInvalidCpf
+          ? 'CPF inválido'
+          : isDuplicate
+            ? 'Matrícula já existe nesta unidade'
+            : 'Erro ao salvar',
+        description: isInvalidCpf
+          ? msg
+          : isDuplicate
+            ? 'Use outra matrícula ou deixe em branco para gerar automaticamente.'
+            : msg.includes('unique') ? 'CPF já cadastrado' : 'Verifique os dados',
         variant: 'destructive',
       });
     },
@@ -439,7 +453,15 @@ const CadastroColaboradores = () => {
               </div>
               <div className="space-y-2">
                 <Label>CPF *</Label>
-                <Input placeholder="000.000.000-00" value={formatCPF(form.cpf)} onChange={(e) => updateField('cpf', e.target.value.replace(/\D/g, '').slice(0, 11))} />
+                <Input
+                  placeholder="000.000.000-00"
+                  value={formatCPF(form.cpf)}
+                  onChange={(e) => updateField('cpf', e.target.value.replace(/\D/g, '').slice(0, 11))}
+                  className={form.cpf.length === 11 && !isValidCPF(form.cpf) ? 'border-destructive focus-visible:ring-destructive' : ''}
+                />
+                {form.cpf.length === 11 && !isValidCPF(form.cpf) && (
+                  <p className="text-xs text-destructive">CPF inválido. Verifique os dígitos.</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label>Data de Nascimento</Label>
@@ -549,7 +571,7 @@ const CadastroColaboradores = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={closeDialog}>Cancelar</Button>
-            <Button onClick={() => saveMutation.mutate()} disabled={!form.nome.trim() || !form.cpf.trim() || !form.secretaria_id || saveMutation.isPending}>
+            <Button onClick={() => saveMutation.mutate()} disabled={!form.nome.trim() || !isValidCPF(form.cpf) || !form.secretaria_id || saveMutation.isPending}>
               {saveMutation.isPending ? 'Salvando...' : 'Salvar'}
             </Button>
           </DialogFooter>

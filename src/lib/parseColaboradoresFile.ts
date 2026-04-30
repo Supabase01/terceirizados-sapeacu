@@ -1,4 +1,5 @@
 import * as XLSX from 'xlsx';
+import { isValidCPF } from './cpf';
 
 export interface ParsedColaborador {
   nome: string;
@@ -132,10 +133,12 @@ export const parseColaboradoresFile = async (file: File): Promise<ParseColaborad
         record.cidade = String(record.cidade || '').trim();
         record.cep = String(record.cep || '').replace(/\D/g, '');
 
-        if (record.nome && record.cpf) {
-          records.push(record as ParsedColaborador);
-        } else {
+        if (!record.nome || !record.cpf) {
           errors.push(`Linha ${index + 2}: Nome ou CPF ausente.`);
+        } else if (!isValidCPF(record.cpf)) {
+          errors.push(`Linha ${index + 2}: CPF inválido (${record.cpf}).`);
+        } else {
+          records.push(record as ParsedColaborador);
         }
       } catch {
         errors.push(`Erro na linha ${index + 2}`);
