@@ -44,9 +44,11 @@ export type Database = {
           mes_fim: number | null
           modo_calculo: string
           percentual: number | null
+          quantidade: number | null
           tipo: string
           unidade_id: string | null
           valor: number
+          valor_unitario: number | null
         }
         Insert: {
           ano?: number | null
@@ -62,9 +64,11 @@ export type Database = {
           mes_fim?: number | null
           modo_calculo?: string
           percentual?: number | null
+          quantidade?: number | null
           tipo?: string
           unidade_id?: string | null
           valor?: number
+          valor_unitario?: number | null
         }
         Update: {
           ano?: number | null
@@ -80,9 +84,11 @@ export type Database = {
           mes_fim?: number | null
           modo_calculo?: string
           percentual?: number | null
+          quantidade?: number | null
           tipo?: string
           unidade_id?: string | null
           valor?: number
+          valor_unitario?: number | null
         }
         Relationships: [
           {
@@ -301,9 +307,11 @@ export type Database = {
           mes_fim: number | null
           modo_calculo: string
           percentual: number | null
+          quantidade: number | null
           tipo: string
           unidade_id: string | null
           valor: number
+          valor_unitario: number | null
         }
         Insert: {
           ano?: number | null
@@ -320,9 +328,11 @@ export type Database = {
           mes_fim?: number | null
           modo_calculo?: string
           percentual?: number | null
+          quantidade?: number | null
           tipo?: string
           unidade_id?: string | null
           valor?: number
+          valor_unitario?: number | null
         }
         Update: {
           ano?: number | null
@@ -339,9 +349,11 @@ export type Database = {
           mes_fim?: number | null
           modo_calculo?: string
           percentual?: number | null
+          quantidade?: number | null
           tipo?: string
           unidade_id?: string | null
           valor?: number
+          valor_unitario?: number | null
         }
         Relationships: [
           {
