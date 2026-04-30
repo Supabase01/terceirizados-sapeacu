@@ -353,6 +353,7 @@ const Adicionais = () => {
                     emptyText="Nenhum colaborador encontrado"
                   />
                 )}
+                {errors.colaborador_ids && <p className="text-xs text-destructive">{errors.colaborador_ids}</p>}
               </div>
             )}
             <div className="space-y-2">
@@ -370,6 +371,7 @@ const Adicionais = () => {
                   Nenhuma rubrica de adicional cadastrada nesta unidade. Cadastre em <strong>Folha → Rubricas</strong> antes de continuar.
                 </div>
               )}
+              {errors.descricao && <p className="text-xs text-destructive">{errors.descricao}</p>}
             </div>
             <RegraCalculoFields
               state={{
@@ -379,6 +381,7 @@ const Adicionais = () => {
                 base_calculo: form.base_calculo,
               }}
               onChange={(next) => setForm(p => ({ ...p, ...next }))}
+              errors={{ valor: errors.valor, percentual: errors.percentual, base_calculo: errors.base_calculo }}
             />
             <div className="space-y-2">
               <Label>Tipo</Label>
@@ -395,23 +398,28 @@ const Adicionais = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Mês Início *</Label>
-                    <Input type="number" min="1" max="12" placeholder="1-12" value={form.mes} onChange={(e) => setForm(p => ({ ...p, mes: e.target.value }))} />
+                    <Input type="number" min="1" max="12" placeholder="1-12" value={form.mes} onChange={(e) => setForm(p => ({ ...p, mes: e.target.value }))} className={errors.mes ? 'border-destructive' : ''} />
+                    {errors.mes && <p className="text-xs text-destructive">{errors.mes}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label>Ano Início *</Label>
-                    <Input type="number" min="2020" placeholder="2026" value={form.ano} onChange={(e) => setForm(p => ({ ...p, ano: e.target.value }))} />
+                    <Input type="number" min="2020" placeholder="2026" value={form.ano} onChange={(e) => setForm(p => ({ ...p, ano: e.target.value }))} className={errors.ano ? 'border-destructive' : ''} />
+                    {errors.ano && <p className="text-xs text-destructive">{errors.ano}</p>}
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Mês Fim (opcional)</Label>
-                    <Input type="number" min="1" max="12" placeholder="1-12" value={form.mes_fim} onChange={(e) => setForm(p => ({ ...p, mes_fim: e.target.value }))} />
+                    <Input type="number" min="1" max="12" placeholder="1-12" value={form.mes_fim} onChange={(e) => setForm(p => ({ ...p, mes_fim: e.target.value }))} className={errors.mes_fim ? 'border-destructive' : ''} />
+                    {errors.mes_fim && <p className="text-xs text-destructive">{errors.mes_fim}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label>Ano Fim (opcional)</Label>
-                    <Input type="number" min="2020" placeholder="2026" value={form.ano_fim} onChange={(e) => setForm(p => ({ ...p, ano_fim: e.target.value }))} />
+                    <Input type="number" min="2020" placeholder="2026" value={form.ano_fim} onChange={(e) => setForm(p => ({ ...p, ano_fim: e.target.value }))} className={errors.ano_fim ? 'border-destructive' : ''} />
+                    {errors.ano_fim && <p className="text-xs text-destructive">{errors.ano_fim}</p>}
                   </div>
                 </div>
+                <p className="text-xs text-muted-foreground">Vigência incompleta (só mês ou só ano) será bloqueada ao salvar.</p>
               </>
             )}
           </div>
