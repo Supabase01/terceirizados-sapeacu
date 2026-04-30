@@ -12,7 +12,8 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { RefreshCw, Search, CheckCircle2, Loader2, FileText, Info, Download } from 'lucide-react';
+import { RefreshCw, Search, CheckCircle2, Loader2, FileText, Info, Download, Eye } from 'lucide-react';
+import ContrachequeDetalhado from '@/components/ContrachequeDetalhado';
 import { exportToPDF } from '@/lib/exportUtils';
 import { useIsMaster } from '@/hooks/useIsMaster';
 import { useToast } from '@/hooks/use-toast';
@@ -53,6 +54,8 @@ const FolhaProcessamento = () => {
   const [page, setPage] = useState(0);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [generateSecretaria, setGenerateSecretaria] = useState('all');
+  const [contrachequeOpen, setContrachequeOpen] = useState(false);
+  const [contrachequeRecord, setContrachequeRecord] = useState<any | null>(null);
 
   // Load secretarias for the generation filter
   const { data: secretariasList = [] } = useQuery({
@@ -934,6 +937,7 @@ const FolhaProcessamento = () => {
                             <TableHead className="text-right">Líquido</TableHead>
                           </>
                         )}
+                        <TableHead className="w-12 text-center">Ações</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -958,6 +962,17 @@ const FolhaProcessamento = () => {
                               <TableCell className="text-right font-bold text-primary">{formatCurrency(Number(r.liquido))}</TableCell>
                             </>
                           )}
+                          <TableCell className="text-center">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8"
+                              onClick={() => { setContrachequeRecord(r); setContrachequeOpen(true); }}
+                              title="Visualizar contracheque detalhado"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -1013,6 +1028,14 @@ const FolhaProcessamento = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ContrachequeDetalhado
+        open={contrachequeOpen}
+        onOpenChange={setContrachequeOpen}
+        registro={contrachequeRecord}
+        unidadeId={unidadeId || ''}
+        isPadrao02={isPadrao02}
+      />
     </Layout>
   );
 };
