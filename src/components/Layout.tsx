@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Building2 } from 'lucide-react';
+import { LogOut, Building2, LayoutGrid } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
@@ -34,6 +34,15 @@ const Layout = ({ children }: { children: ReactNode }) => {
           <header className="sticky top-0 z-50 h-12 flex items-center justify-between border-b bg-card/80 backdrop-blur-sm px-3">
             <div className="flex items-center gap-2">
               <SidebarTrigger className="ml-1" />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/modulos')}
+                className="h-8 gap-1.5 text-muted-foreground hover:text-foreground"
+              >
+                <LayoutGrid className="h-4 w-4" />
+                <span className="hidden sm:inline">Módulos</span>
+              </Button>
               {unidadeNome && (
                 <Badge
                   variant="outline"
