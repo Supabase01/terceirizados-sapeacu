@@ -208,18 +208,39 @@ const ContrachequeDetalhado = ({ open, onOpenChange, registro, unidadeId, isPadr
     // Top accent (neutral)
     doc.setFillColor(71, 85, 105); // slate-600
     doc.rect(0, 0, W, 3, 'F');
-    y = 14;
+    y = 12;
 
-    // Header
-    doc.setTextColor(51, 65, 85); // slate-700
+    // Institution / Unidade header (left)
+    const inst = unidadeInfo?.instituicao;
+    doc.setTextColor(51, 65, 85);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
-    doc.text('CONTRACHEQUE DETALHADO', m, y);
+    doc.setFontSize(11);
+    doc.text(inst?.nome || unidadeInfo?.nome || '—', m, y);
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.setTextColor(100);
-    doc.text(`Competência: ${monthName(registro.mes)}/${registro.ano}`, W - m, y, { align: 'right' });
-    y += 6;
+    doc.setFontSize(8);
+    doc.setTextColor(110);
+    let infoY = y + 4;
+    if (inst?.cnpj) { doc.text(`CNPJ: ${inst.cnpj}`, m, infoY); infoY += 3.5; }
+    const localLinha = [inst?.endereco, [inst?.cidade || unidadeInfo?.cidade, inst?.estado || unidadeInfo?.estado].filter(Boolean).join(' - ')].filter(Boolean).join(' • ');
+    if (localLinha) { doc.text(localLinha, m, infoY); infoY += 3.5; }
+    const contatoLinha = [inst?.telefone, inst?.email].filter(Boolean).join(' • ');
+    if (contatoLinha) { doc.text(contatoLinha, m, infoY); infoY += 3.5; }
+    if (unidadeInfo?.nome && inst?.nome && unidadeInfo.nome !== inst.nome) {
+      doc.text(`Unidade: ${unidadeInfo.nome}`, m, infoY); infoY += 3.5;
+    }
+
+    // Right side: title + competence
+    doc.setTextColor(51, 65, 85);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text('CONTRACHEQUE', W - m, y, { align: 'right' });
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(110);
+    doc.text(`Competência: ${monthName(registro.mes)}/${registro.ano}`, W - m, y + 4, { align: 'right' });
+    doc.text(isPadrao02 ? 'Padrão 02' : 'Padrão 01', W - m, y + 8, { align: 'right' });
+
+    y = Math.max(infoY, y + 12) + 2;
     doc.setDrawColor(220);
     doc.line(m, y, W - m, y);
     y += 5;
