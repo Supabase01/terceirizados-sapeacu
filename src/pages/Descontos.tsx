@@ -216,6 +216,8 @@ const Descontos = () => {
       modo_calculo: (item.modo_calculo as ModoCalculo) || 'fixo',
       percentual: item.percentual != null ? String(item.percentual) : '',
       base_calculo: (item.base_calculo as BaseCalculo) || '',
+      quantidade: item.quantidade != null ? String(item.quantidade) : '',
+      valor_unitario: item.valor_unitario != null ? String(item.valor_unitario) : '',
     });
     setDialogOpen(true);
   };
