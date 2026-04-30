@@ -180,13 +180,13 @@ const ContrachequeDetalhado = ({ open, onOpenChange, registro, unidadeId, isPadr
     const m = 15;
     let y = 15;
 
-    // Top accent
-    doc.setFillColor(41, 65, 122);
+    // Top accent (neutral)
+    doc.setFillColor(71, 85, 105); // slate-600
     doc.rect(0, 0, W, 3, 'F');
     y = 14;
 
     // Header
-    doc.setTextColor(41, 65, 122);
+    doc.setTextColor(51, 65, 85); // slate-700
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(14);
     doc.text('CONTRACHEQUE DETALHADO', m, y);
@@ -245,21 +245,25 @@ const ContrachequeDetalhado = ({ open, onOpenChange, registro, unidadeId, isPadr
       y = (doc as any).lastAutoTable.finalY + 4;
     };
 
+    const NEUTRAL_DARK: [number, number, number] = [55, 65, 81];      // slate-700
+    const NEUTRAL_MED: [number, number, number] = [100, 116, 139];    // slate-500
+    const NEUTRAL_HEADER: [number, number, number] = [71, 85, 105];   // slate-600
+
     if (!isPadrao02) {
-      sectionTitle('PROVENTOS', [16, 122, 87]);
+      sectionTitle('PROVENTOS', NEUTRAL_HEADER);
       renderTable(
         [{ descricao: 'Salário Base', valor: data.salarioBase }, ...data.adicionaisLinhas],
         'Total Proventos / Bruto',
         data.bruto,
-        [16, 122, 87],
+        NEUTRAL_DARK,
       );
-      sectionTitle('DESCONTOS', [190, 50, 70]);
-      renderTable(data.descontosLinhas, 'Total de Descontos', data.totalDescontos, [190, 50, 70], true);
+      sectionTitle('DESCONTOS', NEUTRAL_HEADER);
+      renderTable(data.descontosLinhas, 'Total de Descontos', data.totalDescontos, NEUTRAL_DARK, true);
     } else {
-      sectionTitle('LÍQUIDO CONTRATADO', [16, 122, 87]);
-      renderTable([{ descricao: 'Salário Líquido (base)', valor: data.salarioBase }], 'Líquido Base', data.salarioBase, [16, 122, 87]);
-      sectionTitle('ENCARGOS SOBRE O LÍQUIDO', [200, 130, 30]);
-      renderTable(data.encargosLinhas, 'Total de Encargos', data.totalEncargos, [200, 130, 30]);
+      sectionTitle('LÍQUIDO CONTRATADO', NEUTRAL_HEADER);
+      renderTable([{ descricao: 'Salário Líquido (base)', valor: data.salarioBase }], 'Líquido Base', data.salarioBase, NEUTRAL_DARK);
+      sectionTitle('ENCARGOS SOBRE O LÍQUIDO', NEUTRAL_HEADER);
+      renderTable(data.encargosLinhas, 'Total de Encargos', data.totalEncargos, NEUTRAL_DARK);
       // Bruto box
       doc.setFillColor(245, 247, 250);
       doc.rect(m, y, W - m * 2, 8, 'F');
@@ -268,14 +272,14 @@ const ContrachequeDetalhado = ({ open, onOpenChange, registro, unidadeId, isPadr
       doc.text(formatBRL(data.bruto), W - m - 2, y + 5.5, { align: 'right' });
       y += 12;
       if (data.descontosLinhas.length > 0) {
-        sectionTitle('DESCONTOS', [190, 50, 70]);
-        renderTable(data.descontosLinhas, 'Total de Descontos', data.totalDescontos, [190, 50, 70], true);
+        sectionTitle('DESCONTOS', NEUTRAL_HEADER);
+        renderTable(data.descontosLinhas, 'Total de Descontos', data.totalDescontos, NEUTRAL_DARK, true);
       }
     }
 
     // Líquido final
     if (y > 250) { doc.addPage(); y = 20; }
-    doc.setFillColor(41, 65, 122);
+    doc.setFillColor(51, 65, 85); // slate-700, formal
     doc.rect(m, y, W - m * 2, 14, 'F');
     doc.setTextColor(255); doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
     doc.text('VALOR LÍQUIDO A RECEBER', m + 3, y + 9);
@@ -337,9 +341,9 @@ const ContrachequeDetalhado = ({ open, onOpenChange, registro, unidadeId, isPadr
               <>
                 {/* Base + Adicionais → Bruto */}
                 <section className="rounded-lg border">
-                  <div className="px-4 py-2 bg-emerald-50 dark:bg-emerald-500/10 border-b flex items-center gap-2">
-                    <ArrowUp className="h-4 w-4 text-emerald-600" />
-                    <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">Proventos</span>
+                  <div className="px-4 py-2 bg-muted/60 border-b flex items-center gap-2">
+                    <ArrowUp className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-semibold text-foreground/80">Proventos</span>
                   </div>
                   <div className="divide-y">
                     <LinhaRow descricao="Salário Base" valor={data.salarioBase} />
@@ -358,9 +362,9 @@ const ContrachequeDetalhado = ({ open, onOpenChange, registro, unidadeId, isPadr
 
                 {/* Descontos */}
                 <section className="rounded-lg border">
-                  <div className="px-4 py-2 bg-rose-50 dark:bg-rose-500/10 border-b flex items-center gap-2">
-                    <ArrowDown className="h-4 w-4 text-rose-600" />
-                    <span className="text-sm font-semibold text-rose-700 dark:text-rose-400">Descontos</span>
+                  <div className="px-4 py-2 bg-muted/60 border-b flex items-center gap-2">
+                    <ArrowDown className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-semibold text-foreground/80">Descontos</span>
                   </div>
                   <div className="divide-y">
                     {data.descontosLinhas.map((l, i) => (
@@ -372,7 +376,7 @@ const ContrachequeDetalhado = ({ open, onOpenChange, registro, unidadeId, isPadr
                   </div>
                   <div className="px-4 py-2 bg-muted/40 border-t flex items-center justify-between">
                     <span className="text-sm font-medium">Total de Descontos</span>
-                    <span className="font-bold tabular-nums text-rose-600">- {formatBRL(data.totalDescontos)}</span>
+                    <span className="font-bold tabular-nums text-foreground">- {formatBRL(data.totalDescontos)}</span>
                   </div>
                 </section>
               </>
@@ -382,9 +386,9 @@ const ContrachequeDetalhado = ({ open, onOpenChange, registro, unidadeId, isPadr
             {isPadrao02 && (
               <>
                 <section className="rounded-lg border">
-                  <div className="px-4 py-2 bg-emerald-50 dark:bg-emerald-500/10 border-b flex items-center gap-2">
-                    <Wallet className="h-4 w-4 text-emerald-600" />
-                    <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">Líquido Contratado</span>
+                  <div className="px-4 py-2 bg-muted/60 border-b flex items-center gap-2">
+                    <Wallet className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-semibold text-foreground/80">Líquido Contratado</span>
                   </div>
                   <div className="divide-y">
                     <LinhaRow descricao="Salário Líquido (base)" valor={data.salarioBase} />
@@ -392,9 +396,9 @@ const ContrachequeDetalhado = ({ open, onOpenChange, registro, unidadeId, isPadr
                 </section>
 
                 <section className="rounded-lg border">
-                  <div className="px-4 py-2 bg-amber-50 dark:bg-amber-500/10 border-b flex items-center gap-2">
-                    <ArrowUp className="h-4 w-4 text-amber-600" />
-                    <span className="text-sm font-semibold text-amber-700 dark:text-amber-400">Encargos sobre o Líquido</span>
+                  <div className="px-4 py-2 bg-muted/60 border-b flex items-center gap-2">
+                    <ArrowUp className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-semibold text-foreground/80">Encargos sobre o Líquido</span>
                   </div>
                   <div className="divide-y">
                     {data.encargosLinhas.map((l, i) => (
@@ -406,7 +410,7 @@ const ContrachequeDetalhado = ({ open, onOpenChange, registro, unidadeId, isPadr
                   </div>
                   <div className="px-4 py-2 bg-muted/40 border-t flex items-center justify-between">
                     <span className="text-sm font-medium">Total de Encargos</span>
-                    <span className="font-bold tabular-nums text-amber-600">{formatBRL(data.totalEncargos)}</span>
+                    <span className="font-bold tabular-nums text-foreground">{formatBRL(data.totalEncargos)}</span>
                   </div>
                 </section>
 
@@ -417,9 +421,9 @@ const ContrachequeDetalhado = ({ open, onOpenChange, registro, unidadeId, isPadr
 
                 {data.descontosLinhas.length > 0 && (
                   <section className="rounded-lg border">
-                    <div className="px-4 py-2 bg-rose-50 dark:bg-rose-500/10 border-b flex items-center gap-2">
-                      <ArrowDown className="h-4 w-4 text-rose-600" />
-                      <span className="text-sm font-semibold text-rose-700 dark:text-rose-400">Descontos</span>
+                    <div className="px-4 py-2 bg-muted/60 border-b flex items-center gap-2">
+                      <ArrowDown className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-semibold text-foreground/80">Descontos</span>
                     </div>
                     <div className="divide-y">
                       {data.descontosLinhas.map((l, i) => (
@@ -428,7 +432,7 @@ const ContrachequeDetalhado = ({ open, onOpenChange, registro, unidadeId, isPadr
                     </div>
                     <div className="px-4 py-2 bg-muted/40 border-t flex items-center justify-between">
                       <span className="text-sm font-medium">Total de Descontos</span>
-                      <span className="font-bold tabular-nums text-rose-600">- {formatBRL(data.totalDescontos)}</span>
+                      <span className="font-bold tabular-nums text-foreground">- {formatBRL(data.totalDescontos)}</span>
                     </div>
                   </section>
                 )}
@@ -436,7 +440,7 @@ const ContrachequeDetalhado = ({ open, onOpenChange, registro, unidadeId, isPadr
             )}
 
             {/* Líquido final */}
-            <div className="rounded-lg border-2 border-primary bg-primary/5 px-4 py-4 flex items-center justify-between">
+            <div className="rounded-lg border border-foreground/20 bg-muted/50 px-4 py-4 flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted-foreground uppercase tracking-wide">Valor Líquido a Receber</p>
                 <p className="text-[11px] text-muted-foreground mt-0.5">
@@ -445,7 +449,7 @@ const ContrachequeDetalhado = ({ open, onOpenChange, registro, unidadeId, isPadr
                     : 'Bruto − Total de Descontos'}
                 </p>
               </div>
-              <span className="text-2xl font-bold text-primary tabular-nums">{formatBRL(data.liquido)}</span>
+              <span className="text-2xl font-bold text-foreground tabular-nums">{formatBRL(data.liquido)}</span>
             </div>
           </div>
         )}
@@ -460,7 +464,7 @@ const LinhaRow = ({ descricao, detalhe, valor, negativo }: { descricao: string; 
       <p className="text-sm truncate">{descricao}</p>
       {detalhe && <p className="text-[11px] text-muted-foreground">{detalhe}</p>}
     </div>
-    <span className={`text-sm font-medium tabular-nums shrink-0 ${negativo ? 'text-rose-600' : ''}`}>
+    <span className={`text-sm font-medium tabular-nums shrink-0 ${negativo ? 'text-foreground' : ''}`}>
       {negativo ? '- ' : ''}{formatBRL(valor)}
     </span>
   </div>
