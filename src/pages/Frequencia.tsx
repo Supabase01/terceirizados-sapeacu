@@ -11,7 +11,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { CheckCircle2, Clock, FileWarning, ClipboardCheck } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { CheckCircle2, Clock, FileWarning, ClipboardCheck, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUnidade } from '@/contexts/UnidadeContext';
 
@@ -42,9 +43,11 @@ const Frequencia = () => {
   const [secretariaFilter, setSecretariaFilter] = useState<string>('todas');
   const [statusFilter, setStatusFilter] = useState<'todos' | Status>('todos');
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  // Local edit buffer for inline faltas inputs (avoid jitter while typing)
+  const [faltasDraft, setFaltasDraft] = useState<Record<string, string>>({});
 
-  const [obsDialog, setObsDialog] = useState<{ open: boolean; colaboradorId: string | null; observacao: string }>({
-    open: false, colaboradorId: null, observacao: '',
+  const [obsDialog, setObsDialog] = useState<{ open: boolean; colaboradorId: string | null; observacao: string; faltas: string }>({
+    open: false, colaboradorId: null, observacao: '', faltas: '0',
   });
 
   const { data: secretarias = [] } = useQuery({
@@ -114,7 +117,7 @@ const Frequencia = () => {
       .map((c: any) => {
         const f = freqMap.get(c.id);
         const status: Status = f?.status ?? 'pendente';
-        return { ...c, status, frequencia: f, secretariaNome: secretariasMap.get(c.secretaria_id) ?? '—' };
+        return { ...c, status, frequencia: f, faltas: f?.faltas ?? 0, secretariaNome: secretariasMap.get(c.secretaria_id) ?? '—' };
       })
       .filter((r: any) => {
         if (secretariaFilter !== 'todas' && r.secretaria_id !== secretariaFilter) return false;
@@ -128,32 +131,44 @@ const Frequencia = () => {
   }, [colaboradores, freqMap, secretariasMap, secretariaFilter, statusFilter, search]);
 
   const totals = useMemo(() => {
-    const t = { total: colaboradores.length, entregue: 0, pendente: 0, justificado: 0 };
+    const t = { total: colaboradores.length, entregue: 0, pendente: 0, justificado: 0, faltas: 0 };
     colaboradores.forEach((c: any) => {
-      const s: Status = freqMap.get(c.id)?.status ?? 'pendente';
+      const f = freqMap.get(c.id);
+      const s: Status = f?.status ?? 'pendente';
       t[s]++;
+      t.faltas += Number(f?.faltas ?? 0);
     });
     return t;
   }, [colaboradores, freqMap]);
 
   const upsertMutation = useMutation({
-    mutationFn: async (payload: { colaboradorIds: string[]; status: Status; observacao?: string | null }) => {
-      const rowsToUpsert = payload.colaboradorIds.map((cid) => ({
-        colaborador_id: cid,
-        unidade_id: unidadeId!,
-        mes,
-        ano,
-        status: payload.status,
-        data_entrega: payload.status === 'entregue' ? new Date().toISOString().slice(0, 10) : null,
-        observacao: payload.observacao ?? null,
-      }));
+    mutationFn: async (payload: { colaboradorIds: string[]; status?: Status; observacao?: string | null; faltas?: number; resetFaltas?: boolean }) => {
+      // Need existing rows to preserve fields not being changed
+      const rowsToUpsert = payload.colaboradorIds.map((cid) => {
+        const existing = freqMap.get(cid);
+        const status: Status = payload.status ?? (existing?.status as Status) ?? 'pendente';
+        const faltas = payload.resetFaltas
+          ? 0
+          : payload.faltas !== undefined
+            ? payload.faltas
+            : Number(existing?.faltas ?? 0);
+        return {
+          colaborador_id: cid,
+          unidade_id: unidadeId!,
+          mes,
+          ano,
+          status,
+          faltas,
+          data_entrega: status === 'entregue' ? (existing?.data_entrega ?? new Date().toISOString().slice(0, 10)) : null,
+          observacao: payload.observacao !== undefined ? payload.observacao : (existing?.observacao ?? null),
+        };
+      });
       const { error } = await supabase.from('frequencias').upsert(rowsToUpsert, { onConflict: 'colaborador_id,mes,ano' });
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['frequencias', unidadeId, mes, ano] });
       toast({ title: 'Frequência atualizada' });
-      setSelected(new Set());
     },
     onError: (e: any) => toast({ title: 'Erro ao atualizar', description: e?.message ?? 'Tente novamente.', variant: 'destructive' }),
   });
@@ -178,22 +193,44 @@ const Frequencia = () => {
       toast({ title: 'Selecione ao menos um colaborador', variant: 'destructive' });
       return;
     }
-    upsertMutation.mutate({ colaboradorIds: Array.from(selected), status });
+    // Lote sempre zera faltas (regra de negócio)
+    upsertMutation.mutate(
+      { colaboradorIds: Array.from(selected), status, resetFaltas: status === 'entregue' },
+      { onSuccess: () => setSelected(new Set()) },
+    );
   };
 
-  const openObs = (colaboradorId: string, current?: string | null) => {
-    setObsDialog({ open: true, colaboradorId, observacao: current ?? '' });
+  const saveFaltasInline = (colaboradorId: string, raw: string) => {
+    let n = parseInt(raw, 10);
+    if (!Number.isFinite(n) || n < 0) n = 0;
+    if (n > 31) n = 31;
+    const existing = freqMap.get(colaboradorId);
+    const current = Number(existing?.faltas ?? 0);
+    if (n === current) return; // nada mudou
+    upsertMutation.mutate({ colaboradorIds: [colaboradorId], faltas: n });
+    setFaltasDraft((d) => ({ ...d, [colaboradorId]: '' }));
+  };
+
+  const openObs = (colaboradorId: string, current?: { observacao?: string | null; faltas?: number | null }) => {
+    setObsDialog({
+      open: true,
+      colaboradorId,
+      observacao: current?.observacao ?? '',
+      faltas: String(current?.faltas ?? 0),
+    });
   };
 
   const saveObs = () => {
     if (!obsDialog.colaboradorId) return;
-    const current = freqMap.get(obsDialog.colaboradorId);
+    let n = parseInt(obsDialog.faltas, 10);
+    if (!Number.isFinite(n) || n < 0) n = 0;
+    if (n > 31) n = 31;
     upsertMutation.mutate({
       colaboradorIds: [obsDialog.colaboradorId],
-      status: (current?.status as Status) ?? 'pendente',
       observacao: obsDialog.observacao.trim() || null,
+      faltas: n,
     });
-    setObsDialog({ open: false, colaboradorId: null, observacao: '' });
+    setObsDialog({ open: false, colaboradorId: null, observacao: '', faltas: '0' });
   };
 
   return (
@@ -202,12 +239,12 @@ const Frequencia = () => {
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 className="text-xl font-bold text-foreground flex items-center gap-2"><ClipboardCheck className="h-5 w-5" /> Controle de Frequência</h1>
-            <p className="text-sm text-muted-foreground">Marque a entrega da folha de frequência de cada colaborador no mês.</p>
+            <p className="text-sm text-muted-foreground">Marque a entrega da folha de frequência e registre faltas. Faltas geram desconto automático (Bruto ÷ 30 × Nº faltas).</p>
           </div>
         </div>
 
         {/* Resumo */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           <Card><CardContent className="p-4">
             <div className="text-xs text-muted-foreground">Total de colaboradores</div>
             <div className="text-2xl font-bold">{totals.total}</div>
@@ -223,6 +260,10 @@ const Frequencia = () => {
           <Card><CardContent className="p-4">
             <div className="text-xs text-muted-foreground flex items-center gap-1"><FileWarning className="h-3.5 w-3.5 text-amber-600" /> Justificados</div>
             <div className="text-2xl font-bold text-amber-600">{totals.justificado}</div>
+          </CardContent></Card>
+          <Card><CardContent className="p-4">
+            <div className="text-xs text-muted-foreground flex items-center gap-1"><AlertCircle className="h-3.5 w-3.5 text-orange-600" /> Total de faltas</div>
+            <div className="text-2xl font-bold text-orange-600">{totals.faltas}</div>
           </CardContent></Card>
         </div>
 
@@ -271,7 +312,7 @@ const Frequencia = () => {
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-sm text-muted-foreground">{selected.size} selecionado(s)</span>
           <Button size="sm" variant="default" onClick={() => handleBulk('entregue')} disabled={selected.size === 0 || upsertMutation.isPending}>
-            <CheckCircle2 className="h-4 w-4 mr-1" /> Marcar como entregue
+            <CheckCircle2 className="h-4 w-4 mr-1" /> Marcar entregue (faltas = 0)
           </Button>
           <Button size="sm" variant="outline" onClick={() => handleBulk('justificado')} disabled={selected.size === 0 || upsertMutation.isPending}>
             <FileWarning className="h-4 w-4 mr-1" /> Justificado
@@ -290,57 +331,102 @@ const Frequencia = () => {
                     <Checkbox checked={allFilteredSelected} onCheckedChange={toggleSelectAll} aria-label="Selecionar todos" />
                   </TableHead>
                   <TableHead>Colaborador</TableHead>
-                  <TableHead className="w-32">Matrícula</TableHead>
+                  <TableHead className="w-28">Matrícula</TableHead>
                   <TableHead>Secretaria</TableHead>
                   <TableHead className="w-32">Status</TableHead>
+                  <TableHead className="w-24">Faltas</TableHead>
                   <TableHead className="w-32">Data entrega</TableHead>
                   <TableHead>Observação</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loadingCol ? (
-                  <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
                 ) : rows.length === 0 ? (
-                  <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Nenhum colaborador encontrado</TableCell></TableRow>
-                ) : rows.map((r: any) => (
-                  <TableRow key={r.id} className={selected.has(r.id) ? 'bg-muted/40' : ''}>
-                    <TableCell>
-                      <Checkbox checked={selected.has(r.id)} onCheckedChange={() => toggleSelect(r.id)} />
-                    </TableCell>
-                    <TableCell className="font-medium">{r.nome}</TableCell>
-                    <TableCell className="text-muted-foreground">{r.matricula ?? '—'}</TableCell>
-                    <TableCell className="text-muted-foreground">{r.secretariaNome}</TableCell>
-                    <TableCell>{statusBadge(r.status)}</TableCell>
-                    <TableCell className="text-muted-foreground text-sm">
-                      {r.frequencia?.data_entrega ? new Date(r.frequencia.data_entrega + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}
-                    </TableCell>
-                    <TableCell>
-                      <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => openObs(r.id, r.frequencia?.observacao)}>
-                        {r.frequencia?.observacao ? r.frequencia.observacao.slice(0, 40) + (r.frequencia.observacao.length > 40 ? '…' : '') : 'Adicionar'}
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                  <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Nenhum colaborador encontrado</TableCell></TableRow>
+                ) : rows.map((r: any) => {
+                  const draft = faltasDraft[r.id];
+                  const value = draft !== undefined ? draft : String(r.faltas ?? 0);
+                  const disabled = r.status === 'pendente';
+                  return (
+                    <TableRow key={r.id} className={selected.has(r.id) ? 'bg-muted/40' : ''}>
+                      <TableCell>
+                        <Checkbox checked={selected.has(r.id)} onCheckedChange={() => toggleSelect(r.id)} />
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          <span>{r.nome}</span>
+                          {r.faltas > 0 && (
+                            <Badge variant="outline" className="bg-orange-500/10 text-orange-700 border-orange-500/30 text-[10px] py-0 h-5">
+                              {r.faltas} {r.faltas === 1 ? 'falta' : 'faltas'}
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{r.matricula ?? '—'}</TableCell>
+                      <TableCell className="text-muted-foreground">{r.secretariaNome}</TableCell>
+                      <TableCell>{statusBadge(r.status)}</TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          min={0}
+                          max={31}
+                          value={value}
+                          disabled={disabled}
+                          onChange={(e) => setFaltasDraft((d) => ({ ...d, [r.id]: e.target.value }))}
+                          onBlur={(e) => saveFaltasInline(r.id, e.target.value)}
+                          onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                          className="h-8 w-16 text-sm"
+                          title={disabled ? 'Marque a frequência como entregue ou justificada para registrar faltas' : 'Quantidade de faltas no mês'}
+                        />
+                      </TableCell>
+                      <TableCell className="text-muted-foreground text-sm">
+                        {r.frequencia?.data_entrega ? new Date(r.frequencia.data_entrega + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}
+                      </TableCell>
+                      <TableCell>
+                        <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => openObs(r.id, { observacao: r.frequencia?.observacao, faltas: r.faltas })}>
+                          {r.frequencia?.observacao ? r.frequencia.observacao.slice(0, 40) + (r.frequencia.observacao.length > 40 ? '…' : '') : 'Adicionar'}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </CardContent>
         </Card>
       </div>
 
-      <Dialog open={obsDialog.open} onOpenChange={(o) => !o && setObsDialog({ open: false, colaboradorId: null, observacao: '' })}>
+      <Dialog open={obsDialog.open} onOpenChange={(o) => !o && setObsDialog({ open: false, colaboradorId: null, observacao: '', faltas: '0' })}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Observação da frequência</DialogTitle>
-            <DialogDescription>Registre uma justificativa ou anotação para este colaborador na competência {String(mes).padStart(2, '0')}/{ano}.</DialogDescription>
+            <DialogTitle>Frequência — observações e faltas</DialogTitle>
+            <DialogDescription>Competência {String(mes).padStart(2, '0')}/{ano}.</DialogDescription>
           </DialogHeader>
-          <Textarea
-            value={obsDialog.observacao}
-            onChange={(e) => setObsDialog((s) => ({ ...s, observacao: e.target.value }))}
-            placeholder="Ex.: Atestado médico apresentado em 05/04..."
-            rows={4}
-          />
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label>Quantidade de faltas</Label>
+              <Input
+                type="number"
+                min={0}
+                max={31}
+                value={obsDialog.faltas}
+                onChange={(e) => setObsDialog((s) => ({ ...s, faltas: e.target.value }))}
+              />
+              <p className="text-xs text-muted-foreground">Será descontado automaticamente na folha: Bruto ÷ 30 × Nº faltas.</p>
+            </div>
+            <div className="space-y-1">
+              <Label>Observação</Label>
+              <Textarea
+                value={obsDialog.observacao}
+                onChange={(e) => setObsDialog((s) => ({ ...s, observacao: e.target.value }))}
+                placeholder="Ex.: Atestado médico apresentado em 05/04..."
+                rows={4}
+              />
+            </div>
+          </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setObsDialog({ open: false, colaboradorId: null, observacao: '' })}>Cancelar</Button>
+            <Button variant="outline" onClick={() => setObsDialog({ open: false, colaboradorId: null, observacao: '', faltas: '0' })}>Cancelar</Button>
             <Button onClick={saveObs} disabled={upsertMutation.isPending}>Salvar</Button>
           </DialogFooter>
         </DialogContent>
