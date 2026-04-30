@@ -1,12 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Loader2, ArrowDown, ArrowUp, Calculator, Wallet, Download } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import { fetchUnidadeInfo, fetchContrachequeCalculo, downloadSingleContracheque } from '@/lib/contrachequePdf';
 
 const formatBRL = (v: number) =>
   (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
