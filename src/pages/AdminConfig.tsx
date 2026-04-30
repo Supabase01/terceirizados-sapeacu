@@ -1273,6 +1273,30 @@ const AdminConfig = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={!!deleteUserConfirm} onOpenChange={(open) => !open && setDeleteUserConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Usuário</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação irá remover permanentemente o usuário <strong>{deleteUserConfirm?.email}</strong>, suas funções, vínculos com unidades e permissões. Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteUserMutation.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                if (deleteUserConfirm) deleteUserMutation.mutate(deleteUserConfirm.id);
+              }}
+            >
+              {deleteUserMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Excluir'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Layout>
   );
 };
