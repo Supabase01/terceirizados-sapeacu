@@ -102,9 +102,28 @@ const RelatorioContracheque = () => {
     enabled: !!unidadeId && !!colaboradorId,
   });
 
+  // ===== Coletivo: opções de filtro (tabelas mestras) =====
+  const { data: filtrosOpts = { secretarias: [], lotacoes: [], funcoes: [] } } = useQuery({
+    queryKey: ['filtros-coletivo', unidadeId],
+    queryFn: async () => {
+      const [secs, lots, funs] = await Promise.all([
+        supabase.from('secretarias').select('nome').eq('unidade_id', unidadeId!).eq('ativo', true).order('nome'),
+        supabase.from('lotacoes').select('nome').eq('unidade_id', unidadeId!).eq('ativo', true).order('nome'),
+        supabase.from('funcoes').select('nome').eq('unidade_id', unidadeId!).eq('ativo', true).order('nome'),
+      ]);
+      return {
+        secretarias: (secs.data || []).map((s: any) => s.nome),
+        lotacoes: (lots.data || []).map((s: any) => s.nome),
+        funcoes: (funs.data || []).map((s: any) => s.nome),
+      };
+    },
+    enabled: !!unidadeId,
+  });
+
   // ===== Coletivo: folha do mês =====
+  const colaboradoresKey = colaboradores.length;
   const { data: folhaColetivo = [], isLoading: loadingColetivo } = useQuery({
-    queryKey: ['folha-coletivo', unidadeId, mes, ano],
+    queryKey: ['folha-coletivo', unidadeId, mes, ano, colaboradoresKey],
     queryFn: async () => {
       const PAGE = 1000;
       let all: any[] = [];
@@ -125,12 +144,12 @@ const RelatorioContracheque = () => {
         hasMore = (data?.length ?? 0) === PAGE;
         from += PAGE;
       }
-      // attach matricula from colaboradores cache
       const matMap = new Map(colaboradores.map((c: any) => [c.id, c.matricula]));
       return all.map(r => ({ ...r, matricula: matMap.get(r.colaborador_id) || '' }));
     },
     enabled: !!unidadeId,
   });
+
 
   const colaboradorOptions = useMemo(
     () => colaboradores.map((c: any) => ({
