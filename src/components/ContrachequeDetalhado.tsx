@@ -111,48 +111,46 @@ const ContrachequeDetalhado = ({ open, onOpenChange, registro, unidadeId, isPadr
         {isLoading || !data ? (
           <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-5">
             {/* Padrão 01 */}
             {!isPadrao02 && (
               <>
-                {/* Base + Adicionais → Bruto */}
-                <section className="rounded-lg border">
-                  <div className="px-4 py-2 bg-muted/60 border-b flex items-center gap-2">
-                    <ArrowUp className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-semibold text-foreground/80">Proventos</span>
+                <section>
+                  <div className="flex items-center gap-2 pb-1.5 border-b">
+                    <ArrowUp className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Proventos</span>
                   </div>
-                  <div className="divide-y">
+                  <div className="divide-y divide-border/60">
                     <LinhaRow descricao="Salário Base" valor={data.salarioBase} />
                     {data.adicionaisLinhas.map((l, i) => (
                       <LinhaRow key={i} descricao={l.descricao} detalhe={l.detalhe} valor={l.valor} />
                     ))}
                     {data.adicionaisLinhas.length === 0 && (
-                      <div className="px-4 py-2 text-xs text-muted-foreground italic">Sem adicionais</div>
+                      <div className="px-1 py-2 text-xs text-muted-foreground italic">Sem adicionais</div>
                     )}
                   </div>
-                  <div className="px-4 py-2 bg-muted/40 border-t flex items-center justify-between">
-                    <span className="text-sm font-medium flex items-center gap-1.5"><Calculator className="h-3.5 w-3.5" />Salário Bruto</span>
-                    <span className="font-bold tabular-nums">{formatBRL(data.bruto)}</span>
+                  <div className="border-t-2 border-foreground/30 px-1 py-2 flex items-center justify-between">
+                    <span className="text-sm font-semibold flex items-center gap-1.5"><Calculator className="h-3.5 w-3.5" />Salário Bruto</span>
+                    <span className="font-semibold tabular-nums">{formatBRL(data.bruto)}</span>
                   </div>
                 </section>
 
-                {/* Descontos */}
-                <section className="rounded-lg border">
-                  <div className="px-4 py-2 bg-muted/60 border-b flex items-center gap-2">
-                    <ArrowDown className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-semibold text-foreground/80">Descontos</span>
+                <section>
+                  <div className="flex items-center gap-2 pb-1.5 border-b">
+                    <ArrowDown className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Descontos</span>
                   </div>
-                  <div className="divide-y">
+                  <div className="divide-y divide-border/60">
                     {data.descontosLinhas.map((l, i) => (
                       <LinhaRow key={i} descricao={l.descricao} detalhe={l.detalhe} valor={l.valor} negativo />
                     ))}
                     {data.descontosLinhas.length === 0 && (
-                      <div className="px-4 py-2 text-xs text-muted-foreground italic">Sem descontos</div>
+                      <div className="px-1 py-2 text-xs text-muted-foreground italic">Sem descontos</div>
                     )}
                   </div>
-                  <div className="px-4 py-2 bg-muted/40 border-t flex items-center justify-between">
-                    <span className="text-sm font-medium">Total de Descontos</span>
-                    <span className="font-bold tabular-nums text-foreground">- {formatBRL(data.totalDescontos)}</span>
+                  <div className="border-t-2 border-foreground/30 px-1 py-2 flex items-center justify-between">
+                    <span className="text-sm font-semibold">Total de Descontos</span>
+                    <span className="font-semibold tabular-nums">- {formatBRL(data.totalDescontos)}</span>
                   </div>
                 </section>
               </>
@@ -161,71 +159,69 @@ const ContrachequeDetalhado = ({ open, onOpenChange, registro, unidadeId, isPadr
             {/* Padrão 02 */}
             {isPadrao02 && (
               <>
-                <section className="rounded-lg border">
-                  <div className="px-4 py-2 bg-muted/60 border-b flex items-center gap-2">
-                    <Wallet className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-semibold text-foreground/80">Líquido Contratado</span>
+                <section>
+                  <div className="flex items-center gap-2 pb-1.5 border-b">
+                    <Wallet className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Líquido Contratado</span>
                   </div>
-                  <div className="divide-y">
+                  <div className="divide-y divide-border/60">
                     <LinhaRow descricao="Salário Líquido (base)" valor={data.salarioBase} />
                   </div>
                 </section>
 
-                <section className="rounded-lg border">
-                  <div className="px-4 py-2 bg-muted/60 border-b flex items-center gap-2">
-                    <ArrowUp className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-semibold text-foreground/80">Encargos sobre o Líquido</span>
+                <section>
+                  <div className="flex items-center gap-2 pb-1.5 border-b">
+                    <ArrowUp className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Encargos sobre o Líquido</span>
                   </div>
-                  <div className="divide-y">
+                  <div className="divide-y divide-border/60">
                     {data.encargosLinhas.map((l, i) => (
                       <LinhaRow key={i} descricao={l.descricao} detalhe={l.detalhe} valor={l.valor} />
                     ))}
                     {data.encargosLinhas.length === 0 && (
-                      <div className="px-4 py-2 text-xs text-muted-foreground italic">Sem encargos</div>
+                      <div className="px-1 py-2 text-xs text-muted-foreground italic">Sem encargos</div>
                     )}
                   </div>
-                  <div className="px-4 py-2 bg-muted/40 border-t flex items-center justify-between">
-                    <span className="text-sm font-medium">Total de Encargos</span>
-                    <span className="font-bold tabular-nums text-foreground">{formatBRL(data.totalEncargos)}</span>
+                  <div className="border-t-2 border-foreground/30 px-1 py-2 flex items-center justify-between">
+                    <span className="text-sm font-semibold">Total de Encargos</span>
+                    <span className="font-semibold tabular-nums">{formatBRL(data.totalEncargos)}</span>
                   </div>
                 </section>
 
-                <div className="rounded-lg border bg-muted/30 px-4 py-3 flex items-center justify-between">
-                  <span className="text-sm font-medium flex items-center gap-1.5"><Calculator className="h-3.5 w-3.5" />Salário Bruto (Líquido + Encargos)</span>
-                  <span className="font-bold tabular-nums">{formatBRL(data.bruto)}</span>
+                <div className="border-y px-1 py-2 flex items-center justify-between">
+                  <span className="text-sm font-semibold flex items-center gap-1.5"><Calculator className="h-3.5 w-3.5" />Salário Bruto (Líquido + Encargos)</span>
+                  <span className="font-semibold tabular-nums">{formatBRL(data.bruto)}</span>
                 </div>
 
                 {data.descontosLinhas.length > 0 && (
-                  <section className="rounded-lg border">
-                    <div className="px-4 py-2 bg-muted/60 border-b flex items-center gap-2">
-                      <ArrowDown className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-semibold text-foreground/80">Descontos</span>
+                  <section>
+                    <div className="flex items-center gap-2 pb-1.5 border-b">
+                      <ArrowDown className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Descontos</span>
                     </div>
-                    <div className="divide-y">
+                    <div className="divide-y divide-border/60">
                       {data.descontosLinhas.map((l, i) => (
                         <LinhaRow key={i} descricao={l.descricao} detalhe={l.detalhe} valor={l.valor} negativo />
                       ))}
                     </div>
-                    <div className="px-4 py-2 bg-muted/40 border-t flex items-center justify-between">
-                      <span className="text-sm font-medium">Total de Descontos</span>
-                      <span className="font-bold tabular-nums text-foreground">- {formatBRL(data.totalDescontos)}</span>
+                    <div className="border-t-2 border-foreground/30 px-1 py-2 flex items-center justify-between">
+                      <span className="text-sm font-semibold">Total de Descontos</span>
+                      <span className="font-semibold tabular-nums">- {formatBRL(data.totalDescontos)}</span>
                     </div>
                   </section>
                 )}
               </>
             )}
 
-            {/* Líquido final */}
-            <div className="rounded-lg border border-foreground/20 bg-muted/50 px-4 py-4 flex items-center justify-between">
+            {/* Líquido final - apenas linhas destacadas */}
+            <div className="border-y-2 border-foreground/40 px-1 py-3 flex items-center justify-between">
               <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wide">Valor Líquido a Receber</p>
+                <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">Valor Líquido a Receber</p>
                 <p className="text-[11px] text-muted-foreground mt-0.5">
-                  {isPadrao02
-                    ? 'Líquido base − descontos de faltas'
-                    : 'Bruto − Total de Descontos'}
+                  {isPadrao02 ? 'Líquido base − descontos de faltas' : 'Bruto − Total de Descontos'}
                 </p>
               </div>
-              <span className="text-2xl font-bold text-foreground tabular-nums">{formatBRL(data.liquido)}</span>
+              <span className="text-2xl font-bold tabular-nums">{formatBRL(data.liquido)}</span>
             </div>
           </div>
         )}
