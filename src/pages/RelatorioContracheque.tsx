@@ -177,10 +177,19 @@ const RelatorioContracheque = () => {
     }
   };
 
-  // Coletivo - opções de filtro vindas das tabelas mestras
-  const secretariasOpts = filtrosOpts.secretarias;
-  const lotacoesOpts = filtrosOpts.lotacoes;
-  const funcoesOpts = filtrosOpts.funcoes;
+  // Coletivo - opções de filtro derivadas da folha gerada do mês
+  const secretariasOpts = useMemo(
+    () => Array.from(new Set(folhaColetivo.map((r: any) => r.secretaria).filter(Boolean))).sort() as string[],
+    [folhaColetivo],
+  );
+  const lotacoesOpts = useMemo(
+    () => Array.from(new Set(folhaColetivo.map((r: any) => r.lotacao).filter(Boolean))).sort() as string[],
+    [folhaColetivo],
+  );
+  const funcoesOpts = useMemo(
+    () => Array.from(new Set(folhaColetivo.map((r: any) => r.funcao).filter(Boolean))).sort() as string[],
+    [folhaColetivo],
+  );
 
 
   const folhaFiltrada = useMemo(() => folhaColetivo.filter((r: any) =>
