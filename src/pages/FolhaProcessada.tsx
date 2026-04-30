@@ -433,6 +433,7 @@ const FolhaProcessada = () => {
                             <TableHead className="text-right">Líquido</TableHead>
                           </>
                         )}
+                        <TableHead className="text-center w-12">Ações</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
