@@ -21,7 +21,7 @@ export default function Hub() {
     .filter(mod => mod.items.length > 0);
 
   return (
-    <Layout>
+    <Layout hideSidebar>
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground">Módulos</h1>
