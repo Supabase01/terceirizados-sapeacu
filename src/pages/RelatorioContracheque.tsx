@@ -156,7 +156,7 @@ const RelatorioContracheque = () => {
               <SearchableSelect
                 options={colaboradorOptions}
                 value={colaboradorId}
-                onChange={handleColaboradorChange}
+                onValueChange={handleColaboradorChange}
                 placeholder="Buscar colaborador por nome, matrícula ou CPF..."
               />
             </div>
