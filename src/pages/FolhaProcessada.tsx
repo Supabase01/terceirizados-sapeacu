@@ -43,6 +43,8 @@ const FolhaProcessada = () => {
   const [filterFuncao, setFilterFuncao] = useState('all');
   const [page, setPage] = useState(0);
   const [liberarDialogOpen, setLiberarDialogOpen] = useState(false);
+  const [contrachequeOpen, setContrachequeOpen] = useState(false);
+  const [contrachequeRecord, setContrachequeRecord] = useState<any | null>(null);
 
   // Check if selected month is already released
   const { data: liberadoInfo } = useQuery({
