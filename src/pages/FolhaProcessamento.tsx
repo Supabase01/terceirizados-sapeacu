@@ -328,7 +328,7 @@ const FolhaProcessamento = () => {
         const bruto = salarioBase + totalAdicionais;
 
         const descontosInd = (descontos || []).filter(
-          (d: any) => d.escopo === 'individual' && d.colaborador_id === col.id && isDescontoVigente(d)
+          (d: any) => (d.escopo === 'individual' || d.escopo === 'grupo') && d.colaborador_id === col.id && isDescontoVigente(d)
         );
 
         let totalDescontos = 0;
