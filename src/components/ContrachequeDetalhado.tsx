@@ -386,9 +386,9 @@ const ContrachequeDetalhado = ({ open, onOpenChange, registro, unidadeId, isPadr
             {isPadrao02 && (
               <>
                 <section className="rounded-lg border">
-                  <div className="px-4 py-2 bg-emerald-50 dark:bg-emerald-500/10 border-b flex items-center gap-2">
-                    <Wallet className="h-4 w-4 text-emerald-600" />
-                    <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">Líquido Contratado</span>
+                  <div className="px-4 py-2 bg-muted/60 border-b flex items-center gap-2">
+                    <Wallet className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-semibold text-foreground/80">Líquido Contratado</span>
                   </div>
                   <div className="divide-y">
                     <LinhaRow descricao="Salário Líquido (base)" valor={data.salarioBase} />
@@ -396,9 +396,9 @@ const ContrachequeDetalhado = ({ open, onOpenChange, registro, unidadeId, isPadr
                 </section>
 
                 <section className="rounded-lg border">
-                  <div className="px-4 py-2 bg-amber-50 dark:bg-amber-500/10 border-b flex items-center gap-2">
-                    <ArrowUp className="h-4 w-4 text-amber-600" />
-                    <span className="text-sm font-semibold text-amber-700 dark:text-amber-400">Encargos sobre o Líquido</span>
+                  <div className="px-4 py-2 bg-muted/60 border-b flex items-center gap-2">
+                    <ArrowUp className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-semibold text-foreground/80">Encargos sobre o Líquido</span>
                   </div>
                   <div className="divide-y">
                     {data.encargosLinhas.map((l, i) => (
@@ -410,7 +410,7 @@ const ContrachequeDetalhado = ({ open, onOpenChange, registro, unidadeId, isPadr
                   </div>
                   <div className="px-4 py-2 bg-muted/40 border-t flex items-center justify-between">
                     <span className="text-sm font-medium">Total de Encargos</span>
-                    <span className="font-bold tabular-nums text-amber-600">{formatBRL(data.totalEncargos)}</span>
+                    <span className="font-bold tabular-nums text-foreground">{formatBRL(data.totalEncargos)}</span>
                   </div>
                 </section>
 
@@ -421,9 +421,9 @@ const ContrachequeDetalhado = ({ open, onOpenChange, registro, unidadeId, isPadr
 
                 {data.descontosLinhas.length > 0 && (
                   <section className="rounded-lg border">
-                    <div className="px-4 py-2 bg-rose-50 dark:bg-rose-500/10 border-b flex items-center gap-2">
-                      <ArrowDown className="h-4 w-4 text-rose-600" />
-                      <span className="text-sm font-semibold text-rose-700 dark:text-rose-400">Descontos</span>
+                    <div className="px-4 py-2 bg-muted/60 border-b flex items-center gap-2">
+                      <ArrowDown className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-semibold text-foreground/80">Descontos</span>
                     </div>
                     <div className="divide-y">
                       {data.descontosLinhas.map((l, i) => (
@@ -432,7 +432,7 @@ const ContrachequeDetalhado = ({ open, onOpenChange, registro, unidadeId, isPadr
                     </div>
                     <div className="px-4 py-2 bg-muted/40 border-t flex items-center justify-between">
                       <span className="text-sm font-medium">Total de Descontos</span>
-                      <span className="font-bold tabular-nums text-rose-600">- {formatBRL(data.totalDescontos)}</span>
+                      <span className="font-bold tabular-nums text-foreground">- {formatBRL(data.totalDescontos)}</span>
                     </div>
                   </section>
                 )}
