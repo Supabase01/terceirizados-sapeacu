@@ -8,9 +8,10 @@ interface Props {
   icon: LucideIcon;
   itemsCount: number;
   targetUrl: string;
+  color?: string;
 }
 
-export function ModuleCard({ label, description, icon: Icon, itemsCount, targetUrl }: Props) {
+export function ModuleCard({ label, description, icon: Icon, itemsCount, targetUrl, color }: Props) {
   const navigate = useNavigate();
   return (
     <Card
@@ -18,7 +19,7 @@ export function ModuleCard({ label, description, icon: Icon, itemsCount, targetU
       className="group cursor-pointer p-6 transition-all hover:border-primary/50 hover:shadow-md hover:-translate-y-0.5"
     >
       <div className="flex items-start justify-between mb-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+        <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${color ?? 'bg-primary/10 text-primary'}`}>
           <Icon className="h-6 w-6" />
         </div>
         <ArrowRight className="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary" />
