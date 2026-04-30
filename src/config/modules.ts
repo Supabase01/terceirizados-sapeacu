@@ -2,7 +2,7 @@ import {
   BarChart3, Upload, ShieldAlert, FileText, Users, Building2, Briefcase, MapPin,
   Settings, Landmark, FolderKanban, PlusCircle, MinusCircle, ClipboardList, History,
   Map, Crown, FileSpreadsheet, Monitor, Percent, DollarSign, CheckCircle2, Tag,
-  ClipboardCheck,
+  ClipboardCheck, Receipt,
   type LucideIcon,
 } from 'lucide-react';
 
