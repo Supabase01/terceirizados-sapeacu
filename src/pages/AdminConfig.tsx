@@ -637,12 +637,25 @@ const AdminConfig = () => {
                                   </div>
                                 </div>
                               </TableCell>
+                              <TableCell>
+                                {isMasterUser && !isMaster && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 text-destructive hover:text-destructive"
+                                    onClick={() => setDeleteUserConfirm({ id: user.id, email: user.email })}
+                                    title="Excluir usuário"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                )}
+                              </TableCell>
                             </TableRow>
                           );
                         })}
                         {filteredUsers.length === 0 && (
                           <TableRow>
-                            <TableCell colSpan={2} className="text-center text-muted-foreground py-8">
+                            <TableCell colSpan={isMasterUser ? 3 : 2} className="text-center text-muted-foreground py-8">
                               {userSearch ? 'Nenhum usuário encontrado' : 'Nenhum usuário cadastrado'}
                             </TableCell>
                           </TableRow>
