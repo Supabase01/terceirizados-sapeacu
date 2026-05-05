@@ -44,6 +44,7 @@ const FolhaProcessada = () => {
   const [filterFuncao, setFilterFuncao] = useState('all');
   const [page, setPage] = useState(0);
   const [liberarDialogOpen, setLiberarDialogOpen] = useState(false);
+  const [excluirDialogOpen, setExcluirDialogOpen] = useState(false);
   const [contrachequeOpen, setContrachequeOpen] = useState(false);
   const [contrachequeRecord, setContrachequeRecord] = useState<any | null>(null);
 
