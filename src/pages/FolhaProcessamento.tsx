@@ -1060,6 +1060,28 @@ const FolhaProcessamento = () => {
         </DialogContent>
       </Dialog>
 
+      <AlertDialog open={excluirDialogOpen} onOpenChange={setExcluirDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Folha Gerada de {getMonthLabel(mes)}/{ano}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação removerá permanentemente o rascunho da folha desta unidade. Os cadastros de colaboradores, adicionais e descontos não serão afetados — você poderá gerar novamente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => excluirDraftMutation.mutate()}
+              disabled={excluirDraftMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {excluirDraftMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Trash2 className="h-4 w-4 mr-1" />}
+              Excluir definitivamente
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <ContrachequeDetalhado
         open={contrachequeOpen}
         onOpenChange={setContrachequeOpen}
