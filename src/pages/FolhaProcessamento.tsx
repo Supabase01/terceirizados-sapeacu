@@ -650,6 +650,12 @@ const FolhaProcessamento = () => {
                       <CheckCircle2 className="h-4 w-4 mr-1" />
                       Processar
                     </Button>
+                    {isMaster && (
+                      <Button onClick={() => setExcluirDialogOpen(true)} variant="destructive" size="sm">
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Excluir
+                      </Button>
+                    )}
                   </>
                 ) : (
                   <Button onClick={() => generateMutation.mutate()} disabled={generateMutation.isPending}>
