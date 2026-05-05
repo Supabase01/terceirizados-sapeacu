@@ -12,12 +12,13 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { RefreshCw, Search, CheckCircle2, Loader2, FileText, Info, Download, Eye } from 'lucide-react';
+import { RefreshCw, Search, CheckCircle2, Loader2, FileText, Info, Download, Eye, Trash2 } from 'lucide-react';
 import ContrachequeDetalhado from '@/components/ContrachequeDetalhado';
 import { exportToPDF } from '@/lib/exportUtils';
 import { useIsMaster } from '@/hooks/useIsMaster';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -53,6 +54,7 @@ const FolhaProcessamento = () => {
   const [filterValorMax, setFilterValorMax] = useState('');
   const [page, setPage] = useState(0);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [excluirDialogOpen, setExcluirDialogOpen] = useState(false);
   const [generateSecretaria, setGenerateSecretaria] = useState('all');
   const [contrachequeOpen, setContrachequeOpen] = useState(false);
   const [contrachequeRecord, setContrachequeRecord] = useState<any | null>(null);
@@ -520,6 +522,29 @@ const FolhaProcessamento = () => {
     },
   });
 
+  // Excluir folha rascunho (master) - apaga o draft do mes/ano/unidade
+  const excluirDraftMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('folha_processamento')
+        .delete()
+        .eq('mes', mes)
+        .eq('ano', ano)
+        .eq('status', 'rascunho')
+        .eq('unidade_id', unidadeId!);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['folha-processamento'] });
+      setExcluirDialogOpen(false);
+      toast({ title: 'Folha excluída', description: `Rascunho de ${getMonthLabel(mes)}/${ano} removido.` });
+      registrarLog({ tipo: 'aviso', categoria: 'folha', descricao: `Folha rascunho excluída: ${getMonthLabel(mes)}/${ano}`, unidadeId });
+    },
+    onError: (err: any) => {
+      toast({ title: 'Erro ao excluir', description: err.message, variant: 'destructive' });
+    },
+  });
+
   const isDraft = folha.length > 0;
 
   // Dependent filter options: each dropdown shows only values compatible with the OTHER active filter
@@ -625,6 +650,12 @@ const FolhaProcessamento = () => {
                       <CheckCircle2 className="h-4 w-4 mr-1" />
                       Processar
                     </Button>
+                    {isMaster && (
+                      <Button onClick={() => setExcluirDialogOpen(true)} variant="destructive" size="sm">
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Excluir
+                      </Button>
+                    )}
                   </>
                 ) : (
                   <Button onClick={() => generateMutation.mutate()} disabled={generateMutation.isPending}>
@@ -1028,6 +1059,28 @@ const FolhaProcessamento = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={excluirDialogOpen} onOpenChange={setExcluirDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Folha Gerada de {getMonthLabel(mes)}/{ano}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação removerá permanentemente o rascunho da folha desta unidade. Os cadastros de colaboradores, adicionais e descontos não serão afetados — você poderá gerar novamente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => excluirDraftMutation.mutate()}
+              disabled={excluirDraftMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {excluirDraftMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Trash2 className="h-4 w-4 mr-1" />}
+              Excluir definitivamente
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <ContrachequeDetalhado
         open={contrachequeOpen}
