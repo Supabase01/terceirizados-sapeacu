@@ -570,6 +570,29 @@ const FolhaProcessada = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Excluir folha confirmation */}
+      <AlertDialog open={excluirDialogOpen} onOpenChange={setExcluirDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Folha de {getMonthLabel(mes)}/{ano}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação é <strong>permanente</strong> e removerá todos os registros desta folha (processamento e histórico de pagamento) para esta unidade. Não poderá ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => excluirMutation.mutate()}
+              disabled={excluirMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {excluirMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Trash2 className="h-4 w-4 mr-1" />}
+              Excluir definitivamente
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <ContrachequeDetalhado
         open={contrachequeOpen}
         onOpenChange={setContrachequeOpen}
