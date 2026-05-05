@@ -14,7 +14,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Search, CheckCircle2, Loader2, FileText, Undo2, Send, Info, BarChart3, Eye } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Search, CheckCircle2, Loader2, FileText, Undo2, Send, Info, BarChart3, Eye, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import ContrachequeDetalhado from '@/components/ContrachequeDetalhado';
@@ -43,6 +44,7 @@ const FolhaProcessada = () => {
   const [filterFuncao, setFilterFuncao] = useState('all');
   const [page, setPage] = useState(0);
   const [liberarDialogOpen, setLiberarDialogOpen] = useState(false);
+  const [excluirDialogOpen, setExcluirDialogOpen] = useState(false);
   const [contrachequeOpen, setContrachequeOpen] = useState(false);
   const [contrachequeRecord, setContrachequeRecord] = useState<any | null>(null);
 
@@ -168,6 +170,40 @@ const FolhaProcessada = () => {
     },
   });
 
+  // Excluir folha (master only) - remove tudo do mes/ano/unidade
+  const excluirMutation = useMutation({
+    mutationFn: async () => {
+      const { error: e1 } = await supabase
+        .from('folha_processamento')
+        .delete()
+        .eq('mes', mes)
+        .eq('ano', ano)
+        .eq('unidade_id', unidadeId!);
+      if (e1) throw e1;
+
+      const { error: e2 } = await supabase
+        .from('payroll_records')
+        .delete()
+        .eq('mes', mes)
+        .eq('ano', ano)
+        .eq('unidade_id', unidadeId!);
+      if (e2) throw e2;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['folha-processada'] });
+      queryClient.invalidateQueries({ queryKey: ['folha-processamento'] });
+      queryClient.invalidateQueries({ queryKey: ['payroll-records'] });
+      queryClient.invalidateQueries({ queryKey: ['liberado-info'] });
+      queryClient.invalidateQueries({ queryKey: ['pagamento'] });
+      setExcluirDialogOpen(false);
+      toast({ title: 'Folha excluída', description: `Folha de ${getMonthLabel(mes)}/${ano} removida permanentemente.` });
+      registrarLog({ tipo: 'aviso', categoria: 'folha', descricao: `Folha excluída: ${getMonthLabel(mes)}/${ano}`, unidadeId });
+    },
+    onError: (err: any) => {
+      toast({ title: 'Erro ao excluir', description: err.message, variant: 'destructive' });
+    },
+  });
+
   const secretariasUnicas = [...new Set(folha.map((r: any) => r.secretaria).filter(Boolean))].sort();
   const funcoesUnicas = [...new Set(folha.map((r: any) => r.funcao).filter(Boolean))].sort();
 
@@ -234,13 +270,31 @@ const FolhaProcessada = () => {
                   <Button
                     onClick={() => revertMutation.mutate()}
                     disabled={revertMutation.isPending}
-                    variant="destructive"
+                    variant="outline"
                   >
                     {revertMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Undo2 className="h-4 w-4 mr-1" />}
                     Reverter
                   </Button>
                 )}
               </>
+            )}
+            {folha.length > 0 && isMaster && !isReleased && (
+              <Button
+                onClick={() => setExcluirDialogOpen(true)}
+                variant="destructive"
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                Excluir Folha
+              </Button>
+            )}
+            {isReleased && isMaster && (
+              <Button
+                onClick={() => setExcluirDialogOpen(true)}
+                variant="destructive"
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                Excluir Folha
+              </Button>
             )}
           </div>
         </div>
@@ -515,6 +569,29 @@ const FolhaProcessada = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Excluir folha confirmation */}
+      <AlertDialog open={excluirDialogOpen} onOpenChange={setExcluirDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Folha de {getMonthLabel(mes)}/{ano}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação é <strong>permanente</strong> e removerá todos os registros desta folha (processamento e histórico de pagamento) para esta unidade. Não poderá ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => excluirMutation.mutate()}
+              disabled={excluirMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {excluirMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Trash2 className="h-4 w-4 mr-1" />}
+              Excluir definitivamente
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <ContrachequeDetalhado
         open={contrachequeOpen}
