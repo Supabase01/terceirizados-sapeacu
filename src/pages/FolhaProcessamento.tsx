@@ -54,6 +54,7 @@ const FolhaProcessamento = () => {
   const [filterValorMax, setFilterValorMax] = useState('');
   const [page, setPage] = useState(0);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [excluirDialogOpen, setExcluirDialogOpen] = useState(false);
   const [generateSecretaria, setGenerateSecretaria] = useState('all');
   const [contrachequeOpen, setContrachequeOpen] = useState(false);
   const [contrachequeRecord, setContrachequeRecord] = useState<any | null>(null);
