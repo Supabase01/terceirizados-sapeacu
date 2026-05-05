@@ -522,6 +522,29 @@ const FolhaProcessamento = () => {
     },
   });
 
+  // Excluir folha rascunho (master) - apaga o draft do mes/ano/unidade
+  const excluirDraftMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('folha_processamento')
+        .delete()
+        .eq('mes', mes)
+        .eq('ano', ano)
+        .eq('status', 'rascunho')
+        .eq('unidade_id', unidadeId!);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['folha-processamento'] });
+      setExcluirDialogOpen(false);
+      toast({ title: 'Folha excluída', description: `Rascunho de ${getMonthLabel(mes)}/${ano} removido.` });
+      registrarLog({ tipo: 'aviso', categoria: 'folha', descricao: `Folha rascunho excluída: ${getMonthLabel(mes)}/${ano}`, unidadeId });
+    },
+    onError: (err: any) => {
+      toast({ title: 'Erro ao excluir', description: err.message, variant: 'destructive' });
+    },
+  });
+
   const isDraft = folha.length > 0;
 
   // Dependent filter options: each dropdown shows only values compatible with the OTHER active filter
