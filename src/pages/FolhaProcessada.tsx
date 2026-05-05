@@ -170,6 +170,40 @@ const FolhaProcessada = () => {
     },
   });
 
+  // Excluir folha (master only) - remove tudo do mes/ano/unidade
+  const excluirMutation = useMutation({
+    mutationFn: async () => {
+      const { error: e1 } = await supabase
+        .from('folha_processamento')
+        .delete()
+        .eq('mes', mes)
+        .eq('ano', ano)
+        .eq('unidade_id', unidadeId!);
+      if (e1) throw e1;
+
+      const { error: e2 } = await supabase
+        .from('payroll_records')
+        .delete()
+        .eq('mes', mes)
+        .eq('ano', ano)
+        .eq('unidade_id', unidadeId!);
+      if (e2) throw e2;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['folha-processada'] });
+      queryClient.invalidateQueries({ queryKey: ['folha-processamento'] });
+      queryClient.invalidateQueries({ queryKey: ['payroll-records'] });
+      queryClient.invalidateQueries({ queryKey: ['liberado-info'] });
+      queryClient.invalidateQueries({ queryKey: ['pagamento'] });
+      setExcluirDialogOpen(false);
+      toast({ title: 'Folha excluída', description: `Folha de ${getMonthLabel(mes)}/${ano} removida permanentemente.` });
+      registrarLog({ tipo: 'aviso', categoria: 'folha', descricao: `Folha excluída: ${getMonthLabel(mes)}/${ano}`, unidadeId });
+    },
+    onError: (err: any) => {
+      toast({ title: 'Erro ao excluir', description: err.message, variant: 'destructive' });
+    },
+  });
+
   const secretariasUnicas = [...new Set(folha.map((r: any) => r.secretaria).filter(Boolean))].sort();
   const funcoesUnicas = [...new Set(folha.map((r: any) => r.funcao).filter(Boolean))].sort();
 
