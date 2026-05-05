@@ -270,13 +270,31 @@ const FolhaProcessada = () => {
                   <Button
                     onClick={() => revertMutation.mutate()}
                     disabled={revertMutation.isPending}
-                    variant="destructive"
+                    variant="outline"
                   >
                     {revertMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Undo2 className="h-4 w-4 mr-1" />}
                     Reverter
                   </Button>
                 )}
               </>
+            )}
+            {folha.length > 0 && isMaster && !isReleased && (
+              <Button
+                onClick={() => setExcluirDialogOpen(true)}
+                variant="destructive"
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                Excluir Folha
+              </Button>
+            )}
+            {isReleased && isMaster && (
+              <Button
+                onClick={() => setExcluirDialogOpen(true)}
+                variant="destructive"
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                Excluir Folha
+              </Button>
             )}
           </div>
         </div>
