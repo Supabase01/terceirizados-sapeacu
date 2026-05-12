@@ -114,7 +114,7 @@ export function AsyncColaboradorSelect(props: Props) {
   }, [searchResults]);
 
   // Resolve selected ids that aren't in cache yet (e.g. on edit)
-  const selectedIds = props.multiple ? props.values : (props.value ? [props.value] : []);
+  const selectedIds = props.multiple ? props.values : ((props as SingleProps).value ? [(props as SingleProps).value] : []);
   const missingIds = selectedIds.filter(id => id && !cache.has(id));
 
   useQuery({
@@ -218,7 +218,7 @@ export function AsyncColaboradorSelect(props: Props) {
   }
 
   // Single
-  const { value, onValueChange } = props;
+  const { value, onValueChange } = props as SingleProps;
   const selectedLabel = value ? cache.get(value)?.nome : undefined;
 
   return (
