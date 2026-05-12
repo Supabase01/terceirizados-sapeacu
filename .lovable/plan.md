@@ -1,48 +1,35 @@
-## Controle de Faltas integrado à Frequência
+## Causa do problema
 
-Adicionar o registro de **quantidade de faltas** ao módulo Frequência e descontá-las automaticamente da folha do colaborador na competência correspondente.
+A unidade **Sapeaçu** tem **1.555 colaboradores ativos**, mas as telas **Adicionais** e **Descontos** carregavam o select com uma única consulta Supabase, sujeita ao limite padrão de 1.000 linhas. Maria Beatriz ficava fora desse corte e por isso não aparecia. Ela está corretamente cadastrada e ativa — não é necessário mudar nada no cadastro dela.
 
-### Regra de cálculo
-```
-Desconto por faltas = (Salário Bruto / 30) × quantidade de faltas
-```
-- Aplicado por colaborador na competência (mês/ano) da frequência.
-- O Bruto usado é o calculado na folha daquela competência (Padrão 01: base + adicionais; Padrão 02: líquido + encargos).
-- Faltas = 0 → não gera desconto.
+## Solução: busca server-side com debounce
 
-### Mudanças no banco
-1. Adicionar coluna `faltas` (integer, default 0, ≥ 0) na tabela `frequencias`.
-2. Adicionar coluna opcional `desconto_faltas` (numeric, default 0) — calculada e exibida, mas o cálculo "fonte da verdade" continua na geração da folha.
+Em vez de carregar todos os colaboradores de uma vez (que ficaria pesado conforme a unidade crescer para 5k, 10k+), o select passa a **consultar o banco conforme o usuário digita**. Isso escala para qualquer volume.
 
-### Mudanças na UI — `src/pages/Frequencia.tsx`
-1. Nova coluna **"Faltas"** na tabela com input numérico inline (0 por padrão) por colaborador.
-   - Editável apenas quando o status é `entregue` ou `justificado`.
-   - Salva ao perder foco (onBlur) ou Enter, com debounce.
-2. Novo card de resumo: **"Total de faltas"** (soma de todas as faltas da competência).
-3. **Marcação em lote** (`Marcar como entregue`) → segue zerando faltas (faltas = 0). Mantém comportamento atual.
-4. **Marcação individual** → após marcar como entregue, abre opcionalmente o input de faltas na linha (já visível na coluna). Mantém fluxo simples.
-5. No diálogo de Observação: adicionar campo "Quantidade de faltas" para edição rápida junto com a justificativa.
-6. Badge visual na linha quando `faltas > 0` (ex: `Badge` âmbar "3 faltas").
+### Comportamento do novo select
 
-### Mudanças na Folha — `src/pages/FolhaProcessamento.tsx`
-1. Na função de geração da folha (após calcular `bruto` e antes de aplicar descontos):
-   - Buscar `frequencias` da competência (`mes`, `ano`, `unidade_id`) com `faltas > 0`.
-   - Para cada colaborador com faltas: `descontoFaltas = (bruto / 30) * faltas`.
-   - Somar ao `total_descontos` e subtrair do `liquido`.
-   - Aplica-se a Padrão 01 normalmente. Para Padrão 02, descontar do líquido (recalcular líquido = líquido_original − descontoFaltas; bruto permanece).
-2. Registrar nos detalhes da folha (campo já existente ou via observação) que parte do desconto vem de faltas — opcional, sem nova coluna.
+- Ao **abrir** o select: mostra os **20 primeiros** colaboradores ativos da unidade (ordem alfabética) como prévia.
+- Ao **digitar** (mín. 2 caracteres): aguarda **300ms** (debounce) e consulta o banco filtrando por `nome ILIKE '%termo%' OR cpf ILIKE '%termo%'`, retornando até **50 resultados**.
+- Mostra "Carregando..." enquanto a busca está em andamento e "Nenhum colaborador encontrado" se não houver resultado.
+- Cache por termo (via React Query `placeholderData`) para evitar re-fetch ao reabrir.
 
-### Feedback visual na folha
-- Na tabela da folha em processamento, exibir um badge pequeno "Nº faltas" ao lado do nome quando houver faltas registradas no mês.
+### Telas afetadas
 
-### Arquivos a alterar
-- `supabase/migrations/<novo>.sql` — adicionar `faltas` e `desconto_faltas` em `frequencias`.
-- `src/pages/Frequencia.tsx` — input inline de faltas, card resumo, salvar individual, badge.
-- `src/pages/FolhaProcessamento.tsx` — buscar frequências e aplicar desconto de faltas no cálculo.
-- `src/integrations/supabase/types.ts` — auto-regenerado.
+1. `src/pages/Adicionais.tsx` — select de colaborador (escopo Individual e Grupo).
+2. `src/pages/Descontos.tsx` — mesma correção (mesmo bug latente).
 
 ### Detalhes técnicos
-- Salvar faltas via `upsert` no mesmo padrão atual (`onConflict: 'colaborador_id,mes,ano'`).
-- Validação: faltas inteiras ≥ 0 e ≤ 31.
-- Lote sempre força `faltas = 0` (regra do usuário: "em lote por padrão é falta 0").
-- Cálculo do desconto usa `roundMoney` apenas no total final, não no intermediário (padrão do projeto).
+
+- Criar um hook reutilizável `useColaboradoresSearch(unidadeId, term)` que faz a query paginada (`limit(50)`).
+- Ajustar o `SearchableSelect` (ou criar variante `AsyncSearchableSelect`) para aceitar:
+  - `onSearchChange(term)` → dispara debounce.
+  - `loading` → exibe estado de carregamento.
+  - `options` recebidas dinamicamente (não filtra mais no cliente).
+- Para o **modo "Grupo"** (multi-seleção), manter os IDs já selecionados em estado separado e exibir os nomes correspondentes mesmo que não estejam no resultado atual da busca (busca extra por IDs selecionados quando necessário).
+- Edição de um adicional/desconto existente: ao abrir o diálogo com `colaborador_id` já preenchido, fazer um fetch pontual desse colaborador para mostrar o nome no select.
+
+### Resultado
+
+- Maria Beatriz (e qualquer outro entre os 1.555) é encontrada digitando parte do nome ou CPF.
+- A tela abre instantaneamente, independente do tamanho da unidade.
+- Pronto para escalar para unidades com 10k+ colaboradores sem perda de performance.
