@@ -142,7 +142,7 @@ const Adicionais = () => {
 
       if (editId) {
         // Edição preserva escopo. Para grupo/individual mantém colaborador_id atual no form.
-        const colab = colaboradores.find((c: any) => c.id === form.colaborador_ids[0]);
+        const colab = colabMap.get(form.colaborador_ids[0]);
         const payload = {
           ...basePayload,
           valor: computeValorFor(form.escopo === 'global' ? null : colab),
@@ -161,7 +161,7 @@ const Adicionais = () => {
         } else {
           // individual = exatamente 1 (validado pelo Zod). grupo = N linhas.
           const rows = form.colaborador_ids.map(cid => {
-            const colab = colaboradores.find((c: any) => c.id === cid);
+            const colab = colabMap.get(cid);
             return { ...basePayload, valor: computeValorFor(colab), colaborador_id: cid };
           });
           if (rows.length === 0) throw new Error('Selecione ao menos um colaborador');
@@ -396,12 +396,12 @@ const Adicionais = () => {
             {form.escopo === 'individual' && (
               <div className="space-y-2">
                 <Label>Colaborador *</Label>
-                <SearchableSelect
-                  options={colaboradorOptions}
+                <AsyncColaboradorSelect
+                  unidadeId={unidadeId}
                   value={form.colaborador_ids[0] || ''}
                   onValueChange={(v) => setForm(p => ({ ...p, colaborador_ids: v ? [v] : [] }))}
                   placeholder="Selecione o colaborador"
-                  emptyText="Nenhum colaborador encontrado"
+                  onItemsLoaded={handleColabsLoaded}
                 />
                 {errors.colaborador_ids && <p className="text-xs text-destructive">{errors.colaborador_ids}</p>}
               </div>
@@ -410,21 +410,21 @@ const Adicionais = () => {
               <div className="space-y-2">
                 <Label>Colaboradores * <span className="text-xs text-muted-foreground">({form.colaborador_ids.length} selecionado{form.colaborador_ids.length === 1 ? '' : 's'})</span></Label>
                 {editId ? (
-                  <SearchableSelect
-                    options={colaboradorOptions}
+                  <AsyncColaboradorSelect
+                    unidadeId={unidadeId}
                     value={form.colaborador_ids[0] || ''}
                     onValueChange={(v) => setForm(p => ({ ...p, colaborador_ids: v ? [v] : [] }))}
                     placeholder="Selecione o colaborador"
-                    emptyText="Nenhum colaborador encontrado"
+                    onItemsLoaded={handleColabsLoaded}
                   />
                 ) : (
-                  <SearchableSelect
+                  <AsyncColaboradorSelect
                     multiple
-                    options={colaboradorOptions}
+                    unidadeId={unidadeId}
                     values={form.colaborador_ids}
                     onValuesChange={(v) => setForm(p => ({ ...p, colaborador_ids: v }))}
                     placeholder="Selecione os colaboradores"
-                    emptyText="Nenhum colaborador encontrado"
+                    onItemsLoaded={handleColabsLoaded}
                   />
                 )}
                 {editId && <p className="text-xs text-muted-foreground">Edição altera apenas este registro do grupo.</p>}
