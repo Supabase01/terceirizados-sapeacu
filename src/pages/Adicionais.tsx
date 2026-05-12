@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { SearchableSelect } from '@/components/SearchableSelect';
+import { AsyncColaboradorSelect, type ColaboradorLite } from '@/components/AsyncColaboradorSelect';
 import { RegraCalculoFields, isRegraCalculoValid, type ModoCalculo, type BaseCalculo } from '@/components/RegraCalculoFields';
 import { adicionalSchema, zodErrorMap } from '@/lib/validators/financeiro';
 import { roundMoney } from '@/lib/money';
@@ -75,17 +76,15 @@ const Adicionais = () => {
     enabled: !!unidadeId,
   });
 
-  const { data: colaboradores = [] } = useQuery({
-    queryKey: ['colaboradores-ativos', unidadeId],
-    queryFn: async () => {
-      let query = supabase.from('colaboradores').select('id, nome, cpf, salario_base').eq('ativo', true).order('nome');
-      if (unidadeId) query = query.eq('unidade_id', unidadeId);
-      const { data, error } = await query;
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!unidadeId,
-  });
+  // Cache of colaboradores known to this page (populated by AsyncColaboradorSelect via onItemsLoaded)
+  const [colabMap, setColabMap] = useState<Map<string, ColaboradorLite>>(new Map());
+  const handleColabsLoaded = (items: ColaboradorLite[]) => {
+    setColabMap(prev => {
+      const next = new Map(prev);
+      for (const it of items) next.set(it.id, it);
+      return next;
+    });
+  };
 
   const { data: rubricas = [] } = useQuery({
     queryKey: ['rubricas-adicional', unidadeId],
@@ -98,12 +97,6 @@ const Adicionais = () => {
     },
     enabled: !!unidadeId,
   });
-
-  const colaboradorOptions = colaboradores.map((c: any) => ({
-    value: c.id,
-    label: c.nome,
-    sublabel: c.cpf,
-  }));
 
   const saveMutation = useMutation({
     mutationFn: async () => {
