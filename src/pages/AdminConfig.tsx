@@ -1307,6 +1307,37 @@ const AdminConfig = () => {
         </AlertDialogContent>
       </AlertDialog>
 
+      <Dialog open={!!resetPwdUser} onOpenChange={(open) => { if (!open) { setResetPwdUser(null); setResetPwdValue(''); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Redefinir Senha</DialogTitle>
+            <DialogDescription>
+              Definir nova senha para <strong>{resetPwdUser?.email}</strong>. O usuário poderá alterá-la depois em "Minha Conta".
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <Label>Nova senha</Label>
+            <Input
+              type="text"
+              value={resetPwdValue}
+              onChange={(e) => setResetPwdValue(e.target.value)}
+              placeholder="Mínimo 6 caracteres"
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setResetPwdUser(null); setResetPwdValue(''); }}>Cancelar</Button>
+            <Button
+              disabled={resetPasswordMutation.isPending || resetPwdValue.length < 6}
+              onClick={() => resetPwdUser && resetPasswordMutation.mutate({ userId: resetPwdUser.id, newPassword: resetPwdValue })}
+            >
+              {resetPasswordMutation.isPending ? 'Salvando...' : 'Redefinir'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
       <AlertDialog open={!!deleteUserConfirm} onOpenChange={(open) => !open && setDeleteUserConfirm(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
