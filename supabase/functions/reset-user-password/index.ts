@@ -48,6 +48,13 @@ serve(async (req) => {
     });
     if (updErr) throw updErr;
 
+    // Clear PIN so user is forced to create a new one on next access
+    const { error: pinErr } = await adminClient
+      .from("profiles")
+      .update({ pin: null })
+      .eq("id", user_id);
+    if (pinErr) throw pinErr;
+
     await adminClient.from("log_sistema").insert({
       tipo: "sucesso",
       categoria: "autenticacao",
