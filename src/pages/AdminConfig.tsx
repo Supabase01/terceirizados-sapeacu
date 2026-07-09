@@ -50,6 +50,27 @@ const AdminConfig = () => {
   const { isAdmin, isLoading: loadingAdmin } = useIsAdmin();
   const { isMaster: isMasterUser } = useIsMaster();
   const [deleteUserConfirm, setDeleteUserConfirm] = useState<{ id: string; email: string } | null>(null);
+  const [resetPwdUser, setResetPwdUser] = useState<{ id: string; email: string } | null>(null);
+  const [resetPwdValue, setResetPwdValue] = useState('');
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: async ({ userId, newPassword }: { userId: string; newPassword: string }) => {
+      const { data, error } = await supabase.functions.invoke('reset-user-password', {
+        body: { user_id: userId, new_password: newPassword },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+    },
+    onSuccess: () => {
+      toast({ title: 'Senha redefinida com sucesso' });
+      setResetPwdUser(null);
+      setResetPwdValue('');
+    },
+    onError: (err: any) => {
+      toast({ title: 'Erro ao redefinir senha', description: err.message, variant: 'destructive' });
+    },
+  });
+
 
   const deleteUserMutation = useMutation({
     mutationFn: async (userId: string) => {
@@ -640,17 +661,29 @@ const AdminConfig = () => {
                               </TableCell>
                               <TableCell>
                                 {isMasterUser && !isMaster && (
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7 text-destructive hover:text-destructive"
-                                    onClick={() => setDeleteUserConfirm({ id: user.id, email: user.email })}
-                                    title="Excluir usuário"
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </Button>
+                                  <div className="flex items-center gap-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-7 w-7"
+                                      onClick={() => setResetPwdUser({ id: user.id, email: user.email })}
+                                      title="Redefinir senha"
+                                    >
+                                      <KeyRound className="h-3.5 w-3.5" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-7 w-7 text-destructive hover:text-destructive"
+                                      onClick={() => setDeleteUserConfirm({ id: user.id, email: user.email })}
+                                      title="Excluir usuário"
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </div>
                                 )}
                               </TableCell>
+
                             </TableRow>
                           );
                         })}
@@ -1273,6 +1306,37 @@ const AdminConfig = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={!!resetPwdUser} onOpenChange={(open) => { if (!open) { setResetPwdUser(null); setResetPwdValue(''); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Redefinir Senha</DialogTitle>
+            <DialogDescription>
+              Definir nova senha para <strong>{resetPwdUser?.email}</strong>. O usuário poderá alterá-la depois em "Minha Conta".
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <Label>Nova senha</Label>
+            <Input
+              type="text"
+              value={resetPwdValue}
+              onChange={(e) => setResetPwdValue(e.target.value)}
+              placeholder="Mínimo 6 caracteres"
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setResetPwdUser(null); setResetPwdValue(''); }}>Cancelar</Button>
+            <Button
+              disabled={resetPasswordMutation.isPending || resetPwdValue.length < 6}
+              onClick={() => resetPwdUser && resetPasswordMutation.mutate({ userId: resetPwdUser.id, newPassword: resetPwdValue })}
+            >
+              {resetPasswordMutation.isPending ? 'Salvando...' : 'Redefinir'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
       <AlertDialog open={!!deleteUserConfirm} onOpenChange={(open) => !open && setDeleteUserConfirm(null)}>
         <AlertDialogContent>
