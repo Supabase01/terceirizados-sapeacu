@@ -50,6 +50,27 @@ const AdminConfig = () => {
   const { isAdmin, isLoading: loadingAdmin } = useIsAdmin();
   const { isMaster: isMasterUser } = useIsMaster();
   const [deleteUserConfirm, setDeleteUserConfirm] = useState<{ id: string; email: string } | null>(null);
+  const [resetPwdUser, setResetPwdUser] = useState<{ id: string; email: string } | null>(null);
+  const [resetPwdValue, setResetPwdValue] = useState('');
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: async ({ userId, newPassword }: { userId: string; newPassword: string }) => {
+      const { data, error } = await supabase.functions.invoke('reset-user-password', {
+        body: { user_id: userId, new_password: newPassword },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+    },
+    onSuccess: () => {
+      toast({ title: 'Senha redefinida com sucesso' });
+      setResetPwdUser(null);
+      setResetPwdValue('');
+    },
+    onError: (err: any) => {
+      toast({ title: 'Erro ao redefinir senha', description: err.message, variant: 'destructive' });
+    },
+  });
+
 
   const deleteUserMutation = useMutation({
     mutationFn: async (userId: string) => {
