@@ -26,7 +26,16 @@ interface ExportOptions {
   data: Record<string, any>[];
   fileName: string;
   groupBy?: GroupByOptions;
+  /** nome da unidade / prefeitura exibido acima do título */
+  entity?: string;
+  /** nome da folha (ex.: "Folha Processada — Julho/2026") */
+  folhaNome?: string;
+  /** competência / mês de referência */
+  competencia?: string;
+  /** filtros aplicados, exibidos no cabeçalho */
+  appliedFilters?: { label: string; value: string }[];
 }
+
 
 export const exportToExcel = ({ title, columns, data, fileName }: ExportOptions) => {
   const rows = data.map(row => {
