@@ -156,6 +156,8 @@ const App = () => (
             <Route path="/minha-conta" element={<AuthGuard><PinGuard><MinhaConta /></PinGuard></AuthGuard>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </ErrorBoundary>
+
         </BrowserRouter>
       </UnidadeProvider>
     </TooltipProvider>
