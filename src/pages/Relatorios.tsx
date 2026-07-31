@@ -19,9 +19,10 @@ const TabDetalhamento = ({ records }: { records: any[] }) => {
   const [filters, setFilters] = useState<DashboardFilters>({ ano: null, mes: null, pasta: null, search: '' });
   const [page, setPage] = useState(0);
 
-  const anos = useMemo(() => [...new Set(records.map(r => r.ano))].sort(), [records]);
-  const meses = useMemo(() => [...new Set(records.map(r => r.mes))].sort((a, b) => a - b), [records]);
-  const pastas = useMemo(() => [...new Set(records.map(r => r.pasta))].sort(), [records]);
+  const anos = useMemo(() => [...new Set(records.map(r => r.ano))].filter(Boolean).sort(), [records]);
+  const meses = useMemo(() => [...new Set(records.map(r => r.mes))].filter(Boolean).sort((a, b) => a - b), [records]);
+  const pastas = useMemo(() => [...new Set(records.map(r => r.pasta).filter(p => !!p))].sort(), [records]);
+
 
   const filtered = useMemo(() => {
     return records.filter(r => {
