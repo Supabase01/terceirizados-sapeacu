@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import { usePayrollData } from '@/hooks/usePayrollData';
 import { formatCurrency, formatNumber, getMonthName, getMonthShort } from '@/lib/formatters';
 import { exportToPDF, exportToExcel } from '@/lib/exportUtils';
@@ -15,13 +15,25 @@ import { FileText, FileSpreadsheet, Download, Search, ChevronLeft, ChevronRight 
 // =================== DETALHAMENTO TAB ===================
 const DETAIL_PAGE_SIZE = 15;
 
-const TabDetalhamento = ({ records }: { records: any[] }) => {
+const TabDetalhamento = memo(({ records }: { records: any[] }) => {
   const [filters, setFilters] = useState<DashboardFilters>({ ano: null, mes: null, pasta: null, search: '' });
+  const [searchInput, setSearchInput] = useState('');
   const [page, setPage] = useState(0);
+
+  // Debounce da busca: evita refiltrar milhares de registros a cada tecla
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setFilters(f => (f.search === searchInput ? f : { ...f, search: searchInput }));
+      setPage(0);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [searchInput]);
 
   const anos = useMemo(() => [...new Set(records.map(r => r.ano))].filter(Boolean).sort(), [records]);
   const meses = useMemo(() => [...new Set(records.map(r => r.mes))].filter(Boolean).sort((a, b) => a - b), [records]);
   const pastas = useMemo(() => [...new Set(records.map(r => r.pasta).filter(p => !!p))].sort(), [records]);
+
+
 
 
   const filtered = useMemo(() => {
@@ -102,7 +114,7 @@ const TabDetalhamento = ({ records }: { records: any[] }) => {
         </Select>
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Buscar por nome ou CPF..." value={filters.search} onChange={e => { setFilters(f => ({ ...f, search: e.target.value })); setPage(0); }} className="pl-10" />
+          <Input placeholder="Buscar por nome ou CPF..." value={searchInput} onChange={e => setSearchInput(e.target.value)} className="pl-10" />
         </div>
       </div>
 
@@ -171,7 +183,8 @@ const TabDetalhamento = ({ records }: { records: any[] }) => {
       </Card>
     </>
   );
-};
+});
+TabDetalhamento.displayName = 'TabDetalhamento';
 
 
 
