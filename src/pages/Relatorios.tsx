@@ -29,8 +29,8 @@ const TabDetalhamento = memo(({ records }: { records: any[] }) => {
     return () => clearTimeout(t);
   }, [searchInput]);
 
-  const anos = useMemo(() => [...new Set(records.map(r => r.ano))].filter(Boolean).sort(), [records]);
-  const meses = useMemo(() => [...new Set(records.map(r => r.mes))].filter(Boolean).sort((a, b) => a - b), [records]);
+  const anos = useMemo(() => [...new Set(records.map(r => Number(r.ano)))].filter(Boolean).sort(), [records]);
+  const meses = useMemo(() => [...new Set(records.map(r => Number(r.mes)))].filter(Boolean).sort((a, b) => a - b), [records]);
   const pastas = useMemo(() => [...new Set(records.map(r => r.pasta).filter(p => !!p))].sort(), [records]);
 
 
@@ -38,12 +38,15 @@ const TabDetalhamento = memo(({ records }: { records: any[] }) => {
 
   const filtered = useMemo(() => {
     return records.filter(r => {
-      if (filters.ano && r.ano !== filters.ano) return false;
-      if (filters.mes && r.mes !== filters.mes) return false;
-      if (filters.pasta && r.pasta !== filters.pasta) return false;
+      if (filters.ano && Number(r.ano) !== Number(filters.ano)) return false;
+      if (filters.mes && Number(r.mes) !== Number(filters.mes)) return false;
+      if (filters.pasta && String(r.pasta ?? '') !== String(filters.pasta)) return false;
       if (filters.search) {
         const s = filters.search.toLowerCase();
-        if (!r.nome.toLowerCase().includes(s) && !r.cpf.includes(s)) return false;
+        const nome = String(r.nome ?? '').toLowerCase();
+        const cpf = String(r.cpf ?? '').replace(/\D/g, '');
+        const sDigits = s.replace(/\D/g, '');
+        if (!nome.includes(s) && !(sDigits && cpf.includes(sDigits))) return false;
       }
       return true;
     });
@@ -61,7 +64,13 @@ const TabDetalhamento = memo(({ records }: { records: any[] }) => {
     }));
     const opts = {
       title: 'Detalhamento da Folha',
-      subtitle: `${formatNumber(filtered.length)} registros`,
+      subtitle: [
+        `${formatNumber(filtered.length)} registros`,
+        filters.ano ? `Ano: ${filters.ano}` : null,
+        filters.mes ? `Mês: ${getMonthShort(Number(filters.mes))}` : null,
+        filters.pasta ? `Pasta: ${filters.pasta}` : null,
+        filters.search ? `Busca: "${filters.search}"` : null,
+      ].filter(Boolean).join('  |  '),
       fileName: 'detalhamento_folha',
       columns: [
         { header: 'Nome', key: 'nome' },
@@ -353,7 +362,7 @@ const Relatorios = () => {
 
         {/* DETALHAMENTO */}
         <TabsContent value="detalhamento">
-          <TabDetalhamento records={records} />
+          <TabDetalhamento records={filteredRecords} />
         </TabsContent>
 
         {/* POR SECRETARIA */}
