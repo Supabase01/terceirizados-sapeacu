@@ -42,9 +42,10 @@ const TabDetalhamento = ({ records }: { records: any[] }) => {
 
   const handleExport = (type: 'pdf' | 'excel') => {
     const exportData = filtered.map(r => ({
-      nome: r.nome, cpf: r.cpf, funcao: r.funcao, pasta: r.pasta,
+      nome: r.nome, cpf: r.cpf, funcao: r.funcao, pasta: r.pasta || 'Não informado',
       mesAno: `${getMonthShort(r.mes)}/${r.ano}`,
       bruto: formatCurrency(r.bruto), liquido: formatCurrency(r.liquido),
+      _bruto: Number(r.bruto) || 0, _liquido: Number(r.liquido) || 0,
     }));
     const opts = {
       title: 'Detalhamento da Folha',
@@ -60,9 +61,19 @@ const TabDetalhamento = ({ records }: { records: any[] }) => {
         { header: 'Líquido', key: 'liquido', align: 'right' as const },
       ],
       data: exportData,
+      groupBy: {
+        key: 'pasta',
+        label: 'Subtotal —',
+        sums: [
+          { column: 'bruto', field: '_bruto' },
+          { column: 'liquido', field: '_liquido' },
+        ],
+        format: (n: number) => formatCurrency(n),
+      },
     };
     type === 'pdf' ? exportToPDF(opts) : exportToExcel(opts);
   };
+
 
   return (
     <>
