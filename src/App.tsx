@@ -119,7 +119,9 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <ErrorBoundary>
           <Routes>
+
             <Route path="/" element={<Auth />} />
             <Route path="/pin" element={<AuthGuard><PinAccess /></AuthGuard>} />
             <Route path="/selecionar-unidade" element={<AuthGuard><PinGuard><SelecionarUnidade /></PinGuard></AuthGuard>} />
