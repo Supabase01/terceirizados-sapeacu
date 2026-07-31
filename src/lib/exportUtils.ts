@@ -26,7 +26,16 @@ interface ExportOptions {
   data: Record<string, any>[];
   fileName: string;
   groupBy?: GroupByOptions;
+  /** nome da unidade / prefeitura exibido acima do título */
+  entity?: string;
+  /** nome da folha (ex.: "Folha Processada — Julho/2026") */
+  folhaNome?: string;
+  /** competência / mês de referência */
+  competencia?: string;
+  /** filtros aplicados, exibidos no cabeçalho */
+  appliedFilters?: { label: string; value: string }[];
 }
+
 
 export const exportToExcel = ({ title, columns, data, fileName }: ExportOptions) => {
   const rows = data.map(row => {
@@ -43,7 +52,7 @@ export const exportToExcel = ({ title, columns, data, fileName }: ExportOptions)
   XLSX.writeFile(wb, `${fileName}.xlsx`);
 };
 
-export const exportToPDF = ({ title, subtitle, columns, data, fileName, groupBy }: ExportOptions) => {
+export const exportToPDF = ({ title, subtitle, columns, data, fileName, groupBy, entity, folhaNome, competencia, appliedFilters }: ExportOptions) => {
   const doc = new jsPDF({ orientation: 'landscape' });
 
   const head = [columns.map(c => c.header)];
@@ -89,15 +98,51 @@ export const exportToPDF = ({ title, subtitle, columns, data, fileName, groupBy 
   }
 
   // ── Header ──
-  doc.setFontSize(16);
-  doc.text(title, 14, 20);
+  const pageW = doc.internal.pageSize.width;
+  let headerY = 14;
 
-  let headerY = 20;
-  if (subtitle) {
-    headerY += 8;
+  if (entity) {
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(90, 100, 120);
+    doc.text(entity.toUpperCase(), 14, headerY);
+    headerY += 7;
+  }
+
+  doc.setFontSize(16);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(30, 41, 74);
+  doc.text(title, 14, headerY);
+
+  // linha à direita: folha + competência
+  const rightLines = [folhaNome, competencia ? `Competência: ${competencia}` : null].filter(Boolean) as string[];
+  if (rightLines.length) {
     doc.setFontSize(10);
-    doc.setTextColor(100);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(70, 80, 100);
+    rightLines.forEach((line, i) => doc.text(line, pageW - 14, headerY - 4 + i * 5, { align: 'right' }));
+  }
+
+  doc.setTextColor(0);
+  doc.setFont('helvetica', 'normal');
+
+  if (subtitle) {
+    headerY += 6;
+    doc.setFontSize(9);
+    doc.setTextColor(110);
     doc.text(subtitle, 14, headerY);
+    doc.setTextColor(0);
+  }
+
+  // ── Filtros aplicados ──
+  const filterText = (appliedFilters ?? []).filter(f => f.value).map(f => `${f.label}: ${f.value}`);
+  if (filterText.length) {
+    headerY += 7;
+    doc.setFontSize(8);
+    doc.setTextColor(70, 80, 100);
+    const wrapped = doc.splitTextToSize(`Filtros aplicados — ${filterText.join('   •   ')}`, pageW - 28);
+    doc.text(wrapped, 14, headerY);
+    headerY += (wrapped.length - 1) * 4;
     doc.setTextColor(0);
   }
 
@@ -111,7 +156,7 @@ export const exportToPDF = ({ title, subtitle, columns, data, fileName, groupBy 
     });
     headerY += 8;
     doc.setFillColor(232, 236, 244);
-    doc.rect(14, headerY - 5.5, doc.internal.pageSize.width - 28, 8, 'F');
+    doc.rect(14, headerY - 5.5, pageW - 28, 8, 'F');
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(30, 41, 74);
@@ -119,6 +164,7 @@ export const exportToPDF = ({ title, subtitle, columns, data, fileName, groupBy 
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(0);
   }
+
 
 
   autoTable(doc, {
