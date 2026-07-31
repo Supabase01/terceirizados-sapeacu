@@ -15,13 +15,25 @@ import { FileText, FileSpreadsheet, Download, Search, ChevronLeft, ChevronRight 
 // =================== DETALHAMENTO TAB ===================
 const DETAIL_PAGE_SIZE = 15;
 
-const TabDetalhamento = ({ records }: { records: any[] }) => {
+const TabDetalhamento = memo(({ records }: { records: any[] }) => {
   const [filters, setFilters] = useState<DashboardFilters>({ ano: null, mes: null, pasta: null, search: '' });
+  const [searchInput, setSearchInput] = useState('');
   const [page, setPage] = useState(0);
+
+  // Debounce da busca: evita refiltrar milhares de registros a cada tecla
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setFilters(f => (f.search === searchInput ? f : { ...f, search: searchInput }));
+      setPage(0);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [searchInput]);
 
   const anos = useMemo(() => [...new Set(records.map(r => r.ano))].filter(Boolean).sort(), [records]);
   const meses = useMemo(() => [...new Set(records.map(r => r.mes))].filter(Boolean).sort((a, b) => a - b), [records]);
   const pastas = useMemo(() => [...new Set(records.map(r => r.pasta).filter(p => !!p))].sort(), [records]);
+
+
 
 
   const filtered = useMemo(() => {
