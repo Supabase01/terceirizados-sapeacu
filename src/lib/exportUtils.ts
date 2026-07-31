@@ -122,7 +122,7 @@ export const exportToPDF = ({ title, subtitle, columns, data, fileName, groupBy 
 
 
   autoTable(doc, {
-    startY: subtitle ? 34 : 28,
+    startY: headerY + 6,
     head,
     body,
     styles: { fontSize: 8, cellPadding: 2 },
