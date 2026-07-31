@@ -15,7 +15,7 @@ import { FileText, FileSpreadsheet, Download, Search, ChevronLeft, ChevronRight 
 // =================== DETALHAMENTO TAB ===================
 const DETAIL_PAGE_SIZE = 15;
 
-const TabDetalhamento = memo(({ records }: { records: any[] }) => {
+const TabDetalhamento = memo(({ records, entity, periodLabel }: { records: any[]; entity?: string; periodLabel?: string }) => {
   const [filters, setFilters] = useState<DashboardFilters>({ ano: null, mes: null, pasta: null, search: '' });
   const [searchInput, setSearchInput] = useState('');
   const [page, setPage] = useState(0);
@@ -62,15 +62,24 @@ const TabDetalhamento = memo(({ records }: { records: any[] }) => {
       bruto: formatCurrency(r.bruto), liquido: formatCurrency(r.liquido),
       _bruto: Number(r.bruto) || 0, _liquido: Number(r.liquido) || 0,
     }));
+    const competencia = filters.ano && filters.mes
+      ? `${getMonthName(Number(filters.mes))}/${filters.ano}`
+      : filters.mes ? `${getMonthName(Number(filters.mes))}`
+      : filters.ano ? `${filters.ano}`
+      : (periodLabel || 'Todos os períodos');
     const opts = {
       title: 'Detalhamento da Folha',
-      subtitle: [
-        `${formatNumber(filtered.length)} registros`,
-        filters.ano ? `Ano: ${filters.ano}` : null,
-        filters.mes ? `Mês: ${getMonthShort(Number(filters.mes))}` : null,
-        filters.pasta ? `Pasta: ${filters.pasta}` : null,
-        filters.search ? `Busca: "${filters.search}"` : null,
-      ].filter(Boolean).join('  |  '),
+      entity,
+      folhaNome: `Folha — ${competencia}`,
+      competencia,
+      appliedFilters: [
+        { label: 'Ano', value: filters.ano ? String(filters.ano) : '' },
+        { label: 'Mês', value: filters.mes ? getMonthName(Number(filters.mes)) : '' },
+        { label: 'Pasta/Secretaria', value: filters.pasta ? String(filters.pasta) : '' },
+        { label: 'Busca', value: filters.search || '' },
+        { label: 'Período (global)', value: periodLabel || '' },
+      ],
+      subtitle: `${formatNumber(filtered.length)} registros`,
       fileName: 'detalhamento_folha',
       columns: [
         { header: 'Nome', key: 'nome' },
@@ -275,6 +284,7 @@ const Relatorios = () => {
   const exportSecretaria = (type: 'pdf' | 'excel') => {
     const opts = {
       title: 'Relatório por Secretaria', subtitle: periodLabel,
+      entity: records[0]?.prefeitura, folhaNome: `Folha — ${periodLabel}`, competencia: periodLabel,
       fileName: `relatorio-secretaria-${selectedPeriod}`,
       columns: [
         { header: 'Secretaria', key: 'pasta' },
@@ -295,6 +305,7 @@ const Relatorios = () => {
   const exportFuncao = (type: 'pdf' | 'excel') => {
     const opts = {
       title: 'Relatório por Função', subtitle: periodLabel,
+      entity: records[0]?.prefeitura, folhaNome: `Folha — ${periodLabel}`, competencia: periodLabel,
       fileName: `relatorio-funcao-${selectedPeriod}`,
       columns: [
         { header: 'Função', key: 'funcao' },
@@ -362,7 +373,7 @@ const Relatorios = () => {
 
         {/* DETALHAMENTO */}
         <TabsContent value="detalhamento">
-          <TabDetalhamento records={filteredRecords} />
+          <TabDetalhamento records={filteredRecords} entity={records[0]?.prefeitura} periodLabel={periodLabel} />
         </TabsContent>
 
         {/* POR SECRETARIA */}
