@@ -46,21 +46,12 @@ export const exportToExcel = ({ title, columns, data, fileName }: ExportOptions)
 export const exportToPDF = ({ title, subtitle, columns, data, fileName, groupBy }: ExportOptions) => {
   const doc = new jsPDF({ orientation: 'landscape' });
 
-  doc.setFontSize(16);
-  doc.text(title, 14, 20);
-
-  if (subtitle) {
-    doc.setFontSize(10);
-    doc.setTextColor(100);
-    doc.text(subtitle, 14, 28);
-    doc.setTextColor(0);
-  }
-
   const head = [columns.map(c => c.header)];
   const toCells = (row: Record<string, any>) => columns.map(col => String(row[col.key] ?? ''));
 
   const subtotalRows: number[] = [];
   let body: string[][] = [];
+  const grandTotals: Record<string, number> = {};
 
   if (groupBy) {
     const fmt = groupBy.format ?? ((n: number) => n.toFixed(2));
@@ -70,8 +61,6 @@ export const exportToPDF = ({ title, subtitle, columns, data, fileName, groupBy 
       if (!groups.has(g)) groups.set(g, []);
       groups.get(g)!.push(row);
     });
-
-    const grandTotals: Record<string, number> = {};
 
     [...groups.keys()].sort((a, b) => a.localeCompare(b, 'pt-BR')).forEach(groupName => {
       const rows = groups.get(groupName)!;
@@ -99,8 +88,41 @@ export const exportToPDF = ({ title, subtitle, columns, data, fileName, groupBy 
     body = data.map(toCells);
   }
 
+  // ── Header ──
+  doc.setFontSize(16);
+  doc.text(title, 14, 20);
+
+  let headerY = 20;
+  if (subtitle) {
+    headerY += 8;
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(subtitle, 14, headerY);
+    doc.setTextColor(0);
+  }
+
+  // ── Summary line: count + totals of value columns ──
+  if (groupBy) {
+    const fmt = groupBy.format ?? ((n: number) => n.toFixed(2));
+    const parts = [`Registros: ${data.length.toLocaleString('pt-BR')}`];
+    groupBy.sums.forEach(({ column }) => {
+      const col = columns.find(c => c.key === column);
+      parts.push(`Total ${col?.header ?? column}: ${fmt(grandTotals[column] ?? 0)}`);
+    });
+    headerY += 8;
+    doc.setFillColor(232, 236, 244);
+    doc.rect(14, headerY - 5.5, doc.internal.pageSize.width - 28, 8, 'F');
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(30, 41, 74);
+    doc.text(parts.join('    |    '), 17, headerY);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(0);
+  }
+
+
   autoTable(doc, {
-    startY: subtitle ? 34 : 28,
+    startY: headerY + 6,
     head,
     body,
     styles: { fontSize: 8, cellPadding: 2 },
