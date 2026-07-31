@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
+import { safeSession } from '@/lib/safeStorage';
 
 interface UnidadeContextType {
   unidadeId: string | null;
@@ -11,27 +12,28 @@ interface UnidadeContextType {
 const UnidadeContext = createContext<UnidadeContextType | undefined>(undefined);
 
 export function UnidadeProvider({ children }: { children: ReactNode }) {
-  const [unidadeId, setUnidadeId] = useState<string | null>(() => sessionStorage.getItem('unidade_id'));
-  const [unidadeNome, setUnidadeNome] = useState<string | null>(() => sessionStorage.getItem('unidade_nome'));
-  const [unidadePadrao, setUnidadePadrao] = useState<string | null>(() => sessionStorage.getItem('unidade_padrao'));
+  const [unidadeId, setUnidadeId] = useState<string | null>(() => safeSession.get('unidade_id'));
+  const [unidadeNome, setUnidadeNome] = useState<string | null>(() => safeSession.get('unidade_nome'));
+  const [unidadePadrao, setUnidadePadrao] = useState<string | null>(() => safeSession.get('unidade_padrao'));
 
   const setUnidade = (id: string, nome: string, padrao?: string) => {
-    sessionStorage.setItem('unidade_id', id);
-    sessionStorage.setItem('unidade_nome', nome);
-    sessionStorage.setItem('unidade_padrao', padrao || 'padrao_01');
+    safeSession.set('unidade_id', id);
+    safeSession.set('unidade_nome', nome);
+    safeSession.set('unidade_padrao', padrao || 'padrao_01');
     setUnidadeId(id);
     setUnidadeNome(nome);
     setUnidadePadrao(padrao || 'padrao_01');
   };
 
   const clearUnidade = () => {
-    sessionStorage.removeItem('unidade_id');
-    sessionStorage.removeItem('unidade_nome');
-    sessionStorage.removeItem('unidade_padrao');
+    safeSession.remove('unidade_id');
+    safeSession.remove('unidade_nome');
+    safeSession.remove('unidade_padrao');
     setUnidadeId(null);
     setUnidadeNome(null);
     setUnidadePadrao(null);
   };
+
 
   return (
     <UnidadeContext.Provider value={{ unidadeId, unidadeNome, unidadePadrao, setUnidade, clearUnidade }}>

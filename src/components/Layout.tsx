@@ -6,13 +6,14 @@ import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
 import { useUnidade } from '@/contexts/UnidadeContext';
 import { Badge } from '@/components/ui/badge';
+import { safeSession } from '@/lib/safeStorage';
 
 const Layout = ({ children, hideSidebar = false }: { children: ReactNode; hideSidebar?: boolean }) => {
   const navigate = useNavigate();
   const { unidadeNome, clearUnidade } = useUnidade();
 
   const handleLogout = async () => {
-    sessionStorage.removeItem('pin_validated');
+    safeSession.remove('pin_validated');
     sessionStorage.removeItem('unidade_id');
     sessionStorage.removeItem('unidade_nome');
     const { supabase } = await import('@/integrations/supabase/client');

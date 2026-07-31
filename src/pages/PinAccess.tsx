@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Lock, ShieldCheck, KeyRound } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { safeSession } from '@/lib/safeStorage';
 
 const PinAccess = () => {
   const [pin, setPin] = useState('');
@@ -55,7 +56,7 @@ const PinAccess = () => {
       const { error } = await supabase.rpc('set_user_pin', { _user_id: user.id, _pin: pin } as any);
       if (error) throw error;
 
-      sessionStorage.setItem('pin_validated', 'true');
+      safeSession.set('pin_validated', 'true');
       toast({ title: 'PIN criado com sucesso!', description: 'Seu PIN pessoal foi configurado.' });
       navigate('/selecionar-unidade');
     } catch {
@@ -76,7 +77,7 @@ const PinAccess = () => {
       if (error) throw error;
 
       if (data) {
-        sessionStorage.setItem('pin_validated', 'true');
+        safeSession.set('pin_validated', 'true');
         navigate('/selecionar-unidade');
       } else {
         toast({ title: 'PIN incorreto', description: 'Verifique e tente novamente.', variant: 'destructive' });
@@ -91,7 +92,7 @@ const PinAccess = () => {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    sessionStorage.removeItem('pin_validated');
+    safeSession.remove('pin_validated');
     navigate('/');
   };
 

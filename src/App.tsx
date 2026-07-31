@@ -7,7 +7,10 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session } from "@supabase/supabase-js";
 import { useCanAccessRoute } from "@/hooks/useUserRoles";
+import { safeSession } from "@/lib/safeStorage";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import { UnidadeProvider, useUnidade } from "@/contexts/UnidadeContext";
+
 import Auth from "./pages/Auth";
 import PinAccess from "./pages/PinAccess";
 import SelecionarUnidade from "./pages/SelecionarUnidade";
@@ -64,10 +67,11 @@ const AuthGuard = ({ children }: { children: React.ReactNode }) => {
 };
 
 const PinGuard = ({ children }: { children: React.ReactNode }) => {
-  const pinValid = sessionStorage.getItem('pin_validated') === 'true';
+  const pinValid = safeSession.get('pin_validated') === 'true';
   if (!pinValid) return <Navigate to="/pin" replace />;
   return <>{children}</>;
 };
+
 
 const UnidadeGuard = ({ children }: { children: React.ReactNode }) => {
   const { unidadeId } = useUnidade();
@@ -115,7 +119,9 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <ErrorBoundary>
           <Routes>
+
             <Route path="/" element={<Auth />} />
             <Route path="/pin" element={<AuthGuard><PinAccess /></AuthGuard>} />
             <Route path="/selecionar-unidade" element={<AuthGuard><PinGuard><SelecionarUnidade /></PinGuard></AuthGuard>} />
@@ -150,6 +156,8 @@ const App = () => (
             <Route path="/minha-conta" element={<AuthGuard><PinGuard><MinhaConta /></PinGuard></AuthGuard>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </ErrorBoundary>
+
         </BrowserRouter>
       </UnidadeProvider>
     </TooltipProvider>
