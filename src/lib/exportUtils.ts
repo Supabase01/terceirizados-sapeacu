@@ -8,12 +8,24 @@ interface ExportColumn {
   align?: 'left' | 'right' | 'center';
 }
 
+interface GroupByOptions {
+  /** column key used to group rows (e.g. "pasta") */
+  key: string;
+  /** numeric fields to be summed, mapped to the column key where the total is printed */
+  sums: { column: string; field: string }[];
+  /** formats a summed number for display */
+  format?: (value: number) => string;
+  /** label prefix of the subtotal row */
+  label?: string;
+}
+
 interface ExportOptions {
   title: string;
   subtitle?: string;
   columns: ExportColumn[];
   data: Record<string, any>[];
   fileName: string;
+  groupBy?: GroupByOptions;
 }
 
 export const exportToExcel = ({ title, columns, data, fileName }: ExportOptions) => {
@@ -31,7 +43,7 @@ export const exportToExcel = ({ title, columns, data, fileName }: ExportOptions)
   XLSX.writeFile(wb, `${fileName}.xlsx`);
 };
 
-export const exportToPDF = ({ title, subtitle, columns, data, fileName }: ExportOptions) => {
+export const exportToPDF = ({ title, subtitle, columns, data, fileName, groupBy }: ExportOptions) => {
   const doc = new jsPDF({ orientation: 'landscape' });
 
   doc.setFontSize(16);
@@ -45,7 +57,47 @@ export const exportToPDF = ({ title, subtitle, columns, data, fileName }: Export
   }
 
   const head = [columns.map(c => c.header)];
-  const body = data.map(row => columns.map(col => String(row[col.key] ?? '')));
+  const toCells = (row: Record<string, any>) => columns.map(col => String(row[col.key] ?? ''));
+
+  const subtotalRows: number[] = [];
+  let body: string[][] = [];
+
+  if (groupBy) {
+    const fmt = groupBy.format ?? ((n: number) => n.toFixed(2));
+    const groups = new Map<string, Record<string, any>[]>();
+    data.forEach(row => {
+      const g = String(row[groupBy.key] ?? 'Não informado');
+      if (!groups.has(g)) groups.set(g, []);
+      groups.get(g)!.push(row);
+    });
+
+    const grandTotals: Record<string, number> = {};
+
+    [...groups.keys()].sort((a, b) => a.localeCompare(b, 'pt-BR')).forEach(groupName => {
+      const rows = groups.get(groupName)!;
+      rows.forEach(r => body.push(toCells(r)));
+
+      const totalRow: Record<string, any> = {};
+      totalRow[columns[0].key] = `${groupBy.label ?? 'Subtotal'} ${groupName} (${rows.length})`;
+      groupBy.sums.forEach(({ column, field }) => {
+        const sum = rows.reduce((acc, r) => acc + (Number(r[field]) || 0), 0);
+        totalRow[column] = fmt(sum);
+        grandTotals[column] = (grandTotals[column] ?? 0) + sum;
+      });
+      subtotalRows.push(body.length);
+      body.push(toCells(totalRow));
+    });
+
+    if (groups.size > 1) {
+      const grandRow: Record<string, any> = {};
+      grandRow[columns[0].key] = `TOTAL GERAL (${data.length})`;
+      Object.entries(grandTotals).forEach(([column, sum]) => { grandRow[column] = fmt(sum); });
+      subtotalRows.push(body.length);
+      body.push(toCells(grandRow));
+    }
+  } else {
+    body = data.map(toCells);
+  }
 
   autoTable(doc, {
     startY: subtitle ? 34 : 28,
@@ -57,6 +109,13 @@ export const exportToPDF = ({ title, subtitle, columns, data, fileName }: Export
       if (col.align === 'right') acc[i] = { halign: 'right' as const };
       return acc;
     }, {} as Record<number, { halign: 'left' | 'right' | 'center' }>),
+    didParseCell: (hookData) => {
+      if (hookData.section === 'body' && subtotalRows.includes(hookData.row.index)) {
+        hookData.cell.styles.fontStyle = 'bold';
+        hookData.cell.styles.fillColor = [232, 236, 244];
+        hookData.cell.styles.textColor = [30, 41, 74];
+      }
+    },
     didDrawPage: (data) => {
       const pageCount = doc.getNumberOfPages();
       doc.setFontSize(8);
@@ -66,6 +125,7 @@ export const exportToPDF = ({ title, subtitle, columns, data, fileName }: Export
 
   doc.save(`${fileName}.pdf`);
 };
+
 
 interface ContrachequeData {
   prefeitura: string;
