@@ -183,7 +183,8 @@ const TabDetalhamento = memo(({ records }: { records: any[] }) => {
       </Card>
     </>
   );
-};
+});
+TabDetalhamento.displayName = 'TabDetalhamento';
 
 
 
