@@ -7,7 +7,10 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session } from "@supabase/supabase-js";
 import { useCanAccessRoute } from "@/hooks/useUserRoles";
+import { safeSession } from "@/lib/safeStorage";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import { UnidadeProvider, useUnidade } from "@/contexts/UnidadeContext";
+
 import Auth from "./pages/Auth";
 import PinAccess from "./pages/PinAccess";
 import SelecionarUnidade from "./pages/SelecionarUnidade";
