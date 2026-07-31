@@ -64,10 +64,11 @@ const AuthGuard = ({ children }: { children: React.ReactNode }) => {
 };
 
 const PinGuard = ({ children }: { children: React.ReactNode }) => {
-  const pinValid = sessionStorage.getItem('pin_validated') === 'true';
+  const pinValid = safeSession.get('pin_validated') === 'true';
   if (!pinValid) return <Navigate to="/pin" replace />;
   return <>{children}</>;
 };
+
 
 const UnidadeGuard = ({ children }: { children: React.ReactNode }) => {
   const { unidadeId } = useUnidade();
