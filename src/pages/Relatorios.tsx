@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import { usePayrollData } from '@/hooks/usePayrollData';
 import { formatCurrency, formatNumber, getMonthName, getMonthShort } from '@/lib/formatters';
 import { exportToPDF, exportToExcel } from '@/lib/exportUtils';
