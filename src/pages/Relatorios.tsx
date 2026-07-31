@@ -114,7 +114,7 @@ const TabDetalhamento = memo(({ records }: { records: any[] }) => {
         </Select>
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Buscar por nome ou CPF..." value={filters.search} onChange={e => { setFilters(f => ({ ...f, search: e.target.value })); setPage(0); }} className="pl-10" />
+          <Input placeholder="Buscar por nome ou CPF..." value={searchInput} onChange={e => setSearchInput(e.target.value)} className="pl-10" />
         </div>
       </div>
 
