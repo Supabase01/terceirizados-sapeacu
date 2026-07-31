@@ -52,7 +52,7 @@ export const exportToExcel = ({ title, columns, data, fileName }: ExportOptions)
   XLSX.writeFile(wb, `${fileName}.xlsx`);
 };
 
-export const exportToPDF = ({ title, subtitle, columns, data, fileName, groupBy }: ExportOptions) => {
+export const exportToPDF = ({ title, subtitle, columns, data, fileName, groupBy, entity, folhaNome, competencia, appliedFilters }: ExportOptions) => {
   const doc = new jsPDF({ orientation: 'landscape' });
 
   const head = [columns.map(c => c.header)];
