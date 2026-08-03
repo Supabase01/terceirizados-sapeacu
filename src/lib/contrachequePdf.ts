@@ -1,6 +1,19 @@
 import { supabase } from '@/integrations/supabase/client';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import type jsPDF from 'jspdf';
+
+// Carregamento sob demanda: jspdf só entra na memória quando um PDF é gerado.
+let _jsPDF: typeof import('jspdf').default | null = null;
+let _autoTable: typeof import('jspdf-autotable').default | null = null;
+
+async function loadPdfLibs() {
+  if (!_jsPDF || !_autoTable) {
+    const [pdf, table] = await Promise.all([import('jspdf'), import('jspdf-autotable')]);
+    _jsPDF = pdf.default;
+    _autoTable = table.default;
+  }
+  return { jsPDF: _jsPDF!, autoTable: _autoTable! };
+}
+
 
 const formatBRL = (v: number) =>
   (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -280,7 +293,7 @@ export function renderContrachequeOnPdf(
   };
 
   const renderTable = (rows: Linha[], totalLabel: string, total: number, negative = false) => {
-    autoTable(doc, {
+    _autoTable!(doc, {
       startY: y,
       head: [['Descrição', 'Detalhe', 'Valor (R$)']],
       body: rows.length
@@ -343,13 +356,14 @@ export function renderContrachequeOnPdf(
   doc.text(`Gerado em ${new Date().toLocaleString('pt-BR')}`, W / 2, doc.internal.pageSize.height - 8, { align: 'center' });
 }
 
-export function downloadSingleContracheque(
+export async function downloadSingleContracheque(
   registro: any,
   data: ContrachequeCalculo,
   unidadeInfo: UnidadeInfo | null,
   isPadrao02: boolean,
 ) {
-  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const { jsPDF: JsPDF } = await loadPdfLibs();
+  const doc = new JsPDF({ unit: 'mm', format: 'a4' });
   renderContrachequeOnPdf(doc, registro, data, unidadeInfo, isPadrao02);
   const safeName = (registro.nome || 'colaborador').replace(/\s+/g, '_');
   doc.save(`contracheque_${safeName}_${registro.mes}_${registro.ano}.pdf`);
@@ -368,7 +382,8 @@ export async function downloadColetivoContracheques(
 ) {
   if (registros.length === 0) return;
   const unidadeInfo = await fetchUnidadeInfo(unidadeId);
-  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const { jsPDF: JsPDF } = await loadPdfLibs();
+  const doc = new JsPDF({ unit: 'mm', format: 'a4' });
   const W = doc.internal.pageSize.width;
   const H = doc.internal.pageSize.height;
   const m = 14;
@@ -416,7 +431,7 @@ export async function downloadColetivoContracheques(
   const totalDesc = registros.reduce((s, r) => s + Number(r.total_descontos || 0), 0);
   const totalLiq = registros.reduce((s, r) => s + Number(r.liquido || 0), 0);
 
-  autoTable(doc, {
+  _autoTable!(doc, {
     startY: y,
     head: [['#', 'Matrícula', 'Colaborador', 'CPF', 'Função', 'Secretaria', 'Bruto', 'Descontos', 'Líquido']],
     body: registros.map((r, i) => [
@@ -461,7 +476,8 @@ export async function downloadMultipleContracheques(
 ) {
   if (registros.length === 0) return;
   const unidadeInfo = await fetchUnidadeInfo(unidadeId);
-  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const { jsPDF: JsPDF } = await loadPdfLibs();
+  const doc = new JsPDF({ unit: 'mm', format: 'a4' });
   for (let i = 0; i < registros.length; i++) {
     const reg = registros[i];
     const calc = await fetchContrachequeCalculo(reg, unidadeId, isPadrao02);

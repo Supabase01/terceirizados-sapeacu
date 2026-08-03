@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session } from "@supabase/supabase-js";
 import { useCanAccessRoute } from "@/hooks/useUserRoles";
@@ -11,39 +11,59 @@ import { safeSession } from "@/lib/safeStorage";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { UnidadeProvider, useUnidade } from "@/contexts/UnidadeContext";
 
+// Páginas de entrada ficam no pacote inicial (acesso imediato)
 import Auth from "./pages/Auth";
 import PinAccess from "./pages/PinAccess";
 import SelecionarUnidade from "./pages/SelecionarUnidade";
-import Indicadores from "./pages/Indicadores";
-import Import from "./pages/Import";
-import ImportColaboradores from "./pages/ImportColaboradores";
-import Alertas from "./pages/Alertas";
-import AdicionaisPage from "./pages/Adicionais";
-import DescontosPage from "./pages/Descontos";
-import Relatorios from "./pages/Relatorios";
-import RelatorioContracheque from "./pages/RelatorioContracheque";
-import CadastroColaboradores from "./pages/CadastroColaboradores";
-import CadastroSecretarias from "./pages/CadastroSecretarias";
-import CadastroFuncoes from "./pages/CadastroFuncoes";
-import CadastroLotacoes from "./pages/CadastroLotacoes";
-import AdminConfig from "./pages/AdminConfig";
-import CadastroInstituicoes from "./pages/CadastroInstituicoes";
-import CadastroUnidades from "./pages/CadastroUnidades";
-import CadastroCidades from "./pages/CadastroCidades";
-import CadastroLiderancas from "./pages/CadastroLiderancas";
-import FolhaProcessamento from "./pages/FolhaProcessamento";
-import FolhaProcessada from "./pages/FolhaProcessada";
-import CadastroEncargos from "./pages/CadastroEncargos";
-import AuditLog from "./pages/AuditLog";
-import LogSistema from "./pages/LogSistema";
-import Pagamento from "./pages/Pagamento";
-import CadastroRubricas from "./pages/CadastroRubricas";
-import MinhaConta from "./pages/MinhaConta";
 import Hub from "./pages/Hub";
-import Frequencia from "./pages/Frequencia";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+// Demais páginas são carregadas sob demanda
+const Indicadores = lazy(() => import("./pages/Indicadores"));
+const Import = lazy(() => import("./pages/Import"));
+const ImportColaboradores = lazy(() => import("./pages/ImportColaboradores"));
+const Alertas = lazy(() => import("./pages/Alertas"));
+const AdicionaisPage = lazy(() => import("./pages/Adicionais"));
+const DescontosPage = lazy(() => import("./pages/Descontos"));
+const Relatorios = lazy(() => import("./pages/Relatorios"));
+const RelatorioContracheque = lazy(() => import("./pages/RelatorioContracheque"));
+const CadastroColaboradores = lazy(() => import("./pages/CadastroColaboradores"));
+const CadastroSecretarias = lazy(() => import("./pages/CadastroSecretarias"));
+const CadastroFuncoes = lazy(() => import("./pages/CadastroFuncoes"));
+const CadastroLotacoes = lazy(() => import("./pages/CadastroLotacoes"));
+const AdminConfig = lazy(() => import("./pages/AdminConfig"));
+const CadastroInstituicoes = lazy(() => import("./pages/CadastroInstituicoes"));
+const CadastroUnidades = lazy(() => import("./pages/CadastroUnidades"));
+const CadastroCidades = lazy(() => import("./pages/CadastroCidades"));
+const CadastroLiderancas = lazy(() => import("./pages/CadastroLiderancas"));
+const FolhaProcessamento = lazy(() => import("./pages/FolhaProcessamento"));
+const FolhaProcessada = lazy(() => import("./pages/FolhaProcessada"));
+const CadastroEncargos = lazy(() => import("./pages/CadastroEncargos"));
+const AuditLog = lazy(() => import("./pages/AuditLog"));
+const LogSistema = lazy(() => import("./pages/LogSistema"));
+const Pagamento = lazy(() => import("./pages/Pagamento"));
+const CadastroRubricas = lazy(() => import("./pages/CadastroRubricas"));
+const MinhaConta = lazy(() => import("./pages/MinhaConta"));
+const Frequencia = lazy(() => import("./pages/Frequencia"));
+
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60_000,
+      gcTime: 5 * 60_000,
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
+
+const PageFallback = () => (
+  <div className="flex min-h-screen items-center justify-center">
+    <span className="text-muted-foreground">Carregando...</span>
+  </div>
+);
+
 
 const AuthGuard = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
@@ -120,7 +140,9 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <ErrorBoundary>
+          <Suspense fallback={<PageFallback />}>
           <Routes>
+
 
             <Route path="/" element={<Auth />} />
             <Route path="/pin" element={<AuthGuard><PinAccess /></AuthGuard>} />
@@ -156,7 +178,9 @@ const App = () => (
             <Route path="/minha-conta" element={<AuthGuard><PinGuard><MinhaConta /></PinGuard></AuthGuard>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </Suspense>
           </ErrorBoundary>
+
 
         </BrowserRouter>
       </UnidadeProvider>

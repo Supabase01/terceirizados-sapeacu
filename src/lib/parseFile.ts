@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx';
+
 
 export interface ParsedRecord {
   prefeitura: string;
@@ -54,6 +54,7 @@ export const parseFile = async (file: File): Promise<ParseResult> => {
   const errors: string[] = [];
 
   try {
+    const XLSX = await import('xlsx');
     const buffer = await file.arrayBuffer();
     const workbook = XLSX.read(buffer, { type: 'array' });
     const sheet = workbook.Sheets[workbook.SheetNames[0]];

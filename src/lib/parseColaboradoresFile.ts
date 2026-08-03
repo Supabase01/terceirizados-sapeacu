@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx';
+
 import { isValidCPF } from './cpf';
 
 export interface ParsedColaborador {
@@ -81,6 +81,7 @@ export const parseColaboradoresFile = async (file: File): Promise<ParseColaborad
   const errors: string[] = [];
 
   try {
+    const XLSX = await import('xlsx');
     const buffer = await file.arrayBuffer();
     const workbook = XLSX.read(buffer, { type: 'array' });
     const sheet = workbook.Sheets[workbook.SheetNames[0]];

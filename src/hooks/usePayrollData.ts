@@ -29,7 +29,7 @@ export const usePayrollData = () => {
       const folhas = await fetchAll((from) =>
         supabase
           .from('folha_processamento')
-          .select('*')
+          .select('id, ano, mes, nome, cpf, funcao, secretaria, bruto, liquido, created_at')
           .in('status', ['processado', 'liberado'])
           .eq('unidade_id', unidadeId!)
           .order('ano', { ascending: true })
@@ -58,7 +58,7 @@ export const usePayrollData = () => {
       const importados = await fetchAll((from) => {
         let query = supabase
           .from('payroll_records')
-          .select('*')
+          .select('id, prefeitura, pasta, ano, mes, nome, funcao, cpf, bruto, liquido, created_at')
           .order('ano', { ascending: true })
           .order('mes', { ascending: true })
           .range(from, from + PAGE_SIZE - 1);
@@ -81,5 +81,6 @@ export const usePayrollData = () => {
       );
     },
     enabled: !!unidadeId,
+    staleTime: 5 * 60_000,
   });
 };

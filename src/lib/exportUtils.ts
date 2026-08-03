@@ -1,6 +1,16 @@
-import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import type jsPDFType from 'jspdf';
+
+// Bibliotecas pesadas (xlsx/jspdf) são carregadas somente ao exportar,
+// evitando que entrem no pacote inicial do sistema.
+const loadXlsx = () => import('xlsx');
+const loadPdf = async () => {
+  const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+    import('jspdf'),
+    import('jspdf-autotable'),
+  ]);
+  return { jsPDF, autoTable };
+};
+
 
 interface ExportColumn {
   header: string;
@@ -37,7 +47,8 @@ interface ExportOptions {
 }
 
 
-export const exportToExcel = ({ title, columns, data, fileName }: ExportOptions) => {
+export const exportToExcel = async ({ title, columns, data, fileName }: ExportOptions) => {
+  const XLSX = await loadXlsx();
   const rows = data.map(row => {
     const obj: Record<string, any> = {};
     columns.forEach(col => {
@@ -52,8 +63,10 @@ export const exportToExcel = ({ title, columns, data, fileName }: ExportOptions)
   XLSX.writeFile(wb, `${fileName}.xlsx`);
 };
 
-export const exportToPDF = ({ title, subtitle, columns, data, fileName, groupBy, entity, folhaNome, competencia, appliedFilters }: ExportOptions) => {
-  const doc = new jsPDF({ orientation: 'landscape' });
+export const exportToPDF = async ({ title, subtitle, columns, data, fileName, groupBy, entity, folhaNome, competencia, appliedFilters }: ExportOptions) => {
+  const { jsPDF, autoTable } = await loadPdf();
+  const doc: jsPDFType = new jsPDF({ orientation: 'landscape' });
+
 
   const head = [columns.map(c => c.header)];
   const toCells = (row: Record<string, any>) => columns.map(col => String(row[col.key] ?? ''));
@@ -212,8 +225,10 @@ const getMonthNameExport = (m: number) => {
   return names[m] || '';
 };
 
-export const exportContracheque = (record: ContrachequeData) => {
-  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+export const exportContracheque = async (record: ContrachequeData) => {
+  const { jsPDF, autoTable } = await loadPdf();
+  const doc: jsPDFType = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
   const w = doc.internal.pageSize.width;
   const m = 20; // margin
   const cw = w - m * 2; // content width
