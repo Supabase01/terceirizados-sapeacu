@@ -225,8 +225,10 @@ const getMonthNameExport = (m: number) => {
   return names[m] || '';
 };
 
-export const exportContracheque = (record: ContrachequeData) => {
-  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+export const exportContracheque = async (record: ContrachequeData) => {
+  const { jsPDF, autoTable } = await loadPdf();
+  const doc: jsPDFType = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
   const w = doc.internal.pageSize.width;
   const m = 20; // margin
   const cw = w - m * 2; // content width
