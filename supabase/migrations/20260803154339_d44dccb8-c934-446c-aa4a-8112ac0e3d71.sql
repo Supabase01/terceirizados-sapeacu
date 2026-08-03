@@ -1,0 +1,11 @@
+CREATE INDEX IF NOT EXISTS idx_folha_unidade_periodo ON public.folha_processamento (unidade_id, ano, mes);
+CREATE INDEX IF NOT EXISTS idx_folha_unidade_status ON public.folha_processamento (unidade_id, status);
+CREATE INDEX IF NOT EXISTS idx_folha_unidade_cpf ON public.folha_processamento (unidade_id, cpf);
+CREATE INDEX IF NOT EXISTS idx_folha_colaborador ON public.folha_processamento (colaborador_id);
+CREATE INDEX IF NOT EXISTS idx_payroll_unidade_periodo ON public.payroll_records (unidade_id, ano, mes);
+CREATE INDEX IF NOT EXISTS idx_colaboradores_unidade_ativo ON public.colaboradores (unidade_id, ativo);
+CREATE INDEX IF NOT EXISTS idx_colaboradores_unidade_nome ON public.colaboradores (unidade_id, lower(nome));
+CREATE INDEX IF NOT EXISTS idx_adicionais_unidade ON public.adicionais (unidade_id);
+CREATE INDEX IF NOT EXISTS idx_adicionais_colaborador ON public.adicionais (colaborador_id);
+CREATE INDEX IF NOT EXISTS idx_descontos_unidade ON public.descontos (unidade_id);
+CREATE INDEX IF NOT EXISTS idx_descontos_colaborador ON public.descontos (colaborador_id);
