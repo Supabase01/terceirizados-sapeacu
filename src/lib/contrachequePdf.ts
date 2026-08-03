@@ -1,6 +1,19 @@
 import { supabase } from '@/integrations/supabase/client';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import type jsPDF from 'jspdf';
+
+// Carregamento sob demanda: jspdf só entra na memória quando um PDF é gerado.
+let _jsPDF: typeof import('jspdf').default | null = null;
+let _autoTable: typeof import('jspdf-autotable').default | null = null;
+
+async function loadPdfLibs() {
+  if (!_jsPDF || !_autoTable) {
+    const [pdf, table] = await Promise.all([import('jspdf'), import('jspdf-autotable')]);
+    _jsPDF = pdf.default;
+    _autoTable = table.default;
+  }
+  return { jsPDF: _jsPDF!, autoTable: _autoTable! };
+}
+
 
 const formatBRL = (v: number) =>
   (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
