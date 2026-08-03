@@ -140,7 +140,9 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <ErrorBoundary>
+          <Suspense fallback={<PageFallback />}>
           <Routes>
+
 
             <Route path="/" element={<Auth />} />
             <Route path="/pin" element={<AuthGuard><PinAccess /></AuthGuard>} />
