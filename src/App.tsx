@@ -44,6 +44,8 @@ const LogSistema = lazy(() => import("./pages/LogSistema"));
 const Pagamento = lazy(() => import("./pages/Pagamento"));
 const CadastroRubricas = lazy(() => import("./pages/CadastroRubricas"));
 const MinhaConta = lazy(() => import("./pages/MinhaConta"));
+const Frequencia = lazy(() => import("./pages/Frequencia"));
+
 
 const queryClient = new QueryClient({
   defaultOptions: {
