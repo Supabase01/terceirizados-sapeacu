@@ -47,7 +47,8 @@ interface ExportOptions {
 }
 
 
-export const exportToExcel = ({ title, columns, data, fileName }: ExportOptions) => {
+export const exportToExcel = async ({ title, columns, data, fileName }: ExportOptions) => {
+  const XLSX = await loadXlsx();
   const rows = data.map(row => {
     const obj: Record<string, any> = {};
     columns.forEach(col => {
@@ -62,8 +63,10 @@ export const exportToExcel = ({ title, columns, data, fileName }: ExportOptions)
   XLSX.writeFile(wb, `${fileName}.xlsx`);
 };
 
-export const exportToPDF = ({ title, subtitle, columns, data, fileName, groupBy, entity, folhaNome, competencia, appliedFilters }: ExportOptions) => {
-  const doc = new jsPDF({ orientation: 'landscape' });
+export const exportToPDF = async ({ title, subtitle, columns, data, fileName, groupBy, entity, folhaNome, competencia, appliedFilters }: ExportOptions) => {
+  const { jsPDF, autoTable } = await loadPdf();
+  const doc: jsPDFType = new jsPDF({ orientation: 'landscape' });
+
 
   const head = [columns.map(c => c.header)];
   const toCells = (row: Record<string, any>) => columns.map(col => String(row[col.key] ?? ''));
