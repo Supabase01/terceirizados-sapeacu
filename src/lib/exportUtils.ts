@@ -1,6 +1,16 @@
-import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import type jsPDFType from 'jspdf';
+
+// Bibliotecas pesadas (xlsx/jspdf) são carregadas somente ao exportar,
+// evitando que entrem no pacote inicial do sistema.
+const loadXlsx = () => import('xlsx');
+const loadPdf = async () => {
+  const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+    import('jspdf'),
+    import('jspdf-autotable'),
+  ]);
+  return { jsPDF, autoTable };
+};
+
 
 interface ExportColumn {
   header: string;
